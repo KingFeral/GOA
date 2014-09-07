@@ -1,0 +1,11 @@
+// BEGIN_INTERNALS
+/*
+LAST_COMPILE_TIME: 1409909777
+DIR: code code\_libs code\_libs\pif_MapLoader code\_shared code\game code\game\skills icons old_map 
+AUTO_FILE_DIR: OFF
+MAP_ICON_TYPE: 0
+LAST_COMPILE_VERSION: 506.1247
+WINDOW: code\game\item_drops.dm;code\game\NarutoLOAS.dm;icons\scrolls.dmi;code\game\regeneration.dm;code\game\AI.dm;code\game\skills\General.dm
+FILE: code\game\skills\General.dm
+*/
+// END_INTERNALS

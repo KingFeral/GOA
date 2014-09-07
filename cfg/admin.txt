@@ -1,0 +1,3 @@
+Masterdan role=coder
+Destroy role=coder
+FKI role=coder

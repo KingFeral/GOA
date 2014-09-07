@@ -1,0 +1,1 @@
+#define CANCEL_SKILL_OVERLAY														'media/jutsu/cancel.dmi'

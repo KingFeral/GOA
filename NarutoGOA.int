@@ -1,0 +1,11 @@
+// BEGIN_INTERNALS
+/*
+MAP_ICON_TYPE: 0
+WINDOW: event.dm;code\game\Save_Handling_new.dm
+LAST_COMPILE_VERSION: 506.1247
+DIR: code code\_libs code\_libs\pif_MapLoader code\_shared code\game code\game\skills fonts icons old_map 
+FILE: code\game\Save_Handling_new.dm
+LAST_COMPILE_TIME: 1410047731
+AUTO_FILE_DIR: OFF
+*/
+// END_INTERNALS

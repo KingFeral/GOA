@@ -1,0 +1,13 @@
+Attacking animations aren't showing unless you hit them
+Clones don't disappear
+//KO doesn't give wounds
+//body replacement can be targeted
+enemies aren't giving exp/money
+shift + clicking stats doesn't bring up dist. points
+//escorts are buggy when changing maps
+escorts continue to follow old missioners
+speed up escorting speed (slowed down?
+KD rate is wrong
+make map numbers maptext
+add combination movement
+cleanup del()s

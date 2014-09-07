@@ -1,0 +1,1 @@
+#define VIEW_DISTANCE 10

@@ -1,0 +1,34 @@
+TODO,
+	//define span class 'capturedmap'
+	//define span class 'missionalert'
+	//add an additional B-rank mission (the objective of this mission is to meet with a NPC (who is said to be a spy) to retrieve a scroll item. There is a waiting time before the NPC shows up following the missioner's arrival, giving short time for enemies to intercept. Returning to the village with the item results in a completed mission.
+	//add an additional A-rank mission (the objective of this mission is for the player to slay enemies from [faction] until they reach the maximum amount of credits toward that mission. Each slain enemy's point worth is equal to their rank (D-ranks do not count). C-rank kills are worth one point, where it goes up by 1 point for each rank. Reaching 10 points results in a completed mission.
+	add AC formula
+
+---------------------
+UPDATE LOG,
+	Buffed Nirvana's Fist.  It now knocks the user's target back (distance based on STR), slowing them down in the process based on RFX vs. RFX and dealing STR-based damage.
+	Buffed Hyuuga's Gentle Fist. It now has a 60% chance to cause wound damage on hit. Additionally, the maximum amount of regeneration one can lose from gentle fist alone has been increased. You begin to recover your chakra regeneration after 10 seconds of not being hit with Gentle Fist.
+	Changed Body Replacement. It no longer performs full clone targeting tricks if the user is not on the other player's screen.
+	Changed the leveling curve.
+	Changed Fear Genjutsu. Those targeting the user are placed under the genjutsu's effects, becoming immobile or slowed depending on INT vs. INT.
+	Changed Sleep Genjutsu. For three seconds or until the user's seal is broken, whichever comes first, all of whom the user has targeted are affected by the genjutsu, falling asleep or becoming slowed (more or less based on your INT) based on INT vs. INT. Can be deactivated prematurely by activating the skill again.
+	Enabled Mass Shadow Clones and gave them AI similar to Kobata times (bandaid fix for the meantime).
+	Added KD rate. Only 70% rank grade is achievable through levels, the rest has to be gained through PvP. (So if you have nothing else but level 100, you will have at least 70% rank grade, which is B-rank for Chuunin rank.) Additionally, the requirement for S-rank is >= 100% rank grade.
+	Added a new B-class mission.
+		- The objective of this mission is to meet with a NPC who is said to be a spy from another village to retrieve a scroll item. This mission is PvP-enabled (missions can be carried out to stop you). Completing these missions allows the village to receive notifications of events having to do with the other village.
+	Added a new A-class mission.
+		- The objective of this mission is for the player to slay enemies from [faction] until they reach the maximum amount of credits toward that mission. Each slain enemy's point worth is equal to their rank (D-ranks do not count). C-rank kills are worth one point, where it goes up by 1 point for each rank. Reaching 10 points results in a completed mission. This mission is PvP-enabled (missions can be carried out to stop you).
+	Added double and triple experience scroll drops. Enemy NPCs have a chance to drop one, both or none of these items on death.
+	Added a War Hero NPC. At this NPC, players can exchange any amount of their Faction Points for PvP rewards. Rewards are:
+		+1 Scroll of Double Experience; 5 Faction Points // Each of these scrolls last 10 minutes.
+		+1 Scroll of Triple Experience; 10 Faction Points
+	Made the mission cooldown one minute.
+	New mission experience numbers:
+		D-class: 1,500 experience (from 1,000)
+		C-class: 2,500 experience (from 1,500)
+		B-class: 4,000 experience (from 2,500)
+		A-class: 6,000 experience (from 5,000)
+	Changed how squad experience is calculated. Squad experience is increased by 10% for each member, only stacking for each Genin and Chuunin. An additional 20% boost is gained if the leader is >= Chuunin rank.
+	Squad member kills also count towards other squad members' objectives.
+	The faction that controls the majority of the world's land gains +5 rate.

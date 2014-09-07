@@ -1,0 +1,10 @@
+// BEGIN_INTERNALS
+/*
+MAP_ICON_TYPE: 0
+LAST_COMPILE_VERSION: 506.1247
+HIDDENPATHS: /obj/jutsu /obj/trail /DbColumn /DbConnection /DbQuery /Event /EventScheduler /Map /__Trigger /action /atom_pool /attribute /autojoining /client /collider /dmifont /dmifonttextline /dmm_suite /effect /explosion /faction /grid /image /ini_reader / 
+DIR: code code\atom code\client code\game code\game\server code\mob code\mob\actor code\mob\actor\character code\mob\actor\character\combatant code\mob\actor\character\combatant\player code\mob\initial code\obj code\obj\item code\turf map 
+LAST_COMPILE_TIME: 1408584467
+AUTO_FILE_DIR: OFF
+*/
+// END_INTERNALS
