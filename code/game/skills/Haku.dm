@@ -1,3 +1,11 @@
+mob
+	proc/timed_invisibility(time, level)
+		set waitfor = 0
+		invisibility = level
+		sleep(time)
+		if(invisibility == level)
+			invisibility = 0
+
 skill
 	haku
 		copyable = 0
@@ -6,7 +14,7 @@ skill
 
 
 		sensatsu_suisho
-			id = ICE_NEELDES
+			id = ICE_NEEDLES
 			name = "Sensatsusuishô"
 			icon_state = "ice_needles"
 			default_chakra_cost = 200
@@ -37,7 +45,7 @@ skill
 
 				var/steps = 50
 				while(steps > 0 && etarget && Q && (Q.x!=etarget.x || Q.y!=etarget.y) && Q.z==etarget.z && user)
-					sleep(1)
+					sleep(0)
 					step_to(Q, etarget)
 					--steps
 
@@ -47,21 +55,21 @@ skill
 				if(!Q) return
 				Q.icon_state="none"
 				flick("water-needles",Q)
-				sleep(1)
+				//sleep(1)
 				if(!etarget)
 					Q.loc = null
 					return
 				if(!Q) return
 
 				var/list/EX=new
-				EX+=new/obj/iceneedle(locate(Q.x+1,Q.y,Q.z))
-				EX+=new/obj/iceneedle(locate(Q.x-1,Q.y,Q.z))
-				EX+=new/obj/iceneedle(locate(Q.x,Q.y-1,Q.z))
-				EX+=new/obj/iceneedle(locate(Q.x,Q.y+1,Q.z))
-				EX+=new/obj/iceneedle(locate(Q.x+1,Q.y-1,Q.z))
-				EX+=new/obj/iceneedle(locate(Q.x+1,Q.y+1,Q.z))
-				EX+=new/obj/iceneedle(locate(Q.x-1,Q.y-1,Q.z))
-				EX+=new/obj/iceneedle(locate(Q.x-1,Q.y+1,Q.z))
+				EX.Add(new/obj/iceneedle(locate(Q.x+1,Q.y,Q.z)),
+				new/obj/iceneedle(locate(Q.x-1,Q.y,Q.z)),
+				new/obj/iceneedle(locate(Q.x,Q.y-1,Q.z)),
+				new/obj/iceneedle(locate(Q.x,Q.y+1,Q.z)),
+				new/obj/iceneedle(locate(Q.x+1,Q.y-1,Q.z)),
+				new/obj/iceneedle(locate(Q.x+1,Q.y+1,Q.z)),
+				new/obj/iceneedle(locate(Q.x-1,Q.y-1,Q.z)),
+				new/obj/iceneedle(locate(Q.x-1,Q.y+1,Q.z)))
 				var/turf/P = Q.loc
 
 				Q.loc = null
@@ -70,27 +78,34 @@ skill
 				for(var/obj/M in EX)
 					M.Facedir(P)
 
-				sleep(1)
+				//sleep(pick(1,2))
+				if(etarget && (etarget.Get_Move_Stun() || etarget.movepenalty >= 10))
+					sleep(1)
+				else
+					sleep(2)
 
+				var/stepcount = 10
 				var/needle_hit = 0
-				while(!needle_hit)
+				while(!needle_hit && stepcount > 0)
 					for(var/obj/M in EX)
 						if((M.x!=P.x) || (M.y!=P.y))
 							step_to(M,P,0)
 						else
 							needle_hit = 1
+					stepcount--
 
-					sleep(1)
+					//sleep(1)
 
 				for(var/obj/M in EX)
 					if(M)
 						M.icon_state="NeedleHit"
 
-				sleep(1)
+				//sleep(1)
 
 				if(!user)
 					for(var/obj/O in EX)
-						O.loc = null
+					//	O.loc = null
+						O.dispose()
 					return
 
 				var/conmult = user.ControlDamageMultiplier()
@@ -107,10 +122,10 @@ skill
 					O.Dec_Stam((rand(200,300)+70*conmult),0,user)
 					O.Hostile(user)
 
-				spawn(30)
-					for(var/obj/O in EX)
-						O.loc = null
-
+				//new/Event(30, "delayed_delete", EX)
+				for(var/obj/o in EX)
+					o.dispose()
+				EX = null
 
 
 
@@ -120,23 +135,23 @@ skill
 			icon_state = "ice_spike_explosion"
 			default_chakra_cost = 350
 			default_cooldown = 80
-			default_seal_time = 10
+			default_seal_time = 3
 
 
 
 			Use(mob/human/user)
 				//user.stunned=6
-				user.Timed_Stun(60)
+				user.Timed_Stun(10)
 				viewers(user) << output("[user]: Ice Explosion!", "combat_output")
 
-				spawn(2)Haku_Spikes(user.x,user.y+1,user.z)
-				spawn(1)Haku_Spikes(user.x-1,user.y+2,user.z)
-				spawn(1)Haku_Spikes(user.x-1,user.y,user.z)
-				spawn(1)Haku_Spikes(user.x+1,user.y+2,user.z)
-				spawn(1)Haku_Spikes(user.x+1,user.y,user.z)
+				Haku_Spikes(user.x,user.y+1,user.z)
+				Haku_Spikes(user.x-1,user.y+2,user.z)
+				Haku_Spikes(user.x-1,user.y,user.z)
+				Haku_Spikes(user.x+1,user.y+2,user.z)
+				Haku_Spikes(user.x+1,user.y,user.z)
 				var/conmult = user.ControlDamageMultiplier()
 				for(var/mob/human/X in oview(2,user))
-					X.Dec_Stam(rand(800,2000)+750*conmult,0,user)
+					X.Dec_Stam(rand(1700,2200)+750*conmult,0,user)
 					X.Wound(rand(3,6),0,user)
 					X.Hostile(user)
 					Blood2(X)
@@ -150,14 +165,22 @@ skill
 			icon_state = "demonic_ice_mirrors"
 			default_chakra_cost = 550
 			default_cooldown = 180
-			default_seal_time = 3
+			default_seal_time = 10
 
 
+			SealTime(mob/user)
+				var/mob/mtarget = user.MainTarget()
+				if(mtarget.Get_Move_Stun() || mtarget.movepenalty)
+					default_seal_time = 3
+				else
+					default_seal_time = 10
+				return ..(user)
 
 			IsUsable(mob/user)
 				. = ..()
 				if(.)
-					if(!user.MainTarget())
+					var/mob/mtarget = user.MainTarget()
+					if(!mtarget || istype(mtarget, /mob/human/player/npc/bunshin))
 						Error(user, "No Target")
 						return 0
 					if(!user.NearWater(10))
@@ -170,10 +193,8 @@ skill
 
 				var/mob/human/etarget = user.MainTarget()
 				var/conmult = user.ControlDamageMultiplier()
-				//user.stunned=999
-				//user.protected=999
 				user.Begin_Stun()
-				user.Protect(1000)
+				user.Protect(300)
 
 				if(etarget)
 					user.invisibility=10
@@ -182,11 +203,9 @@ skill
 							user.invisibility=0
 
 					if(!etarget.x)
-						user.invisibility=0
-						//user.stunned=0
-						//user.protected=0
-						user.Reset_Stun()
+						user.End_Stun()
 						user.End_Protect()
+						user.invisibility=0
 						return
 
 					var/list/ret = Mirrors(etarget, user)
@@ -203,9 +222,8 @@ skill
 						if(G!=user)
 							demonmirrored = 1
 							Gotchad+=G
-							//G.stunned+=13
 							G.Timed_Stun(130)
-							spawn() G.Hostile(user)
+							G.Hostile(user)
 
 					if(demonmirrored)
 						for(var/obj/M in mirrorlist)
@@ -215,10 +233,11 @@ skill
 							for(var/mob/OG in Gotchad)
 								spawn() if(OG) projectile_to('icons/projectiles.dmi',"needle-m",M,OG)
 								if(!OG.icon_state)
-									OG.icon_state="Hurt"
+									OG.set_icon_state("Hurt", 10)
+									/*OG.icon_state="Hurt"
 									spawn(10)
 										if(OG && OG.icon_state=="Hurt")
-											OG.icon_state=""
+											OG.icon_state=""*/
 
 						for(var/mob/G in range(2,cen))
 							if(G != src)
@@ -240,11 +259,9 @@ skill
 						spawn(5)
 							for(var/mob/OG in Gotchad)
 								OG.Wound(rand(15,40),0,user)
-								OG.Dec_Stam(rand(500,1000)+500*conmult,0,user)
+								OG.Dec_Stam(rand(2500,3000)+900*conmult,0,user)
 
-						//user.stunned=0
 						user.End_Stun()
-						//user.protected=0
 						user.End_Protect()
 						user.invisibility=0
 
@@ -256,20 +273,16 @@ skill
 								OG.overlays-='icons/needlepwn.dmi'
 
 					else
-						//user.stunned=0
 						user.End_Stun()
-						//user.protected=0
 						user.End_Protect()
 						user.invisibility=0
 						for(var/M in mirrorlist)
 							del(M)
 						return
 
-				//user.protected=0
-				user.End_Protect()
-				//user.stunned=0
-				user.End_Stun()
-				user.invisibility=0
+					user.End_Stun()
+					user.End_Protect()
+					user.invisibility=0
 
 
 
@@ -335,6 +348,7 @@ proc
 
 
 	Make_Mirror(atom/start, dx, dy, state, mob/user, pixel_x=0, pixel_y=0, hide=0)
+		//set waitfor = 0
 		if(!user || !start)
 			return
 
@@ -358,10 +372,45 @@ proc
 
 		X.pixel_x=pixel_x
 		X.pixel_y=pixel_y
+		X.setup(arglist(args))
 
-		spawn()
+		/*var/obj/Q = new/obj/waterblob(start)
+		while(Q.loc != mirror_loc)
+			step_to(Q, mirror_loc)
+			sleep(1)
+			if(!user)
+				del(Q)
+				return
+
+		Q.icon_state="none"
+		switch(state)
+			if("Right")
+				Q.dir=EAST
+			if("Left")
+				Q.dir=WEST
+			if("Back")
+				Q.dir=NORTH
+		flick("formmirrors",Q)
+		//sleep(12)
+		del(Q)*/
+		X.invisibility = 0
+
+		return X
+
+
+
+
+obj
+	mirror
+		layer=MOB_LAYER
+		density=1
+
+
+		proc/setup(atom/start, dx, dy, state, mob/user, pixel_x=0, pixel_y=0, hide=0)
+			set waitfor = 0
+			var/turf/mirror_loc=locate(start.x+dx,start.y+dy,user.z)
 			var/obj/Q = new/obj/waterblob(start)
-			while(Q.loc != mirror_loc)
+			while(Q && Q.loc != mirror_loc)
 				step_to(Q, mirror_loc)
 				sleep(1)
 				if(!user)
@@ -377,22 +426,8 @@ proc
 				if("Back")
 					Q.dir=NORTH
 			flick("formmirrors",Q)
-			sleep(12)
+			//sleep(12)
 			del(Q)
-			X.invisibility = 0
-
-		return X
-
-
-
-
-obj
-	mirror
-		layer=MOB_LAYER
-		density=1
-
-
-
 
 		Back
 			icon='icons/Haku.dmi'
@@ -408,11 +443,15 @@ obj
 
 
 		New()
+			set waitfor = 0
 			..()
-			spawn(900)
-				del(src)
+			sleep(900)
+			del(src)
 
-
+		Del()
+			if(loc == null)
+				return ..()
+			loc = null
 
 
 	waterblob
@@ -421,6 +460,10 @@ obj
 		layer=MOB_LAYER+3
 		density=0
 
+		Del()
+			if(loc == null)
+				return ..()
+			loc = null
 
 
 
@@ -435,3 +478,11 @@ obj
 		New()
 			..()
 			flick("formNeedles",src)
+
+		/*Del()
+			if(loc == null)
+				return ..()
+			loc = null*/
+
+		dispose()
+			loc = null

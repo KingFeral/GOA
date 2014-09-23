@@ -71,7 +71,7 @@ world/proc
 		sleep(100)
 		var/timer=150
 		FOD=1
-		spawn() Auto_Tournament()
+		Auto_Tournament()
 		var/fod_running = 1
 		while(fod_running && timer>0)
 			timer--
@@ -104,6 +104,7 @@ world/proc
 		EndFOD()
 
 	Auto_Tournament()
+		set waitfor = 0
 		if(chuuninwatch)
 			world << "{Chuunin - Tournament} Error: Multiple tournaments started"
 			return
@@ -430,9 +431,8 @@ world/proc
 
 		for(var/client/c)
 			if(c.mob && c.mob.cexam)
-				spawn()
-					c.mob << "You only have 25 minutes to pass the forest of death!"
-					c.mob.Forest_of_Death()
+				c.mob << "You only have 25 minutes to pass the forest of death!"
+				c.mob.Forest_of_Death()
 
 	EndFOD()
 		FOD = 0
@@ -537,23 +537,24 @@ world/proc
 			x.cexam=5
 
 	StartFight()
+		set waitfor = 0
 		for(var/mob/human/player/x in world)
-			spawn()
-				if(x.cexam)
-					x<<"On Go"
-					sleep(10)
-					x<<"3"
-					sleep(10)
-					x<<"2"
-					sleep(10)
-					x<<"1"
-					sleep(10)
-					x<<"0, GO!"
-		spawn(40)
-			for(var/mob/human/player/x in world)
-				if(x.inarena==1)
-					x.pk=1
-					x.frozen=0
+			if(x.cexam)
+				x.chuunin_exam_countdown()
+				/*x<<"On Go"
+				sleep(10)
+				x<<"3"
+				sleep(10)
+				x<<"2"
+				sleep(10)
+				x<<"1"
+				sleep(10)
+				x<<"0, GO!"*/
+		sleep(40)
+		for(var/mob/human/player/x in world)
+			if(x.inarena==1)
+				x.pk=1
+				x.frozen=0
 
 	Declare()
 		for(var/mob/human/player/x in world)
@@ -575,6 +576,20 @@ world/proc
 			if(X.faction.chuunin_item)
 				var/chuunin_type = index2type(X.faction.chuunin_item)
 				new chuunin_type(X)
+
+mob
+	proc/chuunin_exam_countdown()
+		set waitfor = 0
+		src<<"On Go"
+		sleep(10)
+		src<<"3"
+		sleep(10)
+		src<<"2"
+		sleep(10)
+		src<<"1"
+		sleep(10)
+		src<<"0, GO!"
+
 mob
 	Admin
 		verb
@@ -745,24 +760,16 @@ mob
 					x.inarena=1
 					x.cexam=5
 			Start_Chuunin_Fight()
+				set waitfor = 0
 				set category="Chuunin"
 				for(var/mob/human/player/x in world)
-					spawn()
-						if(x.cexam)
-							x<<"On Go"
-							sleep(10)
-							x<<"3"
-							sleep(10)
-							x<<"2"
-							sleep(10)
-							x<<"1"
-							sleep(10)
-							x<<"0, GO!"
-				spawn(40)
-					for(var/mob/human/player/x in world)
-						if(x.inarena==1)
-							x.pk=1
-							x.frozen=0
+					if(x.cexam)
+						x.chuunin_exam_countdown()
+				sleep(40)
+				for(var/mob/human/player/x in world)
+					if(x.inarena==1)
+						x.pk=1
+						x.frozen=0
 
 			Declare_Winner_Chuunin()
 				set category="Chuunin"
@@ -790,6 +797,8 @@ obj
 turf/memberwarp
 	Enter(mob/human/O)
 		if(istype(O) && O.client)
+			if(O.combat_flagged())
+				return 0
 			return TRUE
 			//if(!O.client.IsByondMember())
 			//	O<<"This is for BYOND Members Only!"
@@ -900,6 +909,8 @@ mob
 				src.loc=locate(exe.x,exe.y,exe.z)
 
 		Forest_of_Death()
+			set waitfor = 0
+
 			sleep(-1)
 			if(src.cexam==1)
 				src.cexam=2

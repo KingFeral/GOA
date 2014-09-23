@@ -1,2 +1,0 @@
-mob
-	var/tmp/sandarmor

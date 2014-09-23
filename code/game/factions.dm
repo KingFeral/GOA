@@ -27,7 +27,6 @@ faction
 		chuunin_item
 		member_limit
 		rate = 5
-		spy[]
 		tmp
 			mob/human/player/online_members[0]
 
@@ -122,65 +121,97 @@ mob
 		tmp/faction/faction
 	proc
 		Refresh_Faction_Verbs()
+			set waitfor = 0
+			var/winset_command = ""
 			var/client/C = client
 			if(!C && usr && usr.client)
 				C = usr.client
 			if(faction)
 				//No verbs for these categories yet
 				//verbs += typesof(/mob/faction_verbs/verb)
-				if(C) winset(usr, "faction_menu", "parent=menu;name=\"&Faction\"")
+				if(C)
+					//winset(usr, "faction_menu", "parent=menu;name=\"&Faction\"")
+					winset_command += "faction_menu.parent = menu; faction_menu.name = \"Faction\";"
 				if(faction.leader == realname)
 					//verbs += typesof(/mob/faction_verbs/leader/verb)
-					if(C) winset(C, "faction_leader_menu", "parent=faction_menu;name=\"&Leader\"")
+					if(C)
+						//winset(C, "faction_leader_menu", "parent=faction_menu;name=\"&Leader\"")
+						winset_command += "faction_leader_menu.parent = faction_menu; faction_leader_menu.name = \"Faction Leader\";"
 				if(faction.village != "Missing")
 					verbs += typesof(/mob/faction_verbs/non_missing/verb)
 					if(C)
-						winset(C, "vsay_button", "is-visible=true")
+						winset_command += {"
+						vsay_button.is-visible=true;
+						faction_verb_vsay.parent=faction_menu;faction_verb_vsay.name=\"&Village Say\";faction_verb_vsay.command=Village-Say;
+						faction_verb_vleave.parent=faction_menu;faction_verb_vleave.name=\"L&eave Village\";faction_verb_vleave.command=Leave-Village;
+						"}
+						/*winset(C, "vsay_button", "is-visible=true")
 						winset(C, "faction_verb_vsay", "parent=faction_menu;name=\"&Village Say\";command=Village-Say")
-						winset(C, "faction_verb_vleave", "parent=faction_menu;name=\"L&eave Village\";command=Leave-Village")
+						winset(C, "faction_verb_vleave", "parent=faction_menu;name=\"L&eave Village\";command=Leave-Village")*/
 				if(!(faction in list(leaf_faction, mist_faction, sand_faction, missing_faction)))
 					verbs += typesof(/mob/faction_verbs/non_default/verb)
 					if(C)
-						winset(C, "fsay_button", "is-visible=true")
+						winset_command += {"
+						fsay_button.is-visible = true;
+						faction_verb_fsay.parent = faction_menu; faction_verb_fsay.name=\"&Faction Say\"; faction_verb_fsay.command=Faction-Say";
+						faction_verb_fleave.parent=faction_menu; faction_verb_fleave.name=\"L&eave Faction\"; faction_verb_fleave.command=Leave-Faction;
+						"}
+						/*winset(C, "fsay_button", "is-visible=true")
 						winset(C, "faction_verb_fsay", "parent=faction_menu;name=\"&Faction Say\";command=Faction-Say")
-						winset(C, "faction_verb_fleave", "parent=faction_menu;name=\"L&eave Faction\";command=Leave-Faction")
+						winset(C, "faction_verb_fleave", "parent=faction_menu;name=\"L&eave Faction\";command=Leave-Faction")*/
 					if(faction.leader == realname)
 						verbs += typesof(/mob/faction_verbs/leader/non_default/verb)
 						if(C)
-							winset(C, "faction_verb_finvite", "parent=faction_leader_menu;name=\"&Invite\";command=Invite-to-Faction")
-							winset(C, "faction_verb_fkick", "parent=faction_leader_menu;name=\"&Kick\";command=Kick-from-Faction")
+							winset_command += {"
+							faction_verb_finvite.parent=faction_leader_menu; faction_verb_finvite.name=\"&Invite\"; faction_verb_finvite.command=Invite-to-Faction;
+							faction_verb_fkick.parent=faction_leader_menu; faction_verb_fkick.name=\"&Kick\"; faction_verb_fkick.command=Kick-from-Faction;
+							"}
+							/*winset(C, "faction_verb_finvite", "parent=faction_leader_menu;name=\"&Invite\";command=Invite-to-Faction")
+							winset(C, "faction_verb_fkick", "parent=faction_leader_menu;name=\"&Kick\";command=Kick-from-Faction")*/
 				if(faction in list(leaf_faction, mist_faction, sand_faction))
 					if(faction.leader == realname)
 						verbs += typesof(/mob/faction_verbs/leader/default_non_missing/verb)
 						if(C)
-							winset(C, "arena_host_menu", "parent=faction_leader_menu;name=\"&Arena\"")
-							winset(C, "arena_host_verb_start", "parent=arena_host_menu;name=\"&Start Torunament\";command=Start-Tourney")
-							winset(C, "arena_host_verb_end", "parent=arena_host_menu;name=\"&End Torunament\";command=End-Tourney")
-							winset(C, "arena_host_verb_send", "parent=arena_host_menu;name=\"&Send Player to Arena\";command=Send-to-Arena")
-							winset(C, "arena_host_verb_fight", "parent=arena_host_menu;name=\"Start &Fight\";command=Start-Fight")
-							winset(C, "arena_host_verb_winner", "parent=arena_host_menu;name=\"Declare &Winner\";command=Declare-Winner")
-							winset(C, "subfaction_menu", "parent=faction_leader_menu;name=\"&Village Factions\"")
-							winset(C, "subfaction_verb_create", "parent= subfaction_menu; name=\"&Create New Faction...\";command=Create-Faction-KAGE")
-							winset(C, "subfaction_verb_change", "parent= subfaction_menu; name=\"Change Faction &Leader...\";command=Change-Faction-Leader-KAGE")
-							winset(C, "faction_verb_vinvite", "parent=faction_leader_menu;name=\"&Invite\";command=Invite-to-Village")
-							winset(C, "faction_verb_vkick", "parent=faction_leader_menu;name=\"&Kick\";command=Kick-from-Village")
-							winset(C, "faction_verb_chuunin", "parent=faction_leader_menu;name=\"Host &Chuunin Exam\";command=Host-Chuunin-Exam")
-							winset(C, "faction_verb_rank", "parent=faction_leader_menu;name=\"&Promote Villager\";command=Change-Rank")
-							winset(C, "faction_verb_infocard", "parent=faction_leader_menu;name=\"Change I&nfo Card Comment\";command=Set-Info-Card-Comment")
-							winset(C, "faction_verb_addhelper", "parent=faction_leader_menu;name=\"A&dd Helper\";command=Add-Helper")
-							winset(C, "faction_verb_removehelper", "parent=faction_leader_menu;name=\"&Remove Helper\";command=Remove-Helper")
-							winset(C, "faction_verb_mute", "parent=faction_leader_menu;name=\"&Mute\";command=Mute-KAGE")
-							winset(C, "faction_verb_unmute", "parent=faction_leader_menu;name=\"&Unmute\";command=Unmute-KAGE")
-							winset(C, "faction_verb_unmuteall", "parent=faction_leader_menu;name=\"Unmute &Everyone\";command=Unmute-All-KAGE")
+							winset_command += {"
+							arena_host_menu.parent=faction_leader_menu; arena_host_menu.name=\"&Arena\";
+							arena_host_verb_start.parent=arena_host_menu; arena_host_verb_start.name=\"&Start Torunament\"; arena_host_verb_start.command=Start-Tourney;
+							arena_host_verb_end.parent=arena_host_menu; arena_host_verb_end.name=\"&End Tournament\"; arena_host_verb_end.command=End-Tourney;
+							arena_host_verb_send.parent=arena_host_menu; arena_host_verb_send.name=\"&Send Player to Arena\"; arena_host_verb_send.command=Send-to-Arena
+							arena_host_verb_fight.parent=arena_host_menu; arena_host_verb_fight.name=\"Start &Fight\"; arena_host_verb_fight.command=Start-Fight;
+							arena_host_verb_winner.parent=arena_host_menu; arena_host_verb_winner.name=\"Declare &Winner\"; arena_host_verb_winner.command=Declare-Winner;
+
+							subfaction_menu.parent=faction_leader_menu;subfaction_menu.name=\"&Village Factions\";
+							subfaction_verb_create.parent= subfaction_menu; subfaction_verb_create.name=\"&Create New Faction...\";subfaction_verb_create.command=Create-Faction-KAGE;
+							subfaction_verb_change.parent= subfaction_menu; subfaction_verb_change.name=\"Change Faction &Leader...\";subfaction_verb_change.command=Change-Faction-Leader-KAGE;
+							faction_verb_vinvite.parent=faction_leader_menu;faction_verb_vinvite.name=\"&Invite\";faction_verb_vinvite.command=Invite-to-Village;
+							faction_verb_vkick.parent=faction_leader_menu;faction_verb_vkick.name=\"&Kick\";faction_verb_vkick.command=Kick-from-Village;
+							faction_verb_chuunin.parent=faction_leader_menu;faction_verb_chuunin.name=\"Host &Chuunin Exam\";faction_verb_chuunin.command=Host-Chuunin-Exam;
+							faction_verb_rank.parent=faction_leader_menu;faction_verb_rank.name=\"&Promote Villager\";faction_verb_rank.command=Change-Rank;
+							faction_verb_infocard "parent=faction_leader_menu;faction_verb_infocard.name=\"Change I&nfo Card Comment\";faction_verb_infocard.command=Set-Info-Card-Comment;
+							faction_verb_addhelper, "parent=faction_leader_menu;faction_verb_addhelper.name=\"A&dd Helper\";faction_verb_addhelper.command=Add-Helper;
+							faction_verb_removehelper, "parent=faction_leader_menu;faction_verb_removehelper.name=\"&Remove Helper\";faction_verb_removehelper.command=Remove-Helper;
+							faction_verb_mute.parent=faction_leader_menu;faction_verb_mute.name=\"&Mute\";faction_verb_mute.command=Mute-KAGE;
+							faction_verb_unmute.parent=faction_leader_menu;faction_verb_unmute.name=\"&Unmute\";faction_verb_unmute.command=Unmute-KAGE;
+							faction_verb_unmuteall.parent=faction_leader_menu;faction_verb_unmuteall.name=\"Unmute &Everyone\";faction_verb_unmuteall.command=Unmute-All-KAGE;
+							"}
 			else
 				if(C)
-					winset(C, "vsay_button", "is-visible=false")
+					winset_command += {"
+					vsay_button.is-visible=false;
+					fsay_button.is-visible=false;
+					faction_menu.parent=;
+					faction_leader_menu.parent=;
+					"}
+					/*winset(C, "vsay_button", "is-visible=false")
 					winset(C, "fsay_button", "is-visible=false")
 					winset(C, "faction_menu", "parent=")
-					winset(C, "faction_leader_menu", "parent=")
+					winset(C, "faction_leader_menu", "parent=")*/
 				verbs -= typesof(/mob/faction_verbs/non_missing)
 				verbs -= typesof(/mob/faction_verbs/non_default/verb)
 				verbs -= typesof(/mob/faction_verbs/leader/non_default/verb)
+
+			if(C)
+				winset(C, null, winset_command)
 
 mob/MasterAdmin/verb
 	Create_Faction(faction_name as text, village as text, leader_name as text|mob in world, mouse_icon as null|anything in faction_mouse, chat_icon as anything in faction_chat, chuunin_item as null|num, member_limit as num)
@@ -231,7 +262,7 @@ mob/faction_verbs
 							tempmute=0
 							talktimes=0
 						if(talkcooling==0)
-							spawn()talkcool()
+							talkcool()
 						if(length(t) <= 500&&say==1)
 							say=0
 							var/rrank=rank
@@ -240,11 +271,11 @@ mob/faction_verbs
 							for(var/mob/human/player/P in world)
 								if(P.client && P.faction && (P.faction.village==faction.village || (P in online_admins)))
 									if(P.ckey in admins)
-										P<<"<span class='village_chat'><span class='[StyleClassFilter(faction.village)]'><span class='faction'><span class='villageicon'>\icon[faction_chat[faction.chat_icon]]</span> [faction]</span> (<span class='rank'>[rrank]</span>) <a href='?src=\ref[usr];action=mute' class='admin_link'><span class='name'>[realname]</span></a>: <span class='message'>[html_encode(t)]</span></span></span>"
+										P<<"<span class='village_chat'><span class='[StyleClassFilter(faction.village)]'><span class='faction'><span class='villageicon'>\icon[faction_chat[faction.chat_icon]]</span> [faction]</span> (<span class='rank'>[rrank]</span>) <a href='?src=\ref[usr];action=admin' class='admin_link'><span class='name'>[realname]</span></a>: <span class='message'>[html_encode(t)]</span></span></span>"
 									else
 										P<<"<span class='village_chat'><span class='[StyleClassFilter(faction.village)]'><span class='faction'><span class='villageicon'>\icon[faction_chat[faction.chat_icon]]</span> [faction]</span> (<span class='rank'>[rrank]</span>) <span class='name'>[realname]</span>: <span class='message'>[html_encode(t)]</span></span></span>"
 							ChatLog("village") << "[time2text(world.timeofday, "hh:mm:ss")]\t[faction.village]\t[realname]\t[html_encode(t)]"
-							spawn() SendInterserverMessage("chat_mirror", list("mode" = "village", "ref" = "\ref[src]", "name" = realname, "rank" = rrank, "faction" = "[faction]", "msg" = html_encode(t)))
+							SendInterserverMessage("chat_mirror", list("mode" = "village", "ref" = "\ref[src]", "name" = realname, "rank" = rrank, "faction" = "[faction]", "msg" = html_encode(t)))
 							sleep(2)
 							say=1
 						else
@@ -287,7 +318,7 @@ mob/faction_verbs
 						talktimes=0
 
 					if(talkcooling==0)
-						spawn()talkcool()
+						talkcool()
 
 					if(length(msg) <= 500&&say==1)
 						say=0
@@ -301,11 +332,11 @@ mob/faction_verbs
 							if(M in sent_to) continue
 							sent_to += M
 							if(M.ckey in admins)
-								M << "<span class='faction_chat'><span class='[StyleClassFilter(faction.name)]'><span class='faction'>[faction_text]</span> [show_rank?"(<span class='rank'>[rank]</span>) ":""]<a href='?src=\ref[usr];action=mute' class='admin_link'><span class='name'>[realname]</span></a>: <span class='message'>[html_encode(msg)]</span></span></span>"
+								M << "<span class='faction_chat'><span class='[StyleClassFilter(faction.name)]'><span class='faction'>[faction_text]</span> [show_rank?"(<span class='rank'>[rank]</span>) ":""]<a href='?src=\ref[usr];action=admin' class='admin_link'><span class='name'>[realname]</span></a>: <span class='message'>[html_encode(msg)]</span></span></span>"
 							else
 								M << "<span class='faction_chat'><span class='[StyleClassFilter(faction.name)]'><span class='faction'>[faction_text]</span> [show_rank?"(<span class='rank'>[rank]</span>) ":""]<span class='name'>[realname]</span>: <span class='message'>[html_encode(msg)]</span></span></span>"
 						ChatLog("faction") << "[time2text(world.timeofday, "hh:mm:ss")]\t[faction]\t[realname]\t[html_encode(msg)]"
-						spawn() SendInterserverMessage("chat_mirror", list("mode" = "faction", "ref" = "\ref[src]", "name" = realname, "rank" = rank, "faction" = "[faction]", "msg" = html_encode(msg)))
+						SendInterserverMessage("chat_mirror", list("mode" = "faction", "ref" = "\ref[src]", "name" = realname, "rank" = rank, "faction" = "[faction]", "msg" = html_encode(msg)))
 						sleep(2)
 						say=1
 					else
@@ -336,14 +367,14 @@ mob/faction_verbs
 					for(var/mob/human/player/P in world)
 						if(P.client && P.faction && (P.faction.village==faction.village || (P in online_admins)))
 							P<<"<span class='village_chat'><span class='[StyleClassFilter(faction.village)]'><span class='faction'><span class='villageicon'>\icon[faction_chat[faction.village]]</span> <b>Announce</b></span> (<span class='rank'>Kage</span>) <span class='name'>[realname]</span>: <span class='message'>[T]</span></span></span>"
-					spawn() SendInterserverMessage("chat_mirror", list("mode" = "village_announce", "ref" = "\ref[src]", "name" = realname, "rank" = "<b>Admin</b>", "village" = "[faction.village]", "msg" = T))
+					SendInterserverMessage("chat_mirror", list("mode" = "village_announce", "ref" = "\ref[src]", "name" = realname, "rank" = "<b>Admin</b>", "village" = "[faction.village]", "msg" = T))
 
 				Create_Faction_KAGE(faction_name as text, mob/leader as mob in world, member_limit as num)
 					set desc = "(faction, leader, limit) Create a new faction"
 					if(!leader.faction || leader.faction.village != faction.village)
 						src << "The leader must be in your village."
 					var/list/faction_info = saves.GetFactionInfo(faction_name)//params2list(SendInterserverMessage("faction_info", list("faction" = faction_name)))
-					if(!faction_info["name"])
+					if(!faction_info || !faction_info["name"])
 						var/faction/new_faction = new /faction(faction_name, faction.village, leader, faction.mouse_icon, faction.chat_icon, faction.chuunin_item, member_limit, 1)
 						new_faction.tag = "faction__[new_faction.name]"
 						new_faction.AddMember(leader)
@@ -431,8 +462,12 @@ mob/faction_verbs
 							x.pk=1
 							x.dojo=0
 							//x.stunned=0
+							x.movepenalty = 0
+							x.Reset_Move_Stun()
 							x.Reset_Stun()
 							x.curwound=0
+							x.curstamina = x.stamina
+							x.curchakra = x.chakra
 
 				Declare_Winner()
 					set category="Faction Leader"
@@ -534,6 +569,7 @@ mob/faction_verbs
 						file("logs/kage_[time2text(world.realtime, "YYYY-MM-DD")].log") << "[time2text(world.timeofday, "hh:mm:ss")]\tremove_helper\t[src]\t[faction]\t[name]"
 						saves.RemoveHelper(name, usr.faction.name)//SendInterserverMessage("remove_helper", list("name" = name, "village" = usr.faction.name))
 				Mute_KAGE()
+					set waitfor = 0
 					var/list/li = new
 					for(var/mob/human/X in world)
 						if(X.client && X.faction && X.faction.village==usr.faction.village && !X.mute) li+=X
@@ -545,11 +581,11 @@ mob/faction_verbs
 						var/c_id = M.client.computer_id
 						mutelist+=c_id
 						src = null
-						spawn(18000)
-							mutelist-=c_id
-							if(M && M.mute)
-								M.mute=0
-								world<<"[M.realname] is unmuted"
+						sleep(18000)
+						mutelist-=c_id
+						if(M && M.mute)
+							M.mute=0
+							world<<"[M.realname] is unmuted"
 				Unmute_KAGE()
 					var/list/li = new
 					for(var/mob/human/X in world)

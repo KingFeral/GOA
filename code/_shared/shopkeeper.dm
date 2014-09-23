@@ -6,6 +6,7 @@ obj
 			special=0
 			limit=100
 			stackable=0
+		layer=20
 		Sasuke_Clothes
 			icon='icons/sasuke_cloth.dmi'
 			icon_state="gui"
@@ -391,7 +392,7 @@ obj
 			icon='icons/gui.dmi'
 			icon_state="antidote"
 			refr=/obj/items/usable/Antidote
-			cost=100
+			cost=1000
 			stackable=1
 			limit=10
 		Bandage
@@ -408,6 +409,7 @@ obj
 			cost=45
 			stackable=1
 			limit=10
+
 		SoldierPill
 			icon='icons/gui.dmi'
 			icon_state="soldierpill"
@@ -415,6 +417,27 @@ obj
 			cost=100
 			stackable=1
 			limit=50
+
+		Double_Experience_Scroll
+			icon='icons/scrolls.dmi'
+			icon_state="Rare_Gui"
+			refr=/obj/items/usable/scrolls/double_experience
+			cost = 5
+			details = "Grants the reader double experience rate for +10 minutes."
+			currency = "Faction Points"
+			stackable=1
+			limit = 10
+
+		Triple_Experience_Scroll
+			icon='icons/scrolls.dmi'
+			icon_state="Legendary_Gui"
+			refr=/obj/items/usable/scrolls/triple_experience
+			cost = 10
+			details = "Grants the reader triple experience rate for +10 minutes."
+			currency = "Faction Points"
+			stackable=1
+			limit = 10
+
 		Tripwire
 			icon='icons/gui.dmi'
 			icon_state="tripwire"
@@ -460,33 +483,33 @@ obj
 		Hidden_Knife_Shots
 			icon='icons/gui.dmi'
 			icon_state="mouthknife"
-			refr=/obj/items/Puppet_Stuff/Hidden_Knife_Shot
+			refr=/obj/items/Puppet/weapon/Hidden_Knife_Shot
 			cost=500
 		Poison_Bombs
 			icon='icons/gui.dmi'
 			icon_state="poisonbomb"
-			refr=/obj/items/Puppet_Stuff/Poison_Bomb
+			refr=/obj/items/Puppet/weapon/Poison_Bomb
 			cost=1100
 		Body_Crushs
 			icon='icons/gui.dmi'
 			icon_state="armbind"
-			refr=/obj/items/Puppet_Stuff/Body_Crush
+			refr=/obj/items/Puppet/weapon/Body_Crush
 			cost=750
 		Poison_Tipped_Blades
 			icon='icons/gui.dmi'
 			icon_state="mild-poison"
-			refr=/obj/items/Puppet_Stuff/Poison_Tipped_Blade
+			refr=/obj/items/Puppet/weapon/Poison_Tipped_Blade
 			cost=950
 		Needle_Guns
 			icon='icons/gui.dmi'
 			icon_state="needlegun"
-			refr=/obj/items/Puppet_Stuff/Needle_Gun
+			refr=/obj/items/Puppet/weapon/Needle_Gun
 			cost=1350
 
 		Chakra_Shields
 			icon='icons/gui.dmi'
 			icon_state="chakrashield"
-			refr=/obj/items/Puppet_Stuff/Chakra_Shield
+			refr=/obj/items/Puppet/weapon/Chakra_Shield
 			cost=1250
 
 obj/sale/newsys
@@ -653,6 +676,7 @@ obj
 	Nevermind
 		icon='icons/gui.dmi'
 		icon_state="nvm"
+		layer=20
 		Click()
 			usr.shopping=0
 			usr.canmove=1

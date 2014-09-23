@@ -254,12 +254,19 @@ mob
 				wregenlag=i
 				usr<<"world/regenlag=[wregenlag]"
 
+			SilentAnnounce()
+				var/T=input("Silent Announce in this server only")as text|null
+				if(!T)return
+				world<<"[T]"
+
 			Announce()
-				var/T=input("Announce in all servers")as text
+				var/T=input("Announce in all servers")as text|null
+				if(!T)return
 				MultiAnnounce("<font color=#fff67f><b>[usr]</b>: [T]</font>")
 
 			Local_Announce()
-				var/T=input("Announce in this server only")as text
+				var/T=input("Announce in this server only")as text|null
+				if(!T)return
 				world<<"<font color=#fff67f><b>[usr]</b>: [T]</font>"
 
 			Rank(mob/human/player/M in All_Clients(), rank in list("Academy Student","Genin","Chuunin","Special Jounin","Jounin","Elite Jounin"))
@@ -300,11 +307,12 @@ mob
 				usr<<browse(T)
 			UNHENGE()
 				for(var/mob/human/player/x in world)
-					if(x.henged)
+					if(x.henged||x.phenged)
 						x.name=x.realname
 						x.mouse_over_pointer=faction_mouse[x.faction.mouse_icon]
 						x.henged=0
-						Poof(x.x,x.y,x.z)
+						x.phenged=0
+						Poof(x.loc)//(x.x,x.y,x.z)
 						x.CreateName(255, 255, 255)
 						x.Affirm_Icon()
 						x.Load_Overlays()
@@ -374,6 +382,12 @@ mob
 					if(x.inarena==1 && !x.cexam)
 						x.pk=1
 						x.dojo=0
+						x.movepenalty = 0
+						x.Reset_Move_Stun()
+						x.Reset_Stun()
+						x.curwound=0
+						x.curstamina = x.stamina
+						x.curchakra = x.chakra
 			Declare_Winner()
 				set category="Tournament"
 				for(var/mob/human/player/x in world)

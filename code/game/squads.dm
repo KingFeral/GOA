@@ -25,15 +25,15 @@ squad
 	proc
 		Refresh_Display()
 			var/grid_item = 0
-			online_members << output(name, "squad_list_grid:[++grid_item]")
+			online_members << output(name, "squadgrid:[++grid_item]")
 			for(var/mob/M in online_members)
 				if(!(M in world))
 					online_members -= M
 					continue
-				online_members << output(M, "squad_list_grid:[++grid_item]")
+				online_members << output(M, "squadgrid:[++grid_item]")
 			for(var/mob/M in online_members)
 				if(M.client)
-					winset(M, "squad_list_grid", "cells=[grid_item]")
+					winset(M, "squadgrid", "cells=[grid_item]")
 
 
 proc
@@ -42,7 +42,7 @@ proc
 		var/squad/squad = locate("squad__[squad_name]")
 		if(!squad)
 			var/list/squad_info = saves.GetSquadInfo(squad_name)
-			if(!squad_info || !squad_info["name"])
+			if(!squad_info || !("name" in squad_info) || (!squad_info["name"]))
 				return null
 			squad = new /squad(squad_info["name"], squad_info["leader"], 0)
 			squad.tag = "squad__[squad.name]"
@@ -53,6 +53,7 @@ mob
 		tmp/squad/squad
 	proc
 		Refresh_Squad_Verbs()
+			set waitfor = 0
 			var/client/C = client
 			if(!C && usr && usr.client)
 				C = usr.client
@@ -94,7 +95,7 @@ mob/human
 				return
 			if(!squad)
 				var/list/squad_info = saves.GetSquadInfo(squad_name)
-				if(!squad_info || !squad_info["name"])
+				if(!squad_info || !("name" in squad_info) || !squad_info["name"])
 					squad = new(squad_name, src, 1)
 					squad.tag = "squad__[squad.name]"
 					Refresh_Squad_Verbs()
@@ -107,11 +108,11 @@ mob/squad_verbs
 	verb
 		Leave_Squad()
 			if(squad && !squad.lock && input2(src,"Are you sure you want to leave your squad?","Leave Squad",list("Yes","No")) == "Yes")
+				if(!squad) return
 				squad.online_members -= src
 				if(squad.leader == name)
 					var/squad_name = squad.name
-					spawn()
-						saves.DeleteSquad(squad_name)
+					saves.DeleteSquad(squad_name)
 					del squad
 				if(squad)
 					squad.Refresh_Display()

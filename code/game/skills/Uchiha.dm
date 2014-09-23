@@ -1,3 +1,35 @@
+mob
+	proc/sharingan_image_loop()
+		set waitfor = 0
+		if(!src)
+			return
+		while(sharingan)
+			sleep(10)
+			for(var/mob/human/x in orange(10))
+				add_sharingan_image(x)
+
+	proc/add_sharingan_image(mob/seen)
+		set waitfor = 0
+		var/chakra_level = seen.curchakra / seen.chakra
+		var/chakra_state
+		if(chakra_level > 0.67)
+			chakra_state = "high"
+		else if(chakra_level > 0.33)
+			chakra_state = "med"
+		else
+			chakra_state = "low"
+		var/image/I = image('icons/sharingan_chakra.dmi',seen,chakra_state,MOB_LAYER+0.01,seen.dir)
+		src << I
+		spawn(10 * world.tick_lag)
+			if(client)
+				client.images -= I
+		if(istype(seen, /mob/human/player/npc/bunshin) || istype(seen, /mob/human/player/npc/kage_bunshin))
+			var/image/J = image('icons/sharingan_chakra.dmi',seen,"bunshin",MOB_LAYER+0.01,seen.dir)
+			src << J
+			spawn(10*world.tick_lag)
+				if(client)
+					client.images -= J
+
 skill
 	uchiha
 		copyable = 0
@@ -29,6 +61,7 @@ skill
 			Use(mob/user)
 				viewers(user) << output("[user]: Sharingan!", "combat_output")
 				user.sharingan=1
+				user.sharingan_image_loop()
 
 				var/buffrfx=round(user.rfx*0.25)
 				var/buffint=round(user.int*0.25)
@@ -53,7 +86,7 @@ skill
 
 		sharingan_2
 			id = SHARINGAN2
-			name = "Sharingan"
+			name = "Sharingan: Tomoe 3"
 			icon_state = "sharingan2"
 			default_chakra_cost = 350
 			default_cooldown = 250

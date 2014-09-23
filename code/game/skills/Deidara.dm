@@ -28,21 +28,33 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				flick("Throw1",user)
 
-				var/hit=0
+				/*var/hit=0
 				var/mob/human/player/etarget = user.MainTarget()
 				if(etarget)
 					if(!etarget.protected && !etarget.ko)
 						hit=1
-				if(hit)
-					var/conmult = user.ControlDamageMultiplier()
-					var/mob/human/clay/bird/B=new/mob/human/clay/bird(locate(user.x,user.y,user.z),rand(600, (1000+200*conmult)),user)
-					spawn(1)Poof(B.x,B.y,B.z)
-					spawn(3)Homing_Projectile_bang(user,B,8,etarget,1)
-					spawn(50)
-						if(B)
-							B.Explode()
+				if(hit)*/
+				var/conmult = user.ControlDamageMultiplier()
+				var/targets[] = user.NearestTargets(num = 10)
+				var/stamina_damage = rand(800 + 200 * conmult, (1200 + 200 * conmult))
+				if(targets && targets.len)
+					for(var/mob/m in targets)
+						var/mob/human/clay/bird/b = new(user.loc, stamina_damage, user)
+						stamina_damage *= 0.90 // Lower damage for each subsequent target.
+						if(b)
+							Poof(b.loc)
+							Homing_Projectile_bang(user, b, 10, m, 1)
+
+	/*			var/mob/human/clay/bird/B=new/mob/human/clay/bird(locate(user.x,user.y,user.z),rand(600+200*conmult, (1000+200*conmult)),user)
+				if(B)
+					Poof(B.loc)//(B.x,B.y,B.z)
+					Homing_Projectile_bang(user,B,10,etarget,1)
+				sleep(50)
+				if(B)
+					B.Explode()*/
 
 
 
@@ -57,20 +69,19 @@ skill
 			IsUsable(mob/user)
 				. = ..()
 				if(.)
-					if(user.keys["shift"]) //shift modifies this jutsu to have the spider stay stationary and not chase
+					if(user.keys && user.keys["shift"]) //shift modifies this jutsu to have the spider stay stationary and not chase
 						modified = 1
 
 			Use(mob/human/user)
 				flick("Throw1",user)
 				user.combat("<b>Drag</b> spiders to move them. Press <b>z</b>, <b>click</b> the spider icon on the left side of your screen, or <b>double-click</b> the spider to detonate it.")
 				var/conmult = user.ControlDamageMultiplier()
-				var/mob/human/clay/spider/B=new/mob/human/clay/spider(user.loc,rand(600,2000)+(400*conmult),user)
+				var/mob/human/clay/spider/B=new/mob/human/clay/spider(user.loc,1000+(550*conmult),user,modified)
+				B.owner=user
 				var/obj/trigger/exploding_spider/T = new(user, B)
-				var/mob/human/target = user.MainTarget()
-				if(!modified && target)
-					spawn(10) if(target && B) B.MouseDrop(target)
+
 				user.AddTrigger(T)
-				spawn(1) if(B) Poof(B.x,B.y,B.z)
+				if(B) Poof(B.loc)//(B.x,B.y,B.z)
 
 
 
@@ -94,6 +105,7 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				var/p
 				user.usemove=1
 
@@ -103,7 +115,7 @@ skill
 				sleep(15)
 				user.icon_state=""
 				//user.stunned=0
-				if(user.usemove)
+				if(user && user.usemove)
 					p=used_chakra
 					flick("Throw1",user)
 					var/obj/C3 = new/obj(locate(user.x,user.y,user.z))
@@ -113,7 +125,7 @@ skill
 					step(C3,user.dir)
 					sleep(2)
 					step(C3,user.dir)
-					spawn()Poof(C3.x,C3.y,C3.z)
+					Poof(C3.loc)//(C3.x,C3.y,C3.z)
 					C3.icon=null
 					C3.overlays+=image('icons/C3_tl.dmi',pixel_x=-16,pixel_y=32)
 					C3.overlays+=image('icons/C3_tr.dmi',pixel_x=16,pixel_y=32)
@@ -126,49 +138,21 @@ skill
 					user.combat("The C3 will automatically detonate after flashing. If you wish to detonate it faster, press <b>z</b> or <b>click</b> the C3 icon on the left side of your screen,")
 					user.AddTrigger(T)
 					var/bw=5
-					while(bw>0 && C3)
-						switch(bw)
-							if(5)
-								spawn(12)flick("blink",C3)
-							if(4)
-								spawn(5)flick("blink",C3)
-								spawn(16)flick("blink",C3)
-							if(3)
-								spawn()flick("blink",C3)
-								spawn(10)flick("blink",C3)
-							if(2)
-								spawn()flick("blink",C3)
-								spawn(5)flick("blink",C3)
-								spawn(10)flick("blink",C3)
-							if(1)
-								spawn(0)flick("blink",C3)
-								spawn(2)flick("blink",C3)
-								spawn(3)flick("blink",C3)
-								spawn(5)flick("blink",C3)
+					sleep(bw * 25)
 
-						sleep(bw*5)
-						bw--
-					if(user)
+					if(user && T && (T in user.triggers))
 						user.RemoveTrigger(T)
 					if(C3)
-						C3.overlays=0
-						spawn()
-							if(C3 && user) explosion(P,C3.x,C3.y,C3.z,user,0,6)
-						spawn(pick(1,2,3))
-							if(C3 && user) explosion(P,C3.x+1,C3.y+1,C3.z,user,0,6)
-						spawn(pick(1,2,3))
-							if(C3 && user) explosion(P,C3.x-1,C3.y+1,C3.z,user,0,6)
-						spawn(pick(1,2,3))
-							if(C3 && user) explosion(P,C3.x-1,C3.y-1,C3.z,user,0,6)
-						spawn(pick(1,2,3))
-							if(C3 && user) explosion(P,C3.x-1,C3.y-1,C3.z,user,0,6)
-						spawn(pick(3,4,5))
-							if(C3 && user) explosion(P,C3.x-2,C3.y+2,C3.z,user,0,6)
-						spawn(pick(3,4,5))
-							if(C3 && user) explosion(P,C3.x+2,C3.y-2,C3.z,user,0,6)
-						spawn(pick(3,4,5))
-							if(C3 && user) explosion(P,C3.x+2,C3.y+2,C3.z,user,0,6)
-						spawn(pick(3,4,5))
-							if(C3 && user) explosion(P,C3.x-2,C3.y-2,C3.z,user,0,6)
-						spawn(6)
-							del(C3)
+						C3.overlays = 0
+						explosion(P, C3.x, C3.y, C3.z, user, 0, 6)
+						new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x+1,C3.y+1,C3.z,user,0,6))
+						new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x-1,C3.y+1,C3.z,user,0,6))
+						new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x-1,C3.y-1,C3.z,user,0,6))
+						new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x-1,C3.y-1,C3.z,user,0,6))
+						new/Event(pick(3, 4, 5), "delayed_explosion", list(P,C3.x-2,C3.y+2,C3.z,user,0,6))
+						new/Event(pick(3, 4, 5), "delayed_explosion", list(P,C3.x+2,C3.y-2,C3.z,user,0,6))
+						new/Event(pick(3, 4, 5), "delayed_explosion", list(P,C3.x+2,C3.y+2,C3.z,user,0,6))
+						new/Event(pick(3, 4, 5), "delayed_explosion", list(P,C3.x-2,C3.y-2,C3.z,user,0,6))
+
+
+						C3.loc = null

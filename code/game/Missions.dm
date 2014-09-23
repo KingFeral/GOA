@@ -69,7 +69,7 @@ mob
 					X.loc=locate(X.origx,X.origy,X.origz)
 		RankGrade()
 			if(!src.faction) return
-			if(src.faction.leader == realname)
+			if(src.faction.leader == realname && (faction.village in list("Konoha","Kiri","Suna")))
 				rankgrade = 5
 				return rankgrade
 			if(src.faction.village == "Missing")
@@ -90,11 +90,13 @@ mob
 						src.rankgrade=5
 			return src.rankgrade
 		MissionComplete()
+			set waitfor = 0
 			if(src.Missionstatus)
 				usr=src
 				var/list/P=Pvp_Escort
-				if(leading)
-					call(leading, "stop_following")()
+				if(leading && usr.MissionTarget)
+					call(usr.MissionTarget, "stop_following")()
+					//leading.following = null
 				src.MissionTarget=0
 				//src.mission_rewards = null
 				P.Remove(src)
@@ -125,13 +127,14 @@ mob
 					if("S")
 						expgain = 10000
 
-				var/higherup_boost
-				for(var/mob/human/m in Team)
-					if(m.RankGrade() > 2 && !higherup_boost)
-						higherup_boost = TRUE
-					expgain *= 1.1
-
 				if(length(Team))
+					var/higherup_boost
+					for(var/mob/human/m in Team)
+						if(m == src)
+							continue
+						if(m.RankGrade() > 2 && !higherup_boost)
+							higherup_boost = TRUE
+						expgain *= 1.1
 					poolpay=zpay+1.05*zpay*(length(Team)-1)
 					var/totalclass=0
 					for(var/mob/Q in Team)
@@ -182,8 +185,8 @@ mob
 
 						var/cashout = xpay
 
-						U.body += expgain
-						U << "You gained [expgain] Level Points!"
+						U.body += expgain * lp_mult
+						U << "You gained [expgain * lp_mult] Level Points!"
 						U.money+=cashout
 						U<<"Congratulations on completing your mission! You recieved [cashout] Dollars!"
 
@@ -191,20 +194,20 @@ mob
 					switch(usr.MissionClass)
 						if("D")
 							usr.Rank_D++
-							usr.body+=1000*lp_mult
-							usr<<"You gained [1000*lp_mult] Level Points!"
-						if("C")
-							usr.Rank_C++
 							usr.body+=1500*lp_mult
 							usr<<"You gained [1500*lp_mult] Level Points!"
-						if("B")
-							usr.Rank_B++
+						if("C")
+							usr.Rank_C++
 							usr.body+=2500*lp_mult
 							usr<<"You gained [2500*lp_mult] Level Points!"
+						if("B")
+							usr.Rank_B++
+							usr.body+=4000*lp_mult
+							usr<<"You gained [4000*lp_mult] Level Points!"
 						if("A")
 							usr.Rank_A++
-							usr.body+=5000*lp_mult
-							usr<<"You gained [5000*lp_mult] Level Points!"
+							usr.body+=6000*lp_mult
+							usr<<"You gained [6000*lp_mult] Level Points!"
 						if("S")
 							usr.Rank_S++
 							usr.body+=7000*lp_mult
@@ -215,17 +218,17 @@ mob
 					usr<<"Congratulations on completing your mission! You recieved [cashout] Dollars!"
 					usr.money+=cashout
 
-				spawn()
-					usr.Missionstatus=0
-					for(var/mob/human/player/npc/X in world)
-						if(X.missionowner==usr)
 
-							X.missionowner=0
-							sleep(50)
-							X.onquest=0
-							X.loc=locate(X.origx,X.origy,X.origz)
-					for(var/obj/items/Mission_Scroll/p in usr.contents)
-						del(p)
+				usr.Missionstatus=0
+				for(var/mob/human/player/npc/X in world)
+					if(X.missionowner==usr)
+
+						X.missionowner=0
+						sleep(50)
+						X.onquest=0
+						X.loc=locate(X.origx,X.origy,X.origz)
+				for(var/obj/items/Mission_Scroll/p in usr.contents)
+					del(p)
 
 
 
@@ -362,13 +365,13 @@ mob
 
 			if(rank=="A")//Hostile zones. (Steal a scroll, kill somebody, Rescue prisoner)
 				//pik=pick(3; 150, 8; 150, 9; 100, 10; 200)
-				pik = pick(3, 8, 9, 10)
+				pik = pick(3, 8, 9)//, 9//, 10)
 				usr.afteryou=pick(10;3,50;4,100;5,100;6,150;7,100;8,50;9)
 
 				if(pik==9)
 					NPCpik=new/list()
 					for(var/mob/human/player/O in world)
-						if(O.client && O.initialized && (!O.AFK||O.pk) && O.faction && O.faction.village!=usr.faction.village)
+						if(O.client && O.initialized && (!O.AFK&&O.pk) && O.faction && O.faction.village!=usr.faction.village)
 							NPCpik+=O
 					if(!length(NPCpik))
 						pik=8
@@ -377,7 +380,7 @@ mob
 					var/Kcount=0
 					var/Scount=0
 					var/Mcount=0
-					for(var/mob/human/player/OM in world)
+					for(var/mob/human/player/OM in players)
 						if(OM.client && OM.faction)
 							if(OM.faction.village=="Konoha")
 								Kcount++
@@ -391,6 +394,14 @@ mob
 						NPCpik+=Town_Suna
 					if(usr.faction.village!="Kiri" && Mcount>10)
 						NPCpik+=Town_Mist
+					if(!length(NPCpik))
+						pik=3
+						NPCpik += Town_Kawa
+						if(faction.village != "Missing") NPCpik += Town_Cha
+						NPCpik += Town_Ishi
+						for(var/mob/human/player/npc/X in NPCpik)
+							if(X.onquest)
+								NPCpik -= X
 					usr.afteryou=pick(50;1,100;2,100;3,100;4,50;5)
 
 
@@ -457,6 +468,7 @@ mob
 					var/MissionType= "Assasinate"
 					var/mob/human/player/npc/X  = pick(targetl)
 					X.onquest=1
+					X.set_difficulty(usr)
 					usr.Hastargetpos=1
 					X.missionowner=usr
 					usr.MissionType=MissionType
@@ -475,6 +487,7 @@ mob
 					usr.Hastargetpos=1
 					usr.MissionType=MissionType
 					X.missionowner=usr
+					X.set_difficulty(usr)
 
 					usr.MissionTarget=X
 					usr.MissionTime=1800
@@ -497,7 +510,7 @@ mob
 					usr.TargetLocation=X.locationdisc
 					Pvp_Escort+=usr
 					for(var/mob/human/player/O in world)
-						if(O && O.client && O.faction && O.faction.village!=usr.faction.village && O.faction.village!="Missing" && O.RankGrade()>=2 && (O.faction.spy && O.faction.spy[usr.faction.village] >= world.time))
+						if(O && O.client && O.faction && O.faction.village!=usr.faction.village && O.faction.village!="Missing" && O.RankGrade()>=2)
 							O<<"<font color=#00b84d><b>(PVP Mission Alert):[usr] has just started a B-rank Escort Mission</b></font>"
 					dropoffs.Remove(X.locationdisc)
 					if(usr.faction.village)dropoffs+=usr.faction.village
@@ -516,7 +529,7 @@ mob
 							if(m.faction.village != usr.faction.village && m.MissionTimeLeft > (1800 - 180))
 								viable += m
 						if(!viable.len)
-							spawn() usr.GetMission(5)
+							usr.GetMission(5)
 							return
 						X = pick(viable)
 
@@ -541,9 +554,9 @@ mob
 						goto again*/
 
 					// spying
-					var/faction/f = X.faction
+					/*var/faction/f = X.faction
 					if(f.spy && f.spy[usr.faction.village] >= world.time)
-						f.online_members << "<span class = 'missionalertlight'>(PVP Mission Alert): [usr] has just started a B-rank Assassination on [X.realname]'s objective!</span>"
+						f.online_members << "<span class = 'missionalertlight'>(PVP Mission Alert): [usr] has just started a B-rank Assassination on [X.realname]'s objective!</span>"*/
 
 					usr.MissionTarget=X.MissionTarget
 					usr.TargetLocation=X.MissionTarget:locationdisc
@@ -553,67 +566,11 @@ mob
 					usr.pay=rand(105, 440) + rand(155, 990)
 					Pvp_Escort -= X
 
-				/*if(7) // rendezvous mission.
-					var/villages[] = list("Konoha", "Kiri", "Suna")
-					if(usr.faction)
-						villages -= usr.faction.village
-					var/target_village = pick(villages)
-					var/mob/human/player/npc/X  = pick(targetl)
-					var/turf/orig_loc = X.loc
-					X.loc = get_rendezvous_loc(target_village)
-					if(!X.loc)
-						X.loc = orig_loc
-						CRASH("Failed to initiate rendezvous mission on [X]: invalid rendezvous location")
-						return 0
-					X.onquest = 1
-					X.missionowner = usr
-					X.wander = 0
-					X.dir = SOUTH
-					// spying
-					var/k
-					switch(k)
-						if("Konoha") k = "Konohagakure"
-						if("Kiri") k = "Kirigakure"
-						if("Suna") k = "Sunagakure"
-					var/faction/f = locate("faction_[k]")
-					if(f.spy && f.spy[usr.faction.village] >= world.time)
-						f.online_members << "<span class = 'missionalertlight'>(Spy Mission Alert): [usr] is meeting with a village spy outside of your village!</span>"
-
-					usr.Hastargetpos = TRUE
-					usr.MissionTarget = X
-					usr.MissionType = "Rendezvous"
-					usr.TargetLocation = target_village
-					usr.MissionTime=1800
-					usr.MissionTimeLeft=1800
-					usr.pay = rand(105, 440) + rand(155, 1090)
-					bclass += usr
-
-				if(11)	// rendezvous mission (intercept).
-					var/mob/human/player/m
-					for(var/mob/human/p in bclass)
-						if(p.faction.village != usr.faction.village && p.MissionType == "Rendezvous" && p.MissionTimeLeft > (1800 - 180))
-							m = p
-							break
-					if(!m)
-						spawn() usr.GetMission2(5)
-						return
-
-					// spying
-					var/faction/f = m.faction
-					if(f.spy && f.spy[usr.faction.village] >= world.time)
-						f.online_members << "<span class = 'missionalertlight'>(PVP Mission Alert): [usr] has just started a B-rank Assassination on [m.realname]!</span>"
-
-					usr.MissionTarget = m
-					usr.MissionType = "Rendezvous (Intercept)"
-					usr.TargetLocation = m.faction.village
-					usr.MissionTime=1800
-					usr.MissionTimeLeft=1800
-					usr.pay = rand(105, 440) + rand(155, 1090)
-					bclass -= m*/
 				if(8)
 					var/MissionType= "Invade PvP"
 					var/mob/human/player/npc/X  = pick(targetl)
 					X.onquest=1
+					X.set_difficulty(usr)
 					usr.MissionType=MissionType
 					usr.Hastargetpos=1
 					X.missionowner=usr
@@ -621,8 +578,8 @@ mob
 					usr.MissionTime=1800
 					usr.MissionTimeLeft=1800
 					usr.TargetLocation=X.locationdisc
-					for(var/mob/human/player/O in world)
-						if(O.client && O.faction && O.faction.village!=usr.faction.village && (O.faction.spy && O.faction.spy[usr.faction.village] >= world.time))
+					for(var/mob/human/player/O in players)
+						if(O.client && O.faction && O.faction.village!=usr.faction.village)
 							if(X.locationdisc=="Konoha" && O.faction.village=="Konoha")
 								O<<"<span class = 'missionalert'><b>(PVP Mission Alert): [usr] has just started an A-rank NPC Assasination Mission on [X], who is part of your village!</b></span>"
 							if(X.locationdisc=="Suna" && O.faction.village=="Suna")
@@ -635,9 +592,9 @@ mob
 					var/mob/human/player/X  = pick(targetl)
 
 					// spying
-					var/faction/f = X.faction
+					/*var/faction/f = X.faction
 					if(f.spy && f.spy[usr.faction.village] >= world.time)
-						f.online_members << "<span class = 'missionalert'>(PVP Mission Alert): [usr] has just started an A-rank Assassination Mission on [X.realname]!</span>"
+						f.online_members << "<span class = 'missionalert'>(PVP Mission Alert): [usr] has just started an A-rank Assassination Mission on [X.realname]!</span>"*/
 
 					usr.MissionType=MissionType
 					usr.MissionTarget=X
@@ -662,7 +619,7 @@ mob
 					if(usr.faction.name != "Missing")
 						for(var/mob/human/m in world)
 							if(m.client)
-								if(m.faction.village == target_village && m.faction.spy && m.faction.spy[usr.faction.name] >= world.time)
+								if(m.faction.village == target_village && m.RankGrade() >= 2)
 									m << "<span class = 'missionalert'><b>(PVP Mission Alert): [usr] has just started a Marauding Mission on your village!</b></span>"
 
 					usr.MissionTarget = target_village
@@ -678,13 +635,13 @@ mob
 							m = p
 							break
 					if(!m)
-						spawn() usr.GetMission2(10)
+						usr.GetMission2(10)
 						return
 
 					// spying
-					var/faction/f = m.faction
+					/*var/faction/f = m.faction
 					if(f.spy && f.spy[usr.faction.village] >= world.time)
-						f.online_members << "<span class = 'missionalert'>(PVP Mission Alert): [usr] has just started an A-rank Assassination Mission on [m.realname]!</span>"
+						f.online_members << "<span class = 'missionalert'>(PVP Mission Alert): [usr] has just started an A-rank Assassination Mission on [m.realname]!</span>"*/
 
 					usr.MissionTarget = m
 					usr.MissionType = "Maraud (Intercept)"
@@ -698,10 +655,10 @@ mob
 			//make image
 
 			var/mob/human/player/npc/M=usr.MissionTarget
-			if(M&&!M.client)
+			if(M && ismob(M) && !M.client)
 				M.onquest=1
 
-			usr.MissionCool=60
+			usr.MissionCool=600//6000
 
 mob
 	var/tmp/MissionCredit=0

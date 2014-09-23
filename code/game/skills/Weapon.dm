@@ -52,16 +52,16 @@ skill
 						var/ex=etarget.x
 						var/ey=etarget.y
 						var/ez=etarget.z
-						spawn()explosion(1200,ex,ey,ez,user)
+						explosion(1200,ex,ey,ez,user)
 					else
 						if(startdir==EAST)
-							spawn()explosion(1200,user.x+8,user.y,user.z,user)
+							explosion(1200,user.x+8,user.y,user.z,user)
 						if(startdir==WEST)
-							spawn()explosion(1200,user.x-8,user.y,user.z,user)
+							explosion(1200,user.x-8,user.y,user.z,user)
 						if(startdir==NORTH)
-							spawn()explosion(1200,user.x,user.y+8,user.z,user)
+							explosion(1200,user.x,user.y+8,user.z,user)
 						if(startdir==SOUTH)
-							spawn()explosion(1200,user.x,user.y-8,user.z,user)
+							explosion(1200,user.x,user.y-8,user.z,user)
 				else
 					var/ex=etarget.x
 					var/ey=etarget.y
@@ -70,7 +70,7 @@ skill
 
 					projectile_to(eicon,estate,user,x)
 					del(x)
-					spawn()explosion(1500,ex,ey,ez,user)
+					explosion(1500,ex,ey,ez,user)
 				user.addswords()
 
 
@@ -175,6 +175,7 @@ skill
 
 
 			Use(mob/user)
+				var/d=  user.dir
 				flick("Throw1",user)
 				var/obj/Du = new/obj(user.loc)
 				Du.icon='icons/projectiles.dmi'
@@ -182,23 +183,24 @@ skill
 				Du.density=0
 
 
-				sleep(1)
-				walk(Du,user.dir)
-				sleep(2)
+				//sleep(1)
+				//walk(Du,user.dir)
+				step(Du, d)
+				//sleep(2)
 				flick("Seal",user)
 				for(var/mob/X in oview(0,Du))
-					var/ex=Du.x
-					var/ey=Du.y
-					var/ez=user.z
-					spawn()Poof(ex,ey,ez)
+					//var/ex=Du.x
+					//var/ey=Du.y
+					//var/ez=user.z
+					Poof(Du.loc)//(ex,ey,ez)
 					del(Du)
 					return
 				var/dx=Du.x
 				var/dy=Du.y
 				var/dz=user.z
-				spawn()Poof(dx,dy,dz)
+				Poof(Du.loc)//(dx,dy,dz)
 				del(Du)
-				user.ShadowShuriken(dx,dy,dz)
+				user.ShadowShuriken(dx,dy,dz,user)
 
 
 
@@ -234,7 +236,7 @@ skill
 					spawn() advancedprojectile_angle('icons/twin_proj.dmi', "[pick(1,2,3,4)]", user, speed, angle, distance=7, damage=900, wounds=1, radius=16)
 					//advancedprojectilen(i,estate,mob/efrom,xvel,yvel,distance,damage,wnd,vel,pwn,mob/trueowner,radius)
 					//spawn()advancedprojectilen('icons/twin_proj.dmi',"[pick(1,2,3,4)]",user,xoff,yoff,7,900,1,60,1,user)
-					Poof(user.x,user.y,user.z)
+					Poof(user.loc)//(user.x,user.y,user.z)
 					ammo--
 				user.icon_state=""
 				user.overlays-='icons/twindragon.dmi'

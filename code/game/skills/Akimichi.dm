@@ -10,11 +10,12 @@ skill
 			name = "Spinach Pill"
 			icon_state = "spinach"
 			default_chakra_cost = 0
-			default_cooldown = 5
+			default_cooldown = 10
 
 
 
 			Use(mob/user)
+				set waitfor = 0
 				if(user.gate)
 					user.combat("[usr] closes the gates.")
 					user.CloseGates()
@@ -22,13 +23,13 @@ skill
 					user.pill=1
 					oviewers(user) << output("[user] ate a green pill!", "combat_output")
 					user.combat("You ate the Spinach Pill! Your strength is greatly enhanced, but the strain on your body will cause damage.")
-					spawn()
-						while(user && user.pill)
-							sleep(6000)
-							if(user && user.pill==1)
-								user.pill=0
-								user.combat("The Spinach Pill wore off")
-								user.strbuff=0
+					sleep(6000)
+					if(user && user.pill==1)
+						user.pill=0
+						user.combat("The Spinach Pill wore off")
+						user.strbuff = 0
+						user.conbuff=0
+						src.DoCooldown(user,0,60)
 
 
 
@@ -38,11 +39,12 @@ skill
 			name = "Curry Pill"
 			icon_state = "curry"
 			default_chakra_cost = 0
-			default_cooldown = 5
+			default_cooldown = 10
 
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				if(user.gate)
 					user.combat("[usr] closes the gates.")
 					user.CloseGates()
@@ -51,19 +53,15 @@ skill
 					oviewers(user) << output("[user] ate a yellow pill!", "combat_output")
 					user.combat("You ate the Curry Pill! You have gained super human strength and a great resistance to damage. However, the strain on your body is immense!")
 					user.overlays+='icons/Chakra_Shroud.dmi'
-					spawn()
-						while(user && user.pill)
-							sleep(3000)
-							if(user && user.pill==2)
-								user.pill=1
-								spawn(3000)	// Fix spinach wearing off if the skill wasn't actually used first.
-									if(user && user.pill==1)
-										user.pill=0
-										user.combat("The Spinach Pill wore off")
-										user.strbuff=0
-								user.combat("The Curry Pill wore off")
-								user.overlays-='icons/Chakra_Shroud.dmi'
-								user.strbuff=0
+					sleep(3000)
+					if(user && user.pill==2)
+						user.pill=0
+
+						user.combat("The Curry Pill wore off")
+						user.overlays-='icons/Chakra_Shroud.dmi'
+						user.strbuff = 0
+						user.conbuff=0
+						src.DoCooldown(user,0,300)
 
 
 
@@ -91,6 +89,7 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor =0
 				if(user.Size == 1)
 					user.Size=0
 					user.Akimichi_Revert()
@@ -114,11 +113,11 @@ skill
 						user.Size=1
 					ChangeIconState("sizedown")
 
-					spawn(1200)
-						if(user)
-							user.Size=0
-							user.Akimichi_Revert()
-							ChangeIconState("sizeup1")
+					sleep(1200)
+					if(user && user.Size == 1)
+						user.Size=0
+						user.Akimichi_Revert()
+						ChangeIconState("sizeup1")
 
 
 
@@ -146,6 +145,7 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor=0
 				if(user.Size == 2)
 					user.Size=0
 					user.Akimichi_Revert()
@@ -169,11 +169,11 @@ skill
 						user.Size=2
 					ChangeIconState("sizedown")
 
-					spawn(1200)
-						if(user)
-							user.Size=0
-							user.Akimichi_Revert()
-							ChangeIconState("sizeup2")
+					sleep(1200)
+					if(user && user.Size == 2)
+						user.Size=0
+						user.Akimichi_Revert()
+						ChangeIconState("sizeup2")
 
 
 

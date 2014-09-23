@@ -960,11 +960,18 @@ save_system/sqlite
 
 			for(var/item in current_items)
 				if(!(item in saved_items))
-					item_deletes += "id = [item]"
+					item_deletes += "[item]"
 
 
 			if(item_deletes.len)
-				var/item_ids = ""
+				for(var/itemid in item_deletes)
+					qcon.Add("DELETE FROM items WHERE player = ? AND id = ?", pid, itemid)
+
+					if(!qcon.Execute(dbcon))
+						world.log << "SaveCharacter(items: delete - id: [itemid]) failed:[qcon.ErrorMsg()]"
+						return 0
+
+				/*var/item_ids = ""
 
 				for(var/i = 1, i < item_deletes.len, ++i)
 					item_ids += item_deletes[i]
@@ -972,10 +979,38 @@ save_system/sqlite
 
 				item_ids += item_deletes[item_deletes.len]
 
-				qcon.Add("DELETE FROM items WHERE player = ? AND (?)", pid, item_ids)
+				qcon.Add("DELETE FROM items WHERE player = ? AND ?", pid, item_ids)
 
 				if(!qcon.Execute(dbcon))
 					world.log << "SaveCharacter(items:delete) failed:[qcon.ErrorMsg()]"
-					return 0
+					return 0*/
 
 			return 1
+
+	DeleteItem(id, ckey)
+		qcon.Add("select id from players where ckey = ?", ckey)
+		if(!qcon.Execute(dbcon))
+			return 0
+		if(qcon.NextRow())
+			var/player_id = qcon.GetColumn(1)
+
+			qcon.Add("delete from items where id = ? and player = ?", id, player_id)
+			if(!qcon.Execute(dbcon))
+				return 0
+			//world.log<<"DEBUG: DELETE ITEM WITH ID [id] FROM [ckey]"
+			return 1
+		return 0
+
+	ClearSkills(ckey)
+		qcon.Add("select id from players where ckey = ?", ckey)
+		if(!qcon.Execute(dbcon))
+			return 0
+		if(qcon.NextRow())
+			var/player_id = qcon.GetColumn(1)
+
+			qcon.Add("delete from skills player = ?", player_id)
+			if(!qcon.Execute(dbcon))
+				return 0
+
+			return 1
+		return 0

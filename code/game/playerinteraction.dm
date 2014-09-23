@@ -44,7 +44,7 @@ mob/human/player
 						usr.talktimes=0
 						return
 					if(usr.talkcooling==0)
-						spawn()usr.talkcool()
+						usr.talkcool()
 					if(length(msg) <= 500&&usr.say==1)
 						usr.say=0
 						if(!has_whisper_window)
@@ -59,12 +59,12 @@ mob/human/player
 							winclone(x, "whisper_popup", "whisper__[usr.realname]")
 							winset(x, "whisper__[usr.realname].whisper_chat_input", "command=\"Whisper-Ref \\\"\ref[usr]\\\" \\\"\"")
 							winset(x, "whisper__[usr.realname]", "title=\"[usr.realname]\"")
-						spawn()
-							if(x && x.client && winget(x, "whisper__[usr.realname]", "is-visible") != "true")
-								if(x.ckey in admins)
-									x << "You have recieved a whisper message from <a href='?src=\ref[usr];action=admin' class='admin_link'>[usr.realname]</a>. <a href='?[list2params(list("src"="\ref[x]", "action"="view_whisper", "name"="[usr.realname]"))]'>\[View]</a>"
-								else
-									x << "You have recieved a whisper message from [usr.realname]. <a href='?[list2params(list("src"="\ref[x]", "action"="view_whisper", "name"="[usr.realname]"))]'>\[View]</a>"
+
+						if(x && x.client && winget(x, "whisper__[usr.realname]", "is-visible") != "true")
+							if(x.ckey in admins)
+								x << "You have recieved a whisper message from <a href='?src=\ref[usr];action=admin' class='admin_link'>[usr.realname]</a>. <a href='?[list2params(list("src"="\ref[x]", "action"="view_whisper", "name"="[usr.realname]"))]'>\[View]</a>"
+							else
+								x << "You have recieved a whisper message from [usr.realname]. <a href='?[list2params(list("src"="\ref[x]", "action"="view_whisper", "name"="[usr.realname]"))]'>\[View]</a>"
 						usr << output("[usr]: <font color=#52ad4d>[html_encode(msg)]", "whisper__[x.realname].whisper_chat_output")
 						if(x.ckey in admins)
 							x << output("<a href='?src=\ref[usr];action=admin' class='admin_link'>[usr]</a>: <font color=#52ad4d>[html_encode(msg)]", "whisper__[usr.realname].whisper_chat_output")
@@ -92,93 +92,104 @@ mob
 				src.Look_Map()
 				src.hidestat=1
 
+		verb/checkinventory()
+			if(winget(usr, "inventory_popup", "is-visible") == "true")
+				winshow(usr, "inventory_popup", 0)
+			else
+				winshow(usr, "inventory_popup", 1)
 mob
 	proc
 		Look_Map()
+			set background = 1
+			set waitfor = 0
 			Get_Global_Coords()
-			if(!EN[11] || spectate || !client)
-				return
+			//if(!EN[11] || spectate || !client)
+			//	return
 			src.hidestat=1
 			src.spectate=1
 			src.client.eye=locate(92,9,2)
 			src<<"<font size=+1>Viewing Map, Hit the Interact Button or Space to return. (Only your vision has changed, your character is still in the same spot.)</font>"
-			spawn()
-				var
-					byakugan_pins[0]
-					target_pins[0]
-					squad_pins[0]
-					alert_cache[0]
-				while(client && src.spectate)
-					for(var/image/x in byakugan_pins)
-						client.images -= x
-					for(var/image/x in target_pins)
-						client.images -= x
-					for(var/image/x in squad_pins)
-						client.images -= x
-					for(var/zlevel in 1 to world.maxz)
-						var/obj/mapinfo/Minfo = locate("__mapinfo__[zlevel]")
-						if(Minfo && faction && !Minfo.in_war && (Minfo.village_control == faction.village || online_admins.Find(src)))
-							var/image/alert = Minfo.alert_imgs[Minfo.alert_level+1]
-							if(alert && (!alert_cache[Minfo] || alert_cache[Minfo] != alert))
-								client.images -= alert_cache[Minfo]
-								alert_cache[Minfo] = alert
-								src << alert
-					if(byakugan)
-						var/list/US =src.Global_Coords()
-						if(US)
-							var/gx=US[1]
-							var/gy=US[2]
-							for(var/client/C)
-								var/mob/X = C.mob
-								if(X && X.pk && X!=src)
-									var/list/L=X.Global_Coords()
-									if(L)
-										var/mx=L[1]
-										var/my=L[2]
-										var/di=300
-										if(abs(mx-gx)<di && abs(my-gy)<di && X.map_pin)
-											src << X.map_pin
-											byakugan_pins += X.map_pin
-					if(src.skillspassive[TRACKING])
-						FilterTargets()
-						for(var/mob/M in src.targets)
-							M.Get_Global_Coords()
-							if(M.map_pin_target)
-								src << M.map_pin_target
-								target_pins += M.map_pin_target
-					if(src.MissionTarget && src.Hastargetpos)
-						MissionTarget.Get_Global_Coords()
-						if(MissionTarget.map_pin_target)
-							src << MissionTarget.map_pin_target
-							target_pins += MissionTarget.map_pin_target
-					if(squad)
-						for(var/mob/X in squad.online_members)
-							if(!X)
-								squad.online_members -= X
-								continue
-							X.Get_Global_Coords()
-							if(X.map_pin_squad)
-								src << X.map_pin_squad
-								squad_pins += X.map_pin_squad
-					sleep(10)
-				if(client)
-					for(var/image/x in byakugan_pins)
-						client.images -= x
-					for(var/image/x in target_pins)
-						client.images -= x
-					for(var/image/x in squad_pins)
-						client.images -= x
-					for(var/map in alert_cache)
-						client.images -= alert_cache[map]
+
+			var
+				byakugan_pins[0]
+				target_pins[0]
+				squad_pins[0]
+				alert_cache[0]
+			while(client && src.spectate)
+				for(var/image/x in byakugan_pins)
+					client.images -= x
+				for(var/image/x in target_pins)
+					client.images -= x
+				for(var/image/x in squad_pins)
+					client.images -= x
+				for(var/zlevel in 1 to world.maxz)
+					var/obj/mapinfo/Minfo = locate("__mapinfo__[zlevel]")
+					if(Minfo && faction && !Minfo.in_war && (Minfo.village_control == faction.village || online_admins.Find(src)))
+						var/image/alert = Minfo.alert_imgs[Minfo.alert_level+1]
+						if(alert && (!alert_cache[Minfo] || alert_cache[Minfo] != alert))
+							client.images -= alert_cache[Minfo]
+							alert_cache[Minfo] = alert
+							src << alert
+				if(byakugan)
+					var/list/US =src.Global_Coords()
+					if(US)
+						var/gx=US[1]
+						var/gy=US[2]
+						for(var/client/C)
+							var/mob/X = C.mob
+							if(X && X.pk && X!=src)
+								var/list/L=X.Global_Coords()
+								if(L)
+									var/mx=L[1]
+									var/my=L[2]
+									var/di=300
+									if(abs(mx-gx)<di && abs(my-gy)<di && X.map_pin)
+										src << X.map_pin
+										byakugan_pins += X.map_pin
+				if(src.skillspassive[TRACKING])
+					FilterTargets()
+					for(var/mob/M in src.targets)
+						M.Get_Global_Coords()
+						if(M.map_pin_target)
+							src << M.map_pin_target
+							target_pins += M.map_pin_target
+				if(src.MissionTarget && src.Hastargetpos)
+					if(MissionTarget)MissionTarget.Get_Global_Coords()
+					if(MissionTarget.map_pin_target)
+						src << MissionTarget.map_pin_target
+						target_pins += MissionTarget.map_pin_target
+				if(squad)
+					for(var/mob/X in squad.online_members)
+						if(!X)
+							squad.online_members -= X
+							continue
+						if(X == src)
+							continue
+						X.Get_Global_Coords()
+						if(X.map_pin_squad)
+							src << X.map_pin_squad
+							squad_pins += X.map_pin_squad
+				sleep(10)
+			if(client)
+				for(var/image/x in byakugan_pins)
+					client.images -= x
+				for(var/image/x in target_pins)
+					client.images -= x
+				for(var/image/x in squad_pins)
+					client.images -= x
+				for(var/map in alert_cache)
+					client.images -= alert_cache[map]
+
 
 mob
 	var
-		MissionPins[]
+		//MissionPins[]
 		image
 			map_pin
 			map_pin_target
 			map_pin_self
 			map_pin_squad
+
 
 	Get_Global_Coords()
 		. = ..()
@@ -224,3 +235,4 @@ mob
 			if(map_pin_target) map_pin_target.loc = null
 			if(map_pin_self) map_pin_self.loc = null
 			if(map_pin_squad) map_pin_squad.loc = null
+

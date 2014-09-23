@@ -14,13 +14,14 @@ proc/index2type(i)
 
 world/New()
 	..()
-	spawn(30)
-		var/mob/objserver/O = new(locate(29,93,2))
-		O.tag = "oserver"
+	var/mob/objserver/O = new(locate(29,93,2))
+	O.tag = "oserver"
 
 
 obj/temporary
 	New()
+		set waitfor = 0
 		..()
-		spawn(50)
-			del(src)
+		sleep(50)
+		//del(src)
+		loc = null

@@ -2,11 +2,12 @@ var/list/newbies = list()
 var/list/helpers = list()
 
 mob/human/Topic(href,href_list[])
+	set waitfor = 0
 	if(!src)return
 	switch(href_list["action"])
 		if("admin")
-			var/list/options = list("Mute", "Unmute", "Teleport", "Summon", "Give Money", "Give Level")
-			var/command = input(usr, "What do you want to do referencing [src]?") in options
+			var/list/options = list("Mute", "Unmute", "Teleport", "Summon", "Give Money","Spectate")
+			var/command = input(usr, "What do you want to do referencing [src]?") in options+"Cancel"
 			if(command)
 				switch(command)
 					if("Mute")
@@ -16,10 +17,10 @@ mob/human/Topic(href,href_list[])
 						mutelist+=c_id
 						var/mob/M = src
 						src = null
-						spawn(18000)
-							mutelist-=c_id
-							if(M && M.mute)
-								M.mute=0
+						sleep(18000)
+						mutelist-=c_id
+						if(M && M.mute)
+							M.mute=0
 					if("Unmute")
 						if(client)
 							mutelist -= client.computer_id
@@ -33,30 +34,33 @@ mob/human/Topic(href,href_list[])
 					if("Spectate")
 						usr.spectate = TRUE
 						usr.client.eye = src
-					//if("Give Level")
-					//	var/l = input(usr, "What level?") as num
-					//	give_level(l, src)
-
-		if("mute")
-			mute=2
-			//world<<"[realname] is muted"
-			var/c_id = client.computer_id
-			mutelist+=c_id
-			var/mob/M = src
-			src = null
-			spawn(18000)
-				mutelist-=c_id
-				if(M && M.mute)
-					M.mute=0
-					//world<<"[M.realname] is unmuted"
 		else
 			. = ..()
+
+mob
+	verb/toggleooc()
+		var/prompt = input(usr, "Do you want to turn OOC off or on?") in list("On", "Off", "Cancel")
+		if(prompt)
+			if(prompt == "On")
+				newbies |= src
+				usr << "OOC toggled on."
+			else if(prompt == "Off")
+				newbies -= src
+				usr << "OOC toggled off."
 
 mob/human/player
 	newbie
 		verb
 			NOOC(var/t as text)
 				winset(usr, "map", "focus=true")
+
+				if(!(usr in newbies))
+					alert(usr, "Toggle OOC on first!")
+					return 0
+
+				if(!(ckey in admins) && oocmute)
+					usr << "OOC is muted."
+					return 0
 
 				t = Replace_All(t,chat_filter)
 				if(usr.mute||usr.tempmute)
@@ -73,7 +77,7 @@ mob/human/player
 							usr.tempmute=0
 							usr.talktimes=0
 						if(usr.talkcooling==0)
-							spawn()usr.talkcool()
+							usr.talkcool()
 						if(length(t) <= 500&&usr.say==1)
 							usr.say=0
 							var/rrank=usr.rank
@@ -91,7 +95,7 @@ mob/human/player
 								else
 									M<<"<span class='help'><span class='villageicon'>\icon[faction_chat[usr.faction.chat_icon]]</span>(<span class='name'>[usr.realname]</span>){<span class='rank'>[rrank]</span>} <span class='message'>[html_encode(t)]</span></span>"
 							ChatLog("newbie") << "[time2text(world.timeofday, "hh:mm:ss")]\t[usr.realname]\t[html_encode(t)]"
-							spawn() SendInterserverMessage("chat_mirror", list("mode" = "newbie_help", "ref" = "\ref[usr]", "name" = usr.realname, "rank" = rrank, "faction" = "[usr.faction]", "msg" = html_encode(t)))
+							//SendInterserverMessage("chat_mirror", list("mode" = "newbie_help", "ref" = "\ref[usr]", "name" = usr.realname, "rank" = rrank, "faction" = "[usr.faction]", "msg" = html_encode(t)))
 							sleep(2)
 							usr.say=1
 						else

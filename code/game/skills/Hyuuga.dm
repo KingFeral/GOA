@@ -1,9 +1,30 @@
+mob
+	proc/byakugan_image_loop()
+		set waitfor = 0
+		if(!src)
+			return
+		while(byakugan)
+			sleep(10)
+			for(var/mob/human/x in orange(10))
+				add_byakugan_image(x)
+			/*
+				var/image/I = image('icons/base_chakra.dmi',x,x.icon_state,99999,x.dir)
+				src << I
+				sleep(10 * regenlag)
+					if(client)
+						client.images -= I*/
+
+	proc/add_byakugan_image(mob/seen)
+		set waitfor = 0
+		var/image/I = image('icons/base_chakra.dmi',seen, seen.icon_state,99999, seen.dir)
+		src << I
+		sleep(10 * world.tick_lag)
+		if(client)
+			client.images -= I
+
 skill
 	hyuuga
 		copyable = 0
-
-
-
 
 		byakugan
 			id = BYAKUGAN
@@ -27,19 +48,21 @@ skill
 
 
 			Use(mob/user)
+				set waitfor = 0
 				viewers(user) << output("[user]: Byakugan!", "combat_output")
 				user.byakugan=1
 				user.Affirm_Icon()
-				spawn(Cooldown(user)*10)
-					if(user)
-						user.byakugan=0
-						user.Affirm_Icon()
-						user.combat("The Byakugan wore off")
-						if(user.gentlefist==1)
-							user.gentlefist=0
-							user.overlays-='icons/hakkehand.dmi'
-							user.special=0
-							user.Load_Overlays()
+				user.byakugan_image_loop()
+				sleep(Cooldown(user)*10)
+				if(user)
+					user.byakugan=0
+					user.Affirm_Icon()
+					user.combat("The Byakugan wore off")
+					if(user.gentlefist==1)
+						user.gentlefist=0
+						user.overlays-='icons/hakkehand.dmi'
+						user.special=0
+						user.Load_Overlays()
 
 
 
@@ -62,21 +85,23 @@ skill
 
 
 			Use(mob/user)
+				set waitfor = 0
 				var/obj/b1=new/obj/kbl(locate(user.x,user.y,user.z))
 				var/obj/b2=new/obj/kbr(locate(user.x,user.y,user.z))
 				var/obj/b3=new/obj/ktl(locate(user.x,user.y,user.z))
 				var/obj/b4=new/obj/ktr(locate(user.x,user.y,user.z))
-				spawn()AOExk(user.x,user.y,user.z,1,150,30,user,0,1,1)
-				user.kaiten=1
-				user.protected=5
+				AOExk(user.x,user.y,user.z,1,150,30,user,0,1,1)
+				user.kaiten = 1
+				//user.protected=5
 				//user.stunned=3.2
 				user.Timed_Stun(30)
-				spawn(30)
-					user.kaiten=0
-					del(b1)
-					del(b2)
-					del(b3)
-					del(b4)
+				user.Protect(30)
+				sleep(30)
+				user.kaiten = 0
+				b1.loc = null
+				b2.loc = null
+				b3.loc = null
+				b4.loc = null
 
 
 
@@ -110,8 +135,7 @@ skill
 						if(!M.ko && !M.protected)
 							etarget=M
 				if(etarget && !etarget.ko)
-					spawn()
-						Hakke_Circle(user,etarget)
+					Hakke_Circle(user,etarget)
 					if(etarget.dzed)
 						//etarget.stunned+=3
 						etarget.Timed_Stun(30)
@@ -119,13 +143,13 @@ skill
 					if((etarget in oview(1, user)) && !etarget.ko)
 						//etarget.stunned=5
 						etarget.Timed_Stun(50)
-						spawn()user.Taijutsu(etarget)
+						user.Taijutsu(etarget)
 						user.Hakke_Pwn(etarget)
 						if(etarget && user)
 							etarget.curchakra=0
 							etarget.chakrablocked=60
 							etarget.Dec_Stam(3000+user.ControlDamageMultiplier()*500,0,user)
-							spawn()etarget.Hostile(user)
+							etarget.Hostile(user)
 					if(user) user.End_Stun()//user.stunned=0
 				else
 					Hakke_Circle(user,0)

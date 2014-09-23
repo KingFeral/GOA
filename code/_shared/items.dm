@@ -478,10 +478,10 @@ obj/items
 		Advanced_Karasu
 		Master_Karasu
 
-	Puppet_Stuff
-		Hidden_Knife_Shot
-		Poison_Bomb
-		Body_Crush
-		Poison_Tipped_Blade
-		Needle_Gun
-		Chakra_Shield
+		weapon
+			Hidden_Knife_Shot
+			Poison_Bomb
+			Body_Crush
+			Poison_Tipped_Blade
+			Needle_Gun
+			Chakra_Shield

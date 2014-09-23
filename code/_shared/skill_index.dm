@@ -1,3 +1,5 @@
+
+
 var/const	// Skill index lists
 	// Notes on skill assignments:
 	// - Cancel skills are xx99, go down if more are needed
@@ -21,7 +23,7 @@ var/const	// Skill index lists
 	// Elemental Skills -- Water
 	SUITON_DRAGON = 200
 	SUITON_VORTEX = 201
-	SUTION_SHOCKWAVE = 202
+	SUITON_SHOCKWAVE = 202
 	SUITON_COLLISION_DESTRUCTION = 211
 
 	// Elemental Skills -- Wind
@@ -56,12 +58,6 @@ var/const	// Skill index lists
 	RASENGAN = 1100
 	OODAMA_RASENGAN = 1110
 
-	// General Skills -- Taijutsu
-	LEAF_GREAT_WHIRLWIND = 1200
-	LION_COMBO = 1201
-	NIRVANA_FIST = 1202
-	MORNING_PEACOCK = 1250
-
 	// General Skills -- Gates
 	GATE1 = 1300
 	GATE2 = 1310
@@ -69,6 +65,11 @@ var/const	// Skill index lists
 	GATE4 = 1330
 	GATE5 = 1340
 	GATE6 = 1350
+	PRIMARY_LOTUS = 1351
+	HIDDEN_LOTUS = 1352
+	MORNING_PEACOCK = 1351
+	AFTERNOON_TIGER = 1352
+	GATE_CANCEL = 1399
 
 	// General Skills -- Weapons
 	MANIPULATE_ADVANCING_BLADES = 1400
@@ -103,6 +104,7 @@ var/const	// Skill index lists
 	SHARINGAN1 = 3000
 	SHARINGAN2 = 3010
 	SHARINGAN_COPY = 3020
+	LION_COMBO = 3021
 
 	// Clan Skills -- Hyuuga
 	BYAKUGAN = 3100
@@ -123,7 +125,7 @@ var/const	// Skill index lists
 	SIZEUP2 = 3320
 
 	// Clan Skills -- Haku
-	ICE_NEELDES = 3400
+	ICE_NEEDLES = 3400
 	ICE_SPIKE_EXPLOSION = 3410
 	DEMONIC_ICE_MIRRORS = 3420
 
@@ -159,3 +161,30 @@ var/const	// Skill index lists
 	EXPLODING_BIRD = 3901
 	C3 = 3902
 	RIDABLE_BIRD = 3911
+
+	// Taijutsu Stance -- Strong Fist
+	STRONG_FIST = 4000
+	LEAF_WHIRLWIND = 4001
+	LEAF_GREAT_WHIRLWIND = 4002
+	LEAF_GALE = 4003
+	LEAF_RISING_WIND = 4004
+	LEAF_STRONG_WHIRLWIND = 4005
+	DANCING_LEAF_SHADOW = 4006
+
+	// Taijutsu Stance -- Arhat Fist
+	ARHAT_FIST = 4100
+	ROCK_ATTACK = 4101
+	THRUSTING_SHOULDER = 4102
+	CRUMBLING_PALM = 4103
+	RISING_KNEE = 4104
+	UPWARDS_PALM = 4105
+	PRESSURE_PALM = 4106
+
+	// Taijutsu Stance -- Wrestling
+	WRESTLING = 4200
+	POWERBOMB = 4201
+	DROP_KICK = 4202
+	LARIAT = 4203
+	KNEE_DROP = 4204
+	KIDNEY_PUNCH = 4205
+	IRON_CLAW = 4206

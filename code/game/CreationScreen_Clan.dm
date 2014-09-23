@@ -5,11 +5,11 @@ client/proc/Help()
 mob/var
 	cVillage
 	cClan
-	list/Vimages=new
-	list/Cimages=new
-	list/Simages=new
+	list/Vimages//=new
+	list/Cimages//=new
+	list/Simages//=new
 	image/St
-	list/Iimages=new
+	list/Iimages//=new
 	dd=0
 	sel=0
 	FIN=0
@@ -131,7 +131,7 @@ obj
 							usr.Refresh_Faction_Verbs()
 							usr.Refresh_Squad_Verbs()
 							usr.name_selecting = 0
-							spawn(10) if(usr) usr.Refresh_Mouse()
+							if(usr) usr.Refresh_Mouse()
 						else
 							usr.FIN = 0
 					else
@@ -140,6 +140,7 @@ obj
 				usr<<"You need to pick both a village and a Clan/Trait First!"
 mob/proc
 	Refresh_Mouse()
+		set waitfor = 0
 		if(faction && faction.mouse_icon)
 			src.mouse_over_pointer=faction_mouse[faction.mouse_icon]
 		else

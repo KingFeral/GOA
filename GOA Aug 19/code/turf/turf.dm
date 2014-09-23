@@ -1,3 +1,0 @@
-turf
-	void
-		Enter()

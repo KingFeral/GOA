@@ -23,23 +23,24 @@ skill
 				if(!istype(user.pet, /list))user.pet=new/list
 				viewers(user) << output("[user]: Sand Summoning!", "combat_output")
 
-				var/mob/human/p=new/mob/human/sandmonster(user.loc)
+				var/mob/human/sandmonster/p=new/mob/human/sandmonster(user.loc)
 				user.pet+=p
+				p.owner = user
 				p.initialized=1
 				p.faction = user.faction
 				p.con=user.con
+				p.begin_life()
 
-				spawn()
-					var/ei=1
-					while(ei)
-						ei=0
-						for(var/mob/human/x in oview(10,p))
-							if(x==user)
-								ei=1
-						sleep(20)
-					if(p)
-						//user.pet-=p
-						del(p)
+				/*var/ei=1
+				while(ei)
+					ei=0
+					for(var/mob/human/x in oview(10,p))
+						if(x==user)
+							ei=1
+					sleep(20)
+				if(p)
+					//user.pet-=p
+					del(p)*/
 
 
 
@@ -86,7 +87,7 @@ skill
 				if(p)
 					p.density=0
 					user.Begin_Stun()
-					while(user && get_dist(user, p) > 1)
+					while(user && p && get_dist(user, p) > 1)
 						//user.stunned=2
 						step_to(p,user,1)
 						sleep(1)
@@ -96,6 +97,11 @@ skill
 							break
 					if(!user)
 						return
+					else if(!p)
+						user.End_Stun()
+						return
+
+
 					if(p)
 						p.invisibility=30
 						var/obj/x=new/obj/sandshield(user.loc)
@@ -168,13 +174,38 @@ skill
 						flick("D-Funeral-flick",p)
 
 						sleep(20)
-						spawn(50)
-							if(p)
-								del(p)
-						if(etarget && etarget.loc == target_loc)
-							etarget.Dec_Stam(3000,0,user)
-							etarget.Wound(rand(5,15),0,user)
+
+						new/Event(50, "delayed_delete", list(p))
+
+						if(target_loc == etarget.loc || etarget.Get_Move_Stun()) //Dipic: Full hit
+							//etarget.sandcoffined=1
+							p.loc = etarget.loc
+							p.icon_state="D-funeral"
+							flick("D-Funeral-flick",p)
+
+							etarget.Timed_Stun(20)
+							etarget.Timed_Move_Stun(40)
+							sleep(20)
+
+							etarget.Dec_Stam(3000, 0, user)
+							etarget.Wound(rand(5, 15), 0, user)
 							etarget.Hostile(user)
+						else if(get_dist(etarget, p) <= 2)//Dipic: Partial hit
+							//etarget.sandcoffined=1
+							p.loc = etarget.loc
+							p.icon_state="" //Dipic: This will be changed to a half hitting state
+							flick("partial",p) //Dipic: and half hitting flick
+
+							etarget.Timed_Stun(10)
+							etarget.Timed_Move_Stun(30)
+							sleep(10)
+
+							etarget.Dec_Stam(1800, 0, user)
+							etarget.Wound(rand(5, 15), 0, user)
+							etarget.Hostile(user)
+						else //Dipic: damn, they teleported; miss
+							p.icon_state="" //Dipic: This will be changed to a half hitting state
+							flick("partial",p) //Dipic: and half hitting flick
 
 
 
@@ -200,6 +231,7 @@ skill
 				else ..(user)
 
 			ChakraCost(mob/user)
+				if(!user) return
 				if(!user.sandarmor)
 					return ..(user)
 				else
@@ -207,6 +239,7 @@ skill
 
 
 			Cooldown(mob/user)
+				if(!user) return
 				if(!user.sandarmor)
 					return ..(user)
 				else
@@ -223,7 +256,7 @@ skill
 				if(user.sandarmor)
 					user.sandarmor = 0
 					return
-				var/armor_amount = 2000 + (user.con + user.conbuff - user.conneg - 50) * 5//2000 + user.blevel*10
+				var/armor_amount = 2000 + (user.con - 50) * 10//2000 + user.blevel*10
 				viewers(user)-user << output("[user]: Sand Armor!", "combat_output")
 				user << output("[user]: Sand Armor ([armor_amount])!", "combat_output")
 				//user.sandarmor = user.stamina/2 //5
@@ -232,10 +265,9 @@ skill
 					while(user && user.sandarmor)
 						sleep(1)
 					if(!user) return
-					var/skill/SA = user.GetSkill(SAND_ARMOR)
-					for(var/skillcard/card in SA.skillcards)
-						card.overlays -= 'icons/dull.dmi'
-					spawn() SA.DoCooldown(user)
+					//for(var/skillcard/card in SA.skillcards)
+					//	card.overlays -= 'icons/dull.dmi'
+					if(user) DoCooldown(user)
 					//Why are these here? Removing
 					user.Timed_Stun(10)
 					user.Protect(5)
@@ -341,17 +373,17 @@ obj
 mob/proc
 	Get_Sand_Pet()
 		for(var/mob/human/sandmonster/X in src.pet)
-			if(X && get_dist(X, src) <= 10 && !X.tired)
+			if(X && get_dist(X, src) <= 10 && X.tired <= world.time)
 				return X
 
 
 	Return_Sand_Pet(mob/owner)
+		set waitfor = 0
 		var/mob/human/sandmonster/x=src
-		if(!x.tired)
-			spawn()
-				x.density=0
-				walk_to(x,owner,0,1)
-				sleep(6)
-				x.density=1
-				walk(x,0)
-				x.tired=0
+		if(x.tired <= world.time)
+			x.density=0
+			walk_to(x,owner,0,1)
+			sleep(6)
+			x.density=1
+			walk(x,0)
+			//x.tired=0

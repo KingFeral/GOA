@@ -322,12 +322,12 @@ proc
 			O.icon_state = "dtail"
 			Image = image(O,locate(Loc.x, Bottom, Z))
 			view(Loc) << Image
-			spawn(delay) del(Image)
+			new/Event(delay, "delayed_delete", list(Image))
 		else
 			O.icon_state = "utail"
 			Image = image(O,locate(Loc.x, Top, Z))
 			view(Loc) << Image
-			spawn(delay) del(Image)
+			new/Event(delay, "delayed_delete", list(Image))
 
 		// draw the text
 		width = 6 + 4 * width	// width in characters
@@ -339,6 +339,4 @@ proc
 			if(high)
 				Turf = locate(Left,Turf.y-1,Z)
 
-		spawn(delay)
-			for(var/I in Images)
-				del(I)
+		new/Event(delay, "delayed_delete", Images)

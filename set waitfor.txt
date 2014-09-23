@@ -1,0 +1,4 @@
+procs to make set waitfor = 0
+	//Collide()
+	//talkcool()
+	//Blood(), Blood2()

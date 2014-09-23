@@ -238,6 +238,8 @@ obj
 												usr:AddSkill(sindex)
 												if(sindex==SAND_SUMMON)
 													usr:AddSkill(SAND_UNSUMMON)
+												if(sindex==GATE1)
+													usr:AddSkill(GATE_CANCEL)
 												usr:RefreshSkillList()
 											if(element)
 												usr.elements += element
@@ -304,12 +306,12 @@ obj
 				haku
 					clan_reqs = list("Haku")
 					Sensatsusuisho
-						sindex = ICE_NEELDES
+						sindex = ICE_NEEDLES
 						cost = 800
 					Ice_Explosion
 						sindex = ICE_SPIKE_EXPLOSION
 						cost = 1500
-						skill_reqs = list(ICE_NEELDES)
+						skill_reqs = list(ICE_NEEDLES)
 					Demonic_Ice_Crystal_Mirrors
 						sindex = DEMONIC_ICE_MIRRORS
 						cost = 2500
@@ -492,7 +494,7 @@ obj
 						sindex = SUITON_VORTEX
 						cost = 600
 					Bursting_Water_Shockwave
-						sindex = SUTION_SHOCKWAVE
+						sindex = SUITON_SHOCKWAVE
 						cost = 2500
 					Water_Dragon_Projectile
 						sindex = SUITON_DRAGON
@@ -572,12 +574,12 @@ obj
 					Lion_Combo
 						sindex = LION_COMBO
 						cost = 1400
-					Achiever_of_Nirvana_Fist
+					/*Achiever_of_Nirvana_Fist
 						cost = 400
-						sindex = NIRVANA_FIST
+						sindex = NIRVANA_FIST*/
 					Leaf_Great_Whirlwind
 						cost = 800
-						sindex = LEAF_GREAT_WHIRLWIND
+						sindex = LEAF_WHIRLWIND
 				weapons
 					Manipulate_Advancing_Blades
 						sindex = MANIPULATE_ADVANCING_BLADES

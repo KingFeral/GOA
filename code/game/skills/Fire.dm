@@ -22,12 +22,14 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				viewers(user) << output("[user]: Fire: Grand Fireball!", "combat_output")
 
 				user.icon_state = "Seal"
 				user.overlays += 'icons/breathfire.dmi'
 				//user.stunned=5
 				user.Timed_Stun(20)
+				user.set_icon_state("Seal", 20)
 
 				//AOE(x,y,z,radius,stamdamage,duration)
 				var/dir = user.dir
@@ -37,24 +39,23 @@ skill
 					user.dir = dir
 				var/conmult = user.ControlDamageMultiplier()
 				if(dir == NORTH)
-					spawn() AOE(user.x, user.y + 3, user.z, 2, (100 + conmult * 50), 50, user, 3, 1)
-					spawn() Fire(user.x, user.y + 3, user.z, 2, 50)
+					AOE(user.x, user.y + 3, user.z, 2, (100 + conmult * 50), 50, user, 3, 1)
+					Fire(user.x, user.y + 3, user.z, 2, 50)
 
 				if(dir == SOUTH)
-					spawn() AOE(user.x, user.y - 3, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
-					spawn() Fire(user.x, user.y- 3, user.z, 2, 50)
+					AOE(user.x, user.y - 3, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
+					Fire(user.x, user.y- 3, user.z, 2, 50)
 
 				if(dir == EAST)
-					spawn() AOE(user.x + 3, user.y, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
-					spawn() Fire(user.x + 3, user.y, user.z, 2, 50)
+					AOE(user.x + 3, user.y, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
+					Fire(user.x + 3, user.y, user.z, 2, 50)
 
 				if(dir == WEST)
-					spawn() AOE(user.x - 3, user.y, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
-					spawn() Fire(user.x - 3, user.y, user.z, 2, 50)
+					AOE(user.x - 3, user.y, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
+					Fire(user.x - 3, user.y, user.z, 2, 50)
 
-				spawn(20)
-					user.icon_state = ""
-					user.overlays -= 'icons/breathfire.dmi'
+				sleep(20)
+				user.overlays -= 'icons/breathfire.dmi'
 
 
 
@@ -68,35 +69,37 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				user.icon_state="Seal"
 
 				viewers(user) << output("[user]: Fire: Hôsenka!", "combat_output")
 
-				spawn()
-					var/eicon='icons/fireball.dmi'
-					var/estate=""
-					var/conmult = user.ControlDamageMultiplier()
-					var/mob/human/player/etarget = user.NearestTarget()
 
-					if(!etarget)
-						etarget=straight_proj2(eicon,estate,8,user)
-						if(etarget)
-							var/ex=etarget.x
-							var/ey=etarget.y
-							var/ez=etarget.z
-							spawn()AOE(ex,ey,ez,1,(100 +30*conmult),20,user,3,1)
-							spawn()Fire(ex,ey,ez,1,20)
-					else
+				var/eicon='icons/fireball.dmi'
+				var/estate=""
+				var/conmult = user.ControlDamageMultiplier()
+				var/mob/human/player/etarget = user.NearestTarget()
+
+				if(!etarget)
+					etarget=straight_proj2(eicon,estate,8,user)
+					if(etarget)
 						var/ex=etarget.x
 						var/ey=etarget.y
 						var/ez=etarget.z
-						var/mob/x=new/mob(locate(ex,ey,ez))
+						AOE(ex,ey,ez,1,(100 +30*conmult),20,user,3,1)
+						Fire(ex,ey,ez,1,20)
+				else
+					var/ex=etarget.x
+					var/ey=etarget.y
+					var/ez=etarget.z
+					var/mob/x=new/mob(etarget.loc)
 
-						projectile_to(eicon,estate,user,x)
-						del(x)
-						spawn()AOE(ex,ey,ez,1,(100 +30*conmult),20,user,3,1)
-						spawn()Fire(ex,ey,ez,1,20)
-					user.icon_state=""
+					projectile_to(eicon,estate,user,x)
+					//del(x)
+					x.loc = null
+					AOE(ex,ey,ez,1,(100 +30*conmult),20,user,3,1)
+					Fire(ex,ey,ez,1,20)
+				user.icon_state=""
 
 
 
@@ -111,12 +114,14 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				viewers(user) << output("[user]: Fire: Ash Accumulation Burning!", "combat_output")
 
 				user.icon_state="Seal"
 				user.overlays+='icons/breathfire2.dmi'
 				//user.stunned=10
 				user.Timed_Stun(30)
+				user.set_icon_state("Seal", 30)
 				var/dir = user.dir
 				var/mob/human/player/etarget = user.NearestTarget()
 				if(etarget)
@@ -125,21 +130,20 @@ skill
 				var/conmult = user.ControlDamageMultiplier()
 				//AOE(x,y,z,radius,stamdamage,duration)
 				if(dir==NORTH)
-					spawn()AOE(user.x,user.y+5,user.z,4,(75+40*conmult),90,user,2,1)
-					spawn()Ash(user.x,user.y+5,user.z,100)
+					AOE(user.x,user.y+5,user.z,4,(75+40*conmult),90,user,2,1)
+					Ash(user.x,user.y+5,user.z,100)
 				if(dir==SOUTH)
-					spawn()AOE(user.x,user.y-5,user.z,4,(75+40*conmult),90,user,2,1)
-					spawn()Ash(user.x,user.y-5,user.z,100)
+					AOE(user.x,user.y-5,user.z,4,(75+40*conmult),90,user,2,1)
+					Ash(user.x,user.y-5,user.z,100)
 				if(dir==EAST)
-					spawn()AOE(user.x+5,user.y,user.z,4,(75+40*conmult),90,user,2,1)
-					spawn()Ash(user.x+5,user.y,user.z,100)
+					AOE(user.x+5,user.y,user.z,4,(75+40*conmult),90,user,2,1)
+					Ash(user.x+5,user.y,user.z,100)
 				if(dir==WEST)
-					spawn()AOE(user.x-5,user.y,user.z,4,(75+40*conmult),90,user,2,1)
-					spawn()Ash(user.x-5,user.y,user.z,100)
-				spawn(30)
-					if(user)
-						user.icon_state=""
-						user.overlays-='icons/breathfire2.dmi'
+					AOE(user.x-5,user.y,user.z,4,(75+40*conmult),90,user,2,1)
+					Ash(user.x-5,user.y,user.z,100)
+				sleep(30)
+				if(user)
+					user.overlays-='icons/breathfire2.dmi'
 
 
 
@@ -165,27 +169,21 @@ skill
 
 				var/mob/result=Trail_Straight_Projectile(user.x,user.y,user.z,user.dir,o,14,user)
 				if(result)
-					//result.move_stun=100
 					result.Timed_Move_Stun(100)
+					new/Event(45, "delayed_delete", list(o))
+					new/Event(40, "fire_dragon_end", list(user, result, I2))
 
-					spawn(45)
-						del(o)
-						user.overlays-=I2
-						user.End_Stun()
-						//if(result)result.move_stun=0
-						if(result)
-							result.Reset_Move_Stun()
 					o.overlays+=image('icons/dragonfire.dmi',icon_state="hurt")
 					var/turf/T=result.loc
 					var/conmult = user.ControlDamageMultiplier()
 					result.Dec_Stam(rand(1500,2000)+500*conmult,0,user)
-					spawn()result.Wound(rand(5,10)+round(conmult),0,user)
+					result.Wound(rand(5,10)+round(conmult),0,user)
 					var/ie=3
 					while(result&&T==result.loc && ie>0)
 						ie--
 						result.Dec_Stam(rand(250,600)+50*conmult,0,user)
-						spawn()result.Wound(rand(1,3)+round(conmult/2),0,user)
-						spawn()result.Hostile(user)
+						result.Wound(rand(1,3)+round(conmult/2),0,user)
+						result.Hostile(user)
 						sleep(15)
 
 				else

@@ -2,16 +2,7 @@ mob
 	verb/test()
 		if(ckey != "fki")
 			return 0
-		if(someproc())
-			usr << "SUCCESSFUL TEST"
-		else
-			usr << "FAILED TEST"
-
-	proc/someproc()
-		set waitfor = 0
-		var/i = 0
-		for()
-			i++
-			if(i > 10)
-				return 1
-			sleep(1)
+		var/obj/o = new(loc)
+		for(var/i in 1 to 100)
+			var/image/n = new/image('icons/base_m1.dmi', loc = o)
+			usr << n

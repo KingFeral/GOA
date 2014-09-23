@@ -10,7 +10,7 @@ var
 
 world
 	mob=/mob/charactermenu
-	view=8
+	view = "19x19"//8
 	turf=/turf/denseempty
 	name = "Naruto GOA"
 	status = "{Public Server}"
@@ -41,9 +41,9 @@ proc/server_ticker()
 		if((hour == "11" || hour == "23") && minute == "55")
 			world << "<span class = 'serverimportant'>The Official Servers are rebooting in <em>5</em> minutes!"
 			clear_kill_log()
-			sleep(300)
-			world << "<span class = 'serverimportant'>The Official Servers are rebooting!"
 			world.WorldSave()
+			sleep(3000)
+			world << "<span class = 'serverimportant'>The Official Servers are rebooting!"
 			world.Reboot(1)
 		sleep(600)
 
@@ -55,6 +55,7 @@ world
 	proc
 		WorldSave()
 			set background = 1
+			set waitfor = 0
 			var/list/O = new
 			for(var/mob/human/player/X in world)
 				if(X.client)
@@ -65,7 +66,7 @@ world
 					sleep(100)
 					sleep(-1)
 			sleep(100)
-			spawn()WorldSave()
+			WorldSave()
 
 		WSave()
 			for(var/mob/human/player/O in world)
@@ -74,7 +75,8 @@ world
 
 		WorldLoop_Status()
 			set background = 1
-			spawn() bingosort()
+			set waitfor = 0
+			bingosort()
 			sleep(3000)
 			var/c = 0
 			for(var/mob/human/player/X in world)
@@ -86,10 +88,11 @@ world
 
 			wcount=c
 			sleep(500)
-			spawn()WorldLoop_Status()
+			WorldLoop_Status()
 
-		Worldloop_VoteClear()
+		/*Worldloop_VoteClear()
 			set background = 1 //infinite loops do well to be set as not high priority
+			set waitfor = 0
 			spawn()
 				if(voteclear)
 					voteclear--
@@ -98,34 +101,34 @@ world
 						voteclear = 10
 
 				sleep(600)
-				spawn() Worldloop_VoteClear()
+				spawn() Worldloop_VoteClear()*/
 
 
 		NameCheck(xname)
 			return SendInterserverMessage("check_name", list("name" = xname))
 
 	New()
+		set waitfor = 0
 		..()
-		spawn(20)
-			for(var/mob/human/player/npc/X in world)
-				if(X.questable && !X.onquest&&X.difficulty!="A")
-					switch(X.locationdisc)
-						if("Kawa no Kuni")
-							Town_Kawa+=X
-						if("Cha no Kuni")
-							Town_Cha+=X
-						if("Ishi no Kuni")
-							Town_Ishi+=X
-						if("Konoha")
-							Town_Konoha+=X
-						if("Suna")
-							Town_Suna+=X
-						if("Kiri")
-							Town_Mist+=X
+		sleep(20)
+		for(var/mob/human/player/npc/X in world)
+			if(X.questable && !X.onquest&&X.difficulty!="A")
+				switch(X.locationdisc)
+					if("Kawa no Kuni")
+						Town_Kawa+=X
+					if("Cha no Kuni")
+						Town_Cha+=X
+					if("Ishi no Kuni")
+						Town_Ishi+=X
+					if("Konoha")
+						Town_Konoha+=X
+					if("Suna")
+						Town_Suna+=X
+					if("Kiri")
+						Town_Mist+=X
 
-		spawn() WorldLoop_Status()
-
-		spawn() Worldloop_VoteClear()
+		WorldLoop_Status()
+		//Worldloop_VoteClear()
 
 mob
 	MasterAdmin/verb
@@ -185,6 +188,7 @@ mob
 			set category = "Registry"
 			if(x.client)
 				var/newname=input(usr,"Change His/Her name to what?") as text
+				if(!newname || !length(newname))return
 
 				if(!saves.IsNameUsed(newname))
 					saves.RenameCharacter(x.name, newname, x.key)

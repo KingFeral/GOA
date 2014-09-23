@@ -16,32 +16,6 @@ mob/proc/RankGrade2()
 mob
 	human
 		player
-			verb
-		/*		Vote_Mute(mob/M in All_Clients())
-					if(M.mute)
-						usr << "[M.realname] is already muted."
-						return
-					if(!VoteM && !usr.votecool && usr.RankGrade()>=1)
-						usr.votecool=3600
-						usr.votecool2+=150
-						Mute_Elects+=M
-						var/count=0
-						for(var/mob/MV in Mute_Elects)
-							if(MV == M)
-								count++
-						if(count>=2 && !VoteM)
-							VoteM=M.realname
-							VoteCount=1
-							VoteCount2=0
-
-							world<<"<font size=+1> [usr.realname] has elected to Mute [M.realname]. Vote in your Vote Tab.</font>"
-
-							spawn()world.Vote(M)
-					else
-						if(VoteM)
-							usr<<"There is already a vote going on for [VoteM]"
-						if(usr.votecool)
-							usr<<"You can only do a mute vote once an hour."*/
 
 	vote
 		verb

@@ -116,7 +116,7 @@ proc/M_Projectile_Degree(O,mob/user,power,iterations,speed,degree,list/Misc) //g
 	M_Projectile(O,user,power,xmom,ymom,iterations,Misc)
 proc/M_Projectile_Straight(O,mob/user,power,iterations,speed,list/Misc) //fires in the direction user is facing
 	var/degree=0
-	spawn(50)if(O)del(O)
+	new/Event(50, "delayed_delete", list(O))
 	if(user)
 		switch(user.dir)
 			if(EAST)
@@ -178,10 +178,6 @@ proc/M_Projectile(atom/movable/O,mob/user,power,xmom,ymom,iterations,list/Misc) 
 			var/list/Lin= get_line(A1,A2)
 			var/list/collideds=new
 			for(var/turf/T in Lin)
-				/*var/image/I = image('projectile_test.dmi', T, "line_check", 1000)
-				user.client << I
-				spawn(100)
-					if(user && user.client) user.client.images -= I*/
 				for(var/obj/Oz in T)
 					if(Oz.density && !Oz.vectorized)
 						collideds+=T
@@ -197,12 +193,6 @@ proc/M_Projectile(atom/movable/O,mob/user,power,xmom,ymom,iterations,list/Misc) 
 				if(dist<mindist)
 					mindist=dist
 					Winner=T
-
-		/*if(Winner && user.client)
-			var/image/I = image('projectile_test.dmi', Winner, "dense_obstacle", 1000)
-			user.client << I
-			spawn(100)
-				if(user && user.client) user.client.images -= I*/
 
 		while(O && O.loc && O.momentum>0)
 			while(O && O.clashin)
@@ -360,6 +350,12 @@ atom/var
 atom/movable
 	proc/landed(atom/movable/O,pow,wnd,daze)
 
+obj/projectile/Del()
+	if(loc == null)
+		return ..()
+	powner = null
+	owner = null
+	loc = null
 
 proc/get_real_loc(atom/movable/O)
 	var/turf/T
@@ -401,10 +397,9 @@ obj/projectile
 				sleep(10)
 				del(src) //hit a wall!
 			if(istype(O,/mob/human/player))
-				//world << "THE ONE THATS CALLED"
 				var/mob/human/player/Oc=O
 				src.Grabbed+=Oc  //this means the wave will no longer cause damage to that specific player, 1 time hit max per projectile of this type
-				spawn()Oc.Collide(src)//the mob gets hit by src. Cause knockback check.
+				Oc.Collide(src)//the mob gets hit by src. Cause knockback check.
 				Oc.Dec_Stam(pow)
 
 			if(istype(O,/obj/projectile))
@@ -437,10 +432,11 @@ obj/projectile
 			if(istype(O,/mob/human/player))
 				var/mob/human/player/Oc=O
 				Oc.Dec_Stam(pow)  //hurt the player it hits = the power variable
-				Blood(O.x,O.y,O.z)  //ew blood
+				Blood2(Oc)//Blood(O.x,O.y,O.z)  //ew blood
 				src.loc=null  //go away invisible
-				sleep(20) //give it some time before deletion to avoid runtimes
-				del(src)
+				src.powner = null
+				//sleep(20) //give it some time before deletion to avoid runtimes
+				//del(src)
 			if(istype(O,/obj/projectile))
 				var/obj/projectile/Oc=O
 				if(Oc.landed!=2)  //dont clash with projectiles that are sticking in turfs!
@@ -451,13 +447,9 @@ mob/landed(atom/movable/O,pow,wnd,daze)
 	momentum = 0
 	if(!O)
 		O = loc
-	/*if(client)
-		var/image/I = image('projectile_test.dmi', O, "dense_obstacle", 1000)
-		client << I
-		spawn(100)
-			if(client) client.images -= I*/
 
 mob/proc/Collide(obj/projectile/O)
+	set waitfor = 0
 	var/r=O.weight/src.weight  //how much does this object weigh compared to your guy? shuriken might be 1/150 so less than 1, greater than 1 means the object hitting you is heavier than you!
 	var/i= round(O.momentum * r) //10 more space movements left? but weight only half as much as the mob, would only cause 5 momentum
 	if(i>=2)//only bother with significant knockback, otherwise assume the mob is not overwhelmed by it
@@ -578,23 +570,22 @@ mob/proc/Knockback_new(mx,my,i,push) //if push then the knockback will stun the 
 
 	src.animate_movement=1
 
-atom/movable/Del()
+/*atom/movable/Del()
 	for(var/obj/projectile/O in src.Grabbed)
 		O.loc=null
 
-	..()
+	..()*/
 
 mob
 	weight=150
 atom/movable/proc/Relocate()
 	for(var/obj/projectile/M in src.Grabbed)
-		spawn()
-			var/obj/projectile/eM=M
-			eM.x=src.x+eM.trailx
-			eM.y=src.y+eM.traily
-			eM.z=src.z
-			M.pixel_x=src.pixel_x
-			M.pixel_y=src.pixel_y
+		var/obj/projectile/eM=M
+		eM.x=src.x+eM.trailx
+		eM.y=src.y+eM.traily
+		eM.z=src.z
+		M.pixel_x=src.pixel_x
+		M.pixel_y=src.pixel_y
 	..()
 
 
@@ -987,6 +978,7 @@ proc
 	// Adapted from wikipedia pseudocode
 	// Returns a list of turfs in a line from A to B
 	get_line(atom/A, atom/B)
+		if(!A || !B) return
 		// Can't handle Z-level changes
 		if(A.z != B.z)
 			return list()
@@ -1019,7 +1011,7 @@ proc
 			dx = x1 - x0
 			dy = abs(y1 - y0)
 			error = 0
-			derror = dy / dx
+			derror = (dy && dx) ? dy / dx : (0)
 			ystep = y0<y1?1:-1
 			y = y0
 

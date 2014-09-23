@@ -10,7 +10,8 @@ obj/mapinfo
 		village_players[0]
 		alert_cool[6]
 		alert_imgs[6]
-		initial_capture
+		initial_capture = 1
+		capture_time = 0
 
 	New()
 		. = ..()
@@ -38,7 +39,7 @@ obj/mapinfo
 			++village_players[M.faction.village]
 			//online_admins << "[oX],[oY] ([z]) [village_control]: PlayerEntered([M]) [M.faction] [M.faction.village] [village_players[M.faction.village]]"
 			RefreshAlert()
-			if(can_capture) Check_War(src, M.faction.village)
+			if(can_capture && capture_time <= world.time) Check_War(src, M.faction.village)
 
 	PlayerLeft(mob/human/M)
 		if(!istype(M, /mob/human/player/npc) && !istype(M, /mob/human/player/npc/bunshin) && !istype(M, /mob/human/player/npc/kage_bunshin) && M.faction)
@@ -53,6 +54,7 @@ obj/mapinfo
 
 	proc
 		RefreshAlert()
+			set waitfor = 0
 			var/enemy_players = 0
 			if(village_control != "Missing")
 				for(var/village in village_players)
@@ -72,11 +74,10 @@ obj/mapinfo
 						alert_level = 4
 					else
 						alert_level = 5
-				if(alert_level != old_alert && !alert_cool[alert_level+1])
+				if(alert_level != old_alert && alert_cool[alert_level + 1] < world.time)//!alert_cool[alert_level+1])
 					var/cool_level = alert_level+1
-					alert_cool[cool_level]=1
-					spawn(600)
-						alert_cool[cool_level]=0
+					alert_cool[cool_level]=world.time + 600
+
 					if(alert_level > 0)
 						for(var/faction/F)
 							if(F.village==village_control)
@@ -85,6 +86,8 @@ obj/mapinfo
 						for(var/faction/F)
 							if(F.village==village_control)
 								F.online_members<<"<span class='territory_info'>(Alert): One of your village's controlled areas is no longer on alert!</span>"
+					//sleep(600)
+					//alert_cool[cool_level]=0
 
 var/list/control_overlay_dir_bitflags = list(1, 16, 0, 4, 2, 8, 0, 64, 128, 32)
 
@@ -181,6 +184,7 @@ proc
 				F["initial_capture"] >> Minfo.initial_capture
 				Minfo.can_capture = Minfo.base_capture
 				Set_Control_Display(Minfo.oX, Minfo.oY, Minfo.village_control)
+				if(Minfo.initial_capture) global.mapinfos += Minfo
 		else
 			for(var/z in 1 to world.maxz)
 				var/obj/mapinfo/Minfo =  locate("__mapinfo__[z]")
@@ -269,7 +273,7 @@ proc
 
 	Check_War(obj/mapinfo/M, village)
 		var/village_players = M.village_players[village]
-		if(!M.can_capture || village==M.village_control || village_players < CAPTURE_THRESHOLD)
+		if(!M.can_capture || M.capture_time > world.time || village==M.village_control || village_players < CAPTURE_THRESHOLD)
 			return
 
 		var/map_x = M.oX
@@ -302,12 +306,13 @@ proc
 					F.online_members<<"<span class='territory_info'>(Alert): One of your village's controlled areas is being captured by [village]!</span>"
 				if(F.village == village)
 					F.online_members<<"<span class='territory_info'>(Alert): Your village is capturing one of [M.village_control]'s areas!</span>"
-			spawn() Capture_Loop(M, village, M.village_control)
+			Capture_Loop(M, village, M.village_control)
 
 	Capture_Loop(obj/mapinfo/M, attacking_village, defending_village)
+		set waitfor = 0
 		var/map_x = M.oX
 		var/map_y = M.oY
-		var/countdown = 60 * 3.5//300
+		var/countdown = 60 * 3//300
 		var/capturing = 1
 		var/war = 0
 		while(countdown >= 1 && capturing)
@@ -329,18 +334,18 @@ proc
 					F.online_members<<"<span class='war_info'>(Alert): Fighting has broken out between your village and [attacking_village]!</span>"
 				if(F.village == attacking_village)
 					F.online_members<<"<span class='war_info'>(Alert): Fighting has broken out between your village and [defending_village]!</span>"
-			spawn() War_Loop(M, attacking_village, defending_village)
+			War_Loop(M, attacking_village, defending_village)
 		else if(capturing)
 			M.can_capture = 1
 			M.village_control = attacking_village
 			Set_Control_Display(map_x, map_y, attacking_village)
-			if(get_map_control(attacking_village) >= 0.6)
-				world << "<span class = 'capturedmap'>[attacking_village] has gained control of the majority of the map!"
+			if(get_map_control(attacking_village) >= 0.5 && dominating_faction != attacking_village)
+				world << "<span class = 'capturedmap'><big>[attacking_village] has taken control of the map.</big>"
 				dominating_faction = attacking_village
 			for(var/mob/P in world)
 				if(P.z == M.z && P.faction && P.faction.village == attacking_village)
-					P.body += 4500*lp_mult
-					P << "You gained [1500*lp_mult] Level Points!"
+					P.body += 4000*lp_mult
+					P << "You gained [4000*lp_mult] Level Points!"
 			for(var/faction/F)
 				if(F.village == defending_village)
 					F.online_members<<"<span class='territory_info'>(Alert): One of your village's controlled areas has been captured by [attacking_village]!</span>"
@@ -357,6 +362,7 @@ proc
 					F.online_members<<"<span class='territory_info'>(Alert): Your village has stopped trying to capture one of [defending_village]'s areas!</span>"
 
 	War_Loop(obj/mapinfo/M, attacking_village, defending_village)
+		set waitfor = 0
 		var/map_x = M.oX
 		var/map_y = M.oY
 		Set_War_Control_Display(map_x, map_y, defending_village, attacking_village)
@@ -389,14 +395,16 @@ proc
 			else
 				lose_village = defending_village
 				win_village = attacking_village
-
+			if(get_map_control(win_village) >= 0.5 && dominating_faction != win_village)
+				world << "<span class = 'capturedmap'>[win_village] has gained control of the majority of the map!"
+				dominating_faction = win_village
 			M.village_control = win_village
 			Set_Control_Display(map_x, map_y, win_village)
 			for(var/mob/P in world)
 				if(P.z == M.z && P.faction)
 					if(P.faction.village == win_village)
-						P.body += 9000*lp_mult
-						P << "You gained [7000*lp_mult] Level Points!"
+						P.body += 10000*lp_mult
+						P << "You gained [9000*lp_mult] Level Points!"
 						P << "War stats:\n\t[attacking_village]: [M.attacker_deaths] deaths\n\t[defending_village]: [M.defender_deaths] deaths"
 					else if(P.faction.village == lose_village)
 						P << "War stats:\n\t[attacking_village]: [M.attacker_deaths] deaths\n\t[defending_village]: [M.defender_deaths] deaths"
@@ -406,13 +414,11 @@ proc
 				if(F.village == lose_village)
 					F.online_members<<"<span class='war_info'>(Alert): Your village has been defeated while trying to capture one of [win_village]'s areas!</span>"
 
-			spawn(6000)
-				M.can_capture = 1
+			M.capture_time = world.time + 6000
 			M.in_war = 0
 			M.attacker_deaths = 0
 			M.defender_deaths = 0
 		else if(lose_village && win_village)
-			M.village_control = win_village
 			Set_Control_Display(map_x, map_y, win_village)
 			for(var/mob/P in world)
 				if(P.z == M.z && P.faction)
@@ -427,8 +433,8 @@ proc
 					F.online_members<<"<span class='war_info'>(Alert): [lose_village] has run from the war with your village!</span>"
 				if(F.village == lose_village)
 					F.online_members<<"<span class='war_info'>(Alert): Your village has run from the war with [win_village]!</span>"
-			spawn(6000)
-				M.can_capture = 1
+
+			M.capture_time = world.time + 6000
 			M.in_war = 0
 			M.attacker_deaths = 0
 			M.defender_deaths = 0

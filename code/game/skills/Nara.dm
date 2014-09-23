@@ -33,6 +33,7 @@ skill
 					user.combat("Remove!")
 					user.mane=0
 					ChangeIconState("shadow_imitation")
+					DoCooldown(user)
 					return
 				user.icon_state="Seal"
 				//user.stunned=10
@@ -47,6 +48,7 @@ skill
 							var/mob/result=Trail_Homing_Projectile(user.x,user.y,user.z,user.dir,o,8,etarget)
 							if(result)
 								//user.stunned=0
+								cooldown = 0
 								user.End_Stun()
 								o.icon=0
 								++user.mane
@@ -70,7 +72,7 @@ skill
 								var/rx=result.x
 								var/ry=result.y
 								//result.stunned = 3
-								result.Timed_Stun(10)
+								result.Begin_Stun()
 
 								while(user && user.mane && user.curchakra>cost&&result&&result.x==rx&&result.y==ry)
 									user.curchakra-=cost
@@ -119,7 +121,7 @@ skill
 							var/rx=result.x
 							var/ry=result.y
 							//result.stunned = 3
-							result.Timed_Stun(10)
+							result.Begin_Stun()
 							while(result&&user&&user.mane && user.curchakra>cost&& result.x==rx&&result.y==ry)
 								user.curchakra-=cost
 								sleep(20)
@@ -210,11 +212,13 @@ skill
 
 			Use(mob/human/user)
 				viewers(user) << output("[user]: Shadow Sewing!", "combat_output")
-				user.icon_state="Seal"
+				user.set_icon_state("Seal", 10)
+				/*user.icon_state="Seal"
 				spawn(10)
-					user.icon_state = ""
+					user.icon_state = ""*/
 				//user.stunned=10
-				user.Begin_Stun()
+				//user.Begin_Stun()
+				user.Timed_Stun(25)
 				var/conmult = user.ControlDamageMultiplier()
 				var/targets[] = user.NearestTargets(num=3)
 				if(targets)
@@ -236,14 +240,13 @@ skill
 								result.Wound(rand(1,2),0,user)
 								if(!result.ko && !result.protected)
 									result.Timed_Move_Stun(30)
-									spawn()Blood2(result,user)
+									Blood2(result,user)
 									o.icon_state="still"
-									spawn()result.Hostile(user)
+									result.Hostile(user)
 							//spawn(5) if(result) result.Replacement_End()
 							--active_needles
-							if(active_needles <= 0)
-								spawn(20)
-									user.End_Stun()
+							if(active_needles == 0)
+								user.End_Stun()
 							o.loc = null
 
 						spawn(1)
@@ -259,14 +262,13 @@ skill
 								result.Wound(rand(1,2),0,user)
 								if(!result.ko && !result.protected)
 									result.Timed_Move_Stun(30)
-									spawn()Blood2(result,user)
+									Blood2(result,user)
 									o.icon_state="still"
-									spawn()result.Hostile(user)
+									result.Hostile(user)
 							//spawn(5) if(result) result.Replacement_End()
 							--active_needles
-							if(active_needles <= 0)
-								spawn(20)
-									user.End_Stun()
+							if(active_needles == 0)
+								user.End_Stun()
 							o.loc = null
 
 						spawn(1)
@@ -283,14 +285,13 @@ skill
 								result.Wound(rand(1,2),0,user)
 								if(!result.ko && !result.protected)
 									result.Timed_Move_Stun(30)
-									spawn()Blood2(result,user)
+									Blood2(result,user)
 									o.icon_state="still"
-									spawn()result.Hostile(user)
+									result.Hostile(user)
 							//spawn(5) if(result) result.Replacement_End()
 							--active_needles
-							if(active_needles <= 0)
-								spawn(20)
-									user.End_Stun()
+							if(active_needles == 0)
+								user.End_Stun()
 							o.loc = null
 					else
 						for(var/mob/human/player/target in targets)
@@ -304,11 +305,11 @@ skill
 									if(!result.ko && !result.protected)
 										//result.move_stun = 100
 										result.Timed_Move_Stun(100)
-										spawn()Blood2(result,user)
+										Blood2(result,user)
 										o.icon_state="still"
-										spawn()result.Hostile(user)
+										result.Hostile(user)
 								--active_needles
-								if(active_needles <= 0)
+								if(active_needles == 0)
 									//user.stunned = 0
 									user.End_Stun()
 								del(o)

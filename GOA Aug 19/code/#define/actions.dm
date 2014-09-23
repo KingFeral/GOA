@@ -1,6 +1,0 @@
-#define ACTION_IDLE																	"idle"
-#define ACTION_RUN																	"run"
-#define ACTION_ATTACK																"attack"
-#define ACTION_DEFEND																"defend"
-#define	ACTION_KNOCKOUT																"knockout"
-#define ACTION_HANDSEALS															"handseals"

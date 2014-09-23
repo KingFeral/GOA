@@ -61,8 +61,8 @@ skill
 					if(!OP.ko && !OP.protected)
 
 						user.combat("[src]: Hit [OP] for [damage] damage!")
-						spawn()if(OP) OP.Dec_Stam(damage,0,user)
-						spawn()if(OP) OP.Hostile(user)
+						OP.Dec_Stam(damage,0,user)
+						OP.Hostile(user)
 
 				P.Del()
 				//user.stunned=0
@@ -153,8 +153,8 @@ skill
 							flick("hurt",user)
 
 					if(result>=3)
-						spawn()Blood2(etarget,user)
-						spawn()etarget.Hostile(user)
+						Blood2(etarget,user)
+						etarget.Hostile(user)
 
 					//spawn(5) if(etarget) etarget.Replacement_End()
 
@@ -191,8 +191,7 @@ skill
 					dir = angle2dir_cardinal(get_real_angle(user, etarget))
 					user.dir = dir
 
-				spawn()
-					WaveDamage(user,3,(200+150*user.ControlDamageMultiplier()),3,14)
+				WaveDamage(user,3,(200+150*user.ControlDamageMultiplier()),3,14)
 				Gust(user.x,user.y,user.z,user.dir,3,14)
 
 				//user.stunned=0
@@ -230,13 +229,13 @@ skill
 						spawn()explosion_spread((1000+1500*conmult),ex,ey,ez,user)
 					else
 						if(startdir==EAST)
-							spawn()explosion_spread((1000+1500*conmult),ux+8,uy,uz,user)
+							explosion_spread((1000+1500*conmult),ux+8,uy,uz,user)
 						if(startdir==WEST)
-							spawn()explosion_spread((1000+1500*conmult),ux-8,uy,uz,user)
+							explosion_spread((1000+1500*conmult),ux-8,uy,uz,user)
 						if(startdir==NORTH)
-							spawn()explosion_spread((1000+1500*conmult),ux,uy+8,uz,user)
+							explosion_spread((1000+1500*conmult),ux,uy+8,uz,user)
 						if(startdir==SOUTH)
-							spawn()explosion_spread((1000+1500*conmult),ux,uy-8,uz,user)
+							explosion_spread((1000+1500*conmult),ux,uy-8,uz,user)
 				else
 					var/ex=etarget.x
 					var/ey=etarget.y
@@ -244,8 +243,9 @@ skill
 					var/mob/x=new/mob(locate(ex,ey,ez))
 
 					projectile_to2(/obj/wind_bullet,user,x)
-					del(x)
-					spawn()explosion_spread((1000+1500*conmult),ex,ey,ez,user)
+					//del(x)
+					x.dispose()
+					explosion_spread((1000+1500*conmult),ex,ey,ez,user)
 
 
 

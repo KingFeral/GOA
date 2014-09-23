@@ -1,5 +1,8 @@
 mob
 	var
+		tmp/loggedin = 0
+		tmp/loggingout = 0
+		tmp/transform_chat_icon = ""
 		canwalk=1
 		Tank=0
 		list/bloodrem=new
@@ -55,7 +58,7 @@ mob
 		tajuu=0
 		larch=0
 		//mission
-		leading=0
+		mob/leading=0
 		disp
 		MissionClass
 		mob/MissionTarget
@@ -95,6 +98,7 @@ mob
 		boneharden=0
 		dojo=0
 		oldx
+		tmp/lastwitnessing_time=0
 		oldy
 		oldz
 		inarena=0

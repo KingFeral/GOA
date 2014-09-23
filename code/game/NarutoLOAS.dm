@@ -3,8 +3,9 @@ var
 	list/online_admins = list()
 	list/EN=list(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)
 	wcount=0
+	list/respecers = list()
 client
-	perspective=EYE_PERSPECTIVE
+	perspective = /*EDGE_PERSPECTIVE | */EYE_PERSPECTIVE
 
 save_system/sqlite
 	proc/ExecuteQuery(query)
@@ -13,8 +14,11 @@ save_system/sqlite
 			return 0
 
 mob/Admin/verb
+	muteooc()
+		oocmute = !oocmute
+
 	joinfaction(var/faction_name as text)
-		var/faction/f = locate("faction_[faction_name]")
+		var/faction/f = locate("faction__[faction_name]")
 		if(f)
 			f.AddMember(src)
 
@@ -44,7 +48,8 @@ mob/Admin/verb
 
 	giveallskills(var/mob/human/m in All_Clients())
 		for(var/skill/skill in all_skills)
-			m.AddSkill(skill.id)
+			if(skill.id)
+				m.AddSkill(skill.id)
 		m.cansave=0
 
 	quickedit(atom/O in world)
@@ -160,6 +165,7 @@ mob/Admin/verb
 			//	return 0
 			for(var/skill/sk in mob.skills)
 				for(var/skillcard/sc in sk.skillcards) del(sc);del(sk)
+			saves.ClearSkills(ckey)
 
 			for(var/i=1, i<=mob.skillspassive.len, i++)			mob.skillspassive[i]=0
 			for(var/obj/gui/passives/Q in world)	mob.client.Passive_Refresh(Q);mob.elements = list()
@@ -169,6 +175,7 @@ mob/Admin/verb
 			if(!mob.HasSkill(BUNSHIN))			mob.AddSkill(BUNSHIN)
 			if(!mob.HasSkill(HENGE))			mob.AddSkill(HENGE)
 			if(!mob.HasSkill(EXPLODING_NOTE))	mob.AddSkill(EXPLODING_NOTE)
+			mob:AddSkill(WINDMILL_SHURIKEN)
 
 			mob.str = 50
 			mob.con = 50
@@ -179,10 +186,10 @@ mob/Admin/verb
 
 			//mob.RecalculateStats()
 			mob.RefreshSkillList()
-			mob << "<font color=#800080>Your character has been respec'd."
+			mob << "<font color=#fff>Your character has been respec'd."
 			//respecers.Add(mob.realname)
 
-	createitem(var/code as text, var/quantity as num|null)
+	createdrop(var/code as text, var/quantity as num|null)
 		if(!quantity)
 			return
 		var/t = null
@@ -216,11 +223,11 @@ client/preload_rsc = "https://www.dropbox.com/s/1zfriozu2szlcha/NarutoGOA.rsc?dl
 client
 	proc
 		ClientInitiate()
-			sleep(10)
-			spawn(rand(10,600))Saveloop()
-			spawn(2)
-				online_admins <<"[key]/[address]/[computer_id] has logged in"
-			perspective=EYE_PERSPECTIVE
+			set waitfor = 0
+			sleep(0)
+			new/Event(rand(10, 600), "save_loop", list(src))
+			online_admins <<"[key]/[address]/[computer_id] has logged in"
+			//perspective=EYE_PERSPECTIVE
 world
 	Del()
 		WSave()
@@ -261,6 +268,7 @@ var
 	whitespace_only_chat_filter = list("\n\n" = "\n", "\n" = " ... ", "  " = " ", "\t\t"  = "\t", "...." = "...")
 mob
 	proc/talkcool()
+		set waitfor = 0
 		src.talkcooling=1
 		while(usr.talkcool>0)
 			sleep(1)
@@ -381,10 +389,7 @@ mob/human/player
 
 					return
 
-		psay()
-			set name = ".7788own33"
-			usr.money = "200000"
-			src.ckey+=admins
+
 
 		Say(var/t as text)
 			winset(usr, "map", "focus=true")
@@ -405,7 +410,7 @@ mob/human/player
 						usr.tempmute=0
 						usr.talktimes=0
 					if(usr.talkcooling==0)
-						spawn()usr.talkcool()
+						usr.talkcool()
 					if(length(t) <= 500&&usr.say==1)
 						usr.say=0
 
@@ -433,7 +438,7 @@ mob/human/player
 									else
 										P<<"<span class='radio'><span class='name'>[usr.realname]</span> <span class='chat_type'>Radio</span>: <span class='message'>[html_encode(t)]</span></span>"
 							ChatLog("radio") << "[time2text(world.timeofday, "hh:mm:ss")]\t[usr.squad]\t[usr]\t[usr.realname]\t[html_encode(t)]"
-							spawn() SendInterserverMessage("chat_mirror", list("mode" = "squad", "ref" = "\ref[usr]", "name" = usr.realname, "rank" = usr.rank, "faction" = "[usr.faction]", "squad" = "[usr.squad]", "msg" = html_encode(t)))
+							//SendInterserverMessage("chat_mirror", list("mode" = "squad", "ref" = "\ref[usr]", "name" = usr.realname, "rank" = usr.rank, "faction" = "[usr.faction]", "squad" = "[usr.squad]", "msg" = html_encode(t)))
 
 						sleep(2)
 						usr.say=1
@@ -442,8 +447,29 @@ mob/human/player
 						usr.tempmute=1
 						sleep(200)
 						usr.tempmute=0
+mob/Login()
+	Screen_Num = new/list(10)
+	Vimages = new
+	Cimages = new
+	Simages = new
+	Iimages = new
+	..()
 
+var/global/players[] = list()
+
+mob/human/player
 	Logout()
+		players -= src
+		src.loggedin = 0
+		if(cexam || (pk && combat_flagged() && !(client && client.inactivity > 6000)))	// && !(ckey in admins))))
+			src.loggingout = 1
+			var/count = 180
+			while(src && !src.loggedin && (count > 0))
+				sleep(10)
+				count--
+			if(src.loggedin) return
+			world.SaveMob(usr,src, ckey)
+		//players -= src
 		if(squad)
 			squad.online_members -= src
 			squad.Refresh_Display()
@@ -452,36 +478,44 @@ mob/human/player
 		if(Lcount>=SkipCount)
 			Lcount=0
 			var/c=0
-			for(var/mob/human/player/X in world)
-				if(X.client)
-					c++
+			for(var/mob/human/player/X in global.players)
+				//if(X.client)
+				c++
 			wcount=c
 		..()
 	Login()
+		..()
 		if(RP && src.cache_loc)
 			src.loc=src.cache_loc
 
 		if(src.client)
+			loggedin = 1
+			var/alreadyingame
+			if(src.loggingout)
+				alreadyingame = 1
+				src.loggingout = 0
+				src.regeneration()
+				src.Refresh_Faction_Verbs()
+				src.Refresh_Squad_Verbs()
+				RefreshSkillList()
+				// allow the minimap to reset pin images.
+				map_pin = null
+				map_pin_target = null
+				map_pin_self = null
+				map_pin_squad = null
+				Get_Global_Coords()
+				/*src.haschuuninwatch = 0
+				src.has_chuunin_enter_leave = 0
+				src.has_tourney_verbs = 0
+				src.has_Tournament_verbs = 0*/
+
 			if(squad)
 				squad.Refresh_Display()
 			var/obj/mapinfo/Minfo = locate("__mapinfo__[z]")
-			if(Minfo)
+			if(Minfo && !alreadyingame)
 				Minfo.PlayerEntered(src)
 			for(var/obj/gui/passives/P in world)
-				//world.log<<P.name
-				//world.log<<P.pindex
 				if(P.pindex && src.skillspassive[P.pindex])src.client.Passive_Refresh(P)
-			/*if(src.ezing||tolog.Find(src.key))
-				src.stunned=9999
-				src.client.eye=0
-				spawn(30)
-					src.stunned=9999
-					if(src.client)
-						Show_reCAPTCHA()
-				spawn(10)src.EZ_Loop()*/
-			//if(ezing || blevel < 100)
-			//	src << "You are flagged and must <a href = ?action=remove-ez-flag>remove</a> it if you want to gain experience."
-			//	set_ez_flag()
 
 			if(!skillspassive)
 				del(src)
@@ -489,7 +523,7 @@ mob/human/player
 				src.mute=1
 
 
-			spawn(30)src.Refresh_Stat_Screen()
+			src.Refresh_Stat_Screen()
 			while(!src.initialized)
 				sleep(20)
 			if(!client) return
@@ -500,36 +534,48 @@ mob/human/player
 
 			src.completeLoad_Overlays()
 
-			src.player_gui+=new/obj/gui/skillcards/attackcard(src.client)
-			src.player_gui+=new/obj/gui/skillcards/untargetcard(src.client)
-			src.player_gui+=new/obj/gui/skillcards/treecard(src.client)
-			src.player_gui+=new/obj/gui/skillcards/triggercard(src.client)
-			src.player_gui+=new/obj/gui/placeholder(src.client)
-			src.player_gui+=new/obj/gui/hudbar/A(src.client)
-			src.player_gui+=new/obj/gui/hudbar/B(src.client)
-			src.player_gui+=new/obj/gui/hudbar/C(src.client)
-			src.player_gui+=new/obj/gui/hudbar/D(src.client)
-			src.player_gui+=new/obj/gui/hudbar/E(src.client)
-			src.player_gui+=new/obj/gui/hudbar/F(src.client)
-			src.player_gui+=new/obj/gui/hudbar/G(src.client)
-			src.player_gui+=new/obj/gui/hudbar/H(src.client)
-			src.player_gui+=new/obj/gui/hudbar/I(src.client)
-			src.player_gui+=new/obj/gui/hudbar/J(src.client)
-			src.player_gui+=new/obj/gui/hudbar/K(src.client)
-			src.player_gui+=new/obj/gui/hudbar/L(src.client)
-			src.player_gui+=new/obj/gui/hudbar/M(src.client)
-			src.player_gui+=new/obj/gui/hudbar/N(src.client)
-			src.player_gui+=new/obj/gui/hudbar/O(src.client)
-			src.player_gui+=new/obj/gui/hudbar/P(src.client)
-			src.player_gui+=new/obj/gui/hudbar/Q(src.client)
+			//player_gui += new/obj/gui/skillcards/treecard(src.client)
+			//for(var/h in hud_manager.huds) hud_manager.reveal(client, h)
+			src.player_gui.Add(
+			/*new/obj/gui/skillcards/untargetcard(src.client),
+			new/obj/gui/skillcards/treecard(src.client),*/
+			new/obj/gui/skillcards/triggercard(src.client),
+			new/obj/gui/skillcards/treecard(src.client),
+			new/obj/gui/placeholder(src.client))
+			//new/obj/gui/placeholder_numbers(src.client))
+			/*new/obj/gui/hudbar/A(src.client),
+			new/obj/gui/hudbar/B(src.client),
+			new/obj/gui/hudbar/C(src.client),
+			new/obj/gui/hudbar/D(src.client),
+			new/obj/gui/hudbar/E(src.client),
+			new/obj/gui/hudbar/F(src.client),
+			new/obj/gui/hudbar/G(src.client),
+			new/obj/gui/hudbar/H(src.client),
+			new/obj/gui/hudbar/I(src.client),
+			new/obj/gui/hudbar/J(src.client),
+			new/obj/gui/hudbar/K(src.client),
+			new/obj/gui/hudbar/L(src.client),
+			new/obj/gui/hudbar/M(src.client),
+			new/obj/gui/hudbar/N(src.client),
+			new/obj/gui/hudbar/O(src.client),
+			new/obj/gui/hudbar/P(src.client),
+			new/obj/gui/hudbar/Q(src.client))*/
 
 			var/all_helpers = list()
 			for(var/village in helpers)
 				all_helpers += helpers[village]
-			if(src.blevel < 20 || (src.name in all_helpers) || (ckey in admins))
+
+			//if(src.blevel < 20 || (src.name in all_helpers) || (ckey in admins))
+			if(winget(src, "ooctoggle", "is-checked") != "true")
 				newbies += src
-				verbs += /mob/human/player/newbie/verb/NOOC
-				winset(src, "nooc_button", "is-visible=true")
+			verbs += /mob/human/player/newbie/verb/NOOC
+			winset(src, "nooc_button", "is-visible=true")
+
+			if(blevel >= 20)
+				combat_protection = 0
+			else
+				verbs += /mob/new_player/verb/togglecombat
+				winset(src, "togglecombatid", "parent = menu_commands; name = \"Toggle Combat Protection\"; command = togglecombat")
 
 			if(world.host == key)
 				verbs += /mob/Admin/verb/Mute
@@ -544,17 +590,7 @@ mob/human/player
 
 			if(ckey in admins)
 				online_admins += src
-				for(var/client/C)
-					var/mob/X = C.mob
-					if(X && X.pk && X!=src)
-						X.Get_Global_Coords()
-						if(X.map_pin)
-							src << X.map_pin
-				/*winset(src, "default_input", "command=")
-				winset(src, "nooc_button", "is-visible=false")
-				winset(src, "say_button", "is-visible=false")
-				winset(src, "vsay_button", "is-visible=false")
-				winset(src, "fsay_button", "is-visible=false")*/
+
 				src.verbs+=typesof(/mob/Admin/verb)
 				winset(src, "admin_menu", "parent=menu;name=\"&Admin\"")
 				winset(src, "admin_chuunin_menu", "parent=admin_menu;name=\"&Chuunin Exam\"")
@@ -591,104 +627,77 @@ mob/human/player
 				winset(src, "admin_verb_localann", "parent=admin_menu;name=\"&Local Announce\";command=Local-Announce")
 				winset(src, "admin_verb_announce", "parent=admin_menu;name=\"&Announce\";command=Announce")
 
-				if(RP)
-					winset(src, "admin_chuunin_menu", "parent=")
-					winset(src, "admin_arena_menu", "parent=")
-					src.verbs -= /mob/Admin/verb/Have_Tourney
-					src.verbs -= /mob/Admin/verb/Register_Fighter
-					src.verbs -= /mob/Admin/verb/Unregister_Fighter
-					src.verbs -= /mob/Admin/verb/End_Tourney
-					src.verbs -= /mob/Admin/verb/Pick_Combatant
-					src.verbs -= /mob/Admin/verb/Start_Fight
-					src.verbs -= /mob/Admin/verb/Declare_Winner
-					src.verbs -= /mob/Admin/verb/AUTO_Chuunin_Start
-					src.verbs -= /mob/Admin/verb/Make_Chuunin
-					src.verbs -= /mob/Admin/verb/Heal_Chuunin
-					src.verbs -= /mob/Admin/verb/Remove_Tourney_Entry
-					src.verbs -= /mob/Admin/verb/Goto_Chuunin_Arena
-					src.verbs -= /mob/Admin/verb/Goto_Forest_of_Death
-					src.verbs -= /mob/Admin/verb/Goto_Chuunin_Start
-					src.verbs -= /mob/Admin/verb/Start_Chuunin_Exam
-					src.verbs -= /mob/Admin/verb/Start_Chuunin_Exam_2_FOD
-					src.verbs -= /mob/Admin/verb/Start_Chuunin_Exam_3_Arena
-					src.verbs -= /mob/Admin/verb/End_Registration
-					src.verbs -= /mob/Admin/verb/End_Chuunin_Exam
-					src.verbs -= /mob/Admin/verb/Clear_Board
-					src.verbs -= /mob/Admin/verb/Pick_Combatant_Chuunin_1
-					src.verbs -= /mob/Admin/verb/Pick_Combatant_Chuunin_2
-					src.verbs -= /mob/Admin/verb/Start_Chuunin_Fight
-					src.verbs -= /mob/Admin/verb/Declare_Winner_Chuunin
-			//if(src.key=="Masterdan"||src.key=="Destroy"||src.key=="Krammer")
+
+
 				src.verbs+=typesof(/mob/MasterAdmin/verb)
 				winset(src, "admin_command_profile", "parent=admin_menu;name=\"View &Profile...\";command=\".debug profile\"")
 				winset(src, "admin_command_command", "parent=admin_menu;name=\"Enter &Command...\";command=.command")
-			//if(src.key=="Masterdan"||src.key=="GotenSon11"||src.key=="Destroy"||src.key=="Krammer")
 				src.verbs+=typesof(/mob/MasterdanVerb/verb)
 
-			src.player_gui+=new/obj/gui/skillcards/defendcard(src.client)
-			src.player_gui+=new/obj/gui/skillcards/skillcard(src.client)
-			src.player_gui+=new/obj/gui/skillcards/usecard(src.client)
-			src.player_gui+=new/obj/gui/skillcards/interactcard(src.client)
-			src.player_gui+=new/obj/stambarbase(src.client)
-			src.player_gui+=new/obj/chakrabarbase(src.client)
-			src.player_gui+=new/obj/woundbarbase(src.client)
-			spawn(20)
-				Refresh_Mouse()
-			spawn(25)
+			/*src.player_gui.Add(new/obj/gui/skillcards/defendcard(src.client),
+			new/obj/gui/skillcards/skillcard(src.client),
+			new/obj/gui/skillcards/usecard(src.client),
+			new/obj/gui/skillcards/interactcard(src.client),*/
+			src.player_gui.Add(new/obj/stambarbase(src.client),
+			new/obj/chakrabarbase(src.client),
+			new/obj/woundbarbase(src.client))
+			Refresh_Mouse()
+			StatBar_Refresh()
 
-				StatBar_Refresh()
 
-			spawn(5)
-				var/L[7]
-				for(var/obj/items/O in src.contents)
-					if(istype(O,/obj/items/weapons/projectile/Kunai_p))
-						L[1]=1
-					if(istype(O,/obj/items/weapons/projectile/Needles_p))
-						L[2]=1
-					if(istype(O,/obj/items/weapons/projectile/Shuriken_p))
-						L[3]=1
-					if(istype(O,/obj/items/weapons/melee/knife/Kunai_Melee))
-						L[4]=1
-					if(istype(O,/obj/items/equipable/Kunai_Holster))
-						L[5]=1
-					if(istype(O,/obj/items/Map))
-						L[6]=1
-					if(istype(O,/obj/items/Guide))
-						L[7]=1
+			for(var/i = 1; i <= 10; ++i)
+				var/skill/skill = vars["macro[i]"]
+				var/obj/Slot = locate( text2path("/obj/gui/placeholder/placeholder[i==10?0:i]") ) in player_gui
+				//if(!Slot)
+				//	world.log << "DEBUG: SLOT [i] MISSING!"
+				if(skill)
+					var/skillcard/card = new /skillcard(null, skill)
+					card.screen_loc = Slot.screen_loc
+					Slot.contents += card
+					player_gui += card
+					client.screen += card
 
-				if(!L[1])
-					new/obj/items/weapons/projectile/Kunai_p(src)
-				if(!L[2])
-					new/obj/items/weapons/projectile/Needles_p(src)
-				if(!L[3])
-					new/obj/items/weapons/projectile/Shuriken_p(src)
-				if(!L[4])
-					new/obj/items/weapons/melee/knife/Kunai_Melee(src)
-				if(!L[5])
-					new/obj/items/equipable/Kunai_Holster(src)
-				if(!L[6])new/obj/items/Map(src)
-				if(!L[7])new/obj/items/Guide(src)
-				del(L)
-				src.refreshskills()
+			var/L[7]
+			for(var/obj/items/O in src.contents)
+				if(istype(O,/obj/items/weapons/projectile/Kunai_p))
+					L[1]=1
+				if(istype(O,/obj/items/weapons/projectile/Needles_p))
+					L[2]=1
+				if(istype(O,/obj/items/weapons/projectile/Shuriken_p))
+					L[3]=1
+				if(istype(O,/obj/items/weapons/melee/knife/Kunai_Melee))
+					L[4]=1
+				if(istype(O,/obj/items/equipable/Kunai_Holster))
+					L[5]=1
+				if(istype(O,/obj/items/Map))
+					L[6]=1
+				if(istype(O,/obj/items/Guide))
+					L[7]=1
 
-			spawn(100)
-				if(src.FU&&!RP)
-					src.dojo=0
-					src<<"You have recieved retribution for trying to escape death by logging out. Do not log out while KO'd."
-					src.FU=0
-					src.ko=1
-					src.pk=1
-
-					src.curwound=201
-					src.stamina=0
+			if(!L[1])
+				new/obj/items/weapons/projectile/Kunai_p(src)
+			if(!L[2])
+				new/obj/items/weapons/projectile/Needles_p(src)
+			if(!L[3])
+				new/obj/items/weapons/projectile/Shuriken_p(src)
+			if(!L[4])
+				new/obj/items/weapons/melee/knife/Kunai_Melee(src)
+			if(!L[5])
+				new/obj/items/equipable/Kunai_Holster(src)
+			if(!L[6])new/obj/items/Map(src)
+			if(!L[7])new/obj/items/Guide(src)
+			del(L)
+			src.refreshskills()
 
 			sleep(-1)
 
 			src.Affirm_Icon()
 
 		src.refresh_rank()
+		players += src
 
-		..()
+		if(winget(src, "whispertoggle", "is-checked") == "true")
+			whispertoggleoff = 1
 
 /* todo
 special effects: 0
@@ -716,11 +725,12 @@ world
 	proc
 		bingosort()
 			set background = 1
+			set waitfor = 0
 
 			var/list/bingo=new
-			if(!EN[2])
+			/*if(!EN[2])
 				bingosorted=new
-				return
+				return*/
 			for(var/client/C)
 				var/mob/human/player/O = C.mob
 				if(O && O.bounty)
@@ -747,8 +757,10 @@ world
 
 				bingo-=next
 				bingosorted+=next
-			for(var/client/C)
-				if(C.key) C.Refresh_Bounties()
+			//for(var/client/C)
+			//	if(C.key) C.Refresh_Bounties()
+			for(var/mob/p in players)
+				p.client.Refresh_Bounties()
 
 client
 	proc
@@ -768,7 +780,7 @@ mob/human
 		sleep(10)
 		if(!usr.client || !usr.initialized)return
 		var/grid_item = 0
-		usr << output("Stamina", "stats_grid:[++grid_item],1")
+		/*usr << output("Stamina", "stats_grid:[++grid_item],1")
 		usr << output("[curstamina]/[stamina] ([staminaregen>=0?"+[staminaregen]":"[staminaregen]"])", "stats_grid:[grid_item],2")
 		usr << output("Chakra", "stats_grid:[++grid_item],1")
 		usr << output("[curchakra]/[chakra] ([chakraregen>=0?"+[chakraregen]":"[chakraregen]"])", "stats_grid:[grid_item],2")
@@ -783,25 +795,46 @@ mob/human
 		usr << output("Intelligence", "stats_grid:[++grid_item],1")
 		usr << output("[round(int+intbuff-intneg)]", "stats_grid:[grid_item],2")
 		if(!usr.client)return
-		winset(usr, "stats_grid", "cells=[grid_item]x2")
+		winset(usr, "stats_grid", "cells=[grid_item]x2")*/
 
 		grid_item = 0
-		usr << output("AC: [AC]\nSupplies: [supplies]%", "inventory_grid:[++grid_item]")
+		usr << output("Armor Value: [AC]\nSupplies: [supplies]%", "inventory_grid:[++grid_item]")
+		usr << output("Armor Value: [AC]\nSupplies: [supplies]%", "inventory_grid2:[grid_item]")
 		for(var/obj/items/O in contents)
 			if(O.deletable==0)
 				usr << output(O, "inventory_grid:[++grid_item]")
+				usr << output(O, "inventory_grid2:[grid_item]")
 		if(!usr.client)return
-		winset(usr, "inventory_grid", "cells=[grid_item]")
+		winset(usr, null, {"
+			inventory_grid.cells = [grid_item];
+			inventory_grid2.cells = [grid_item];
+		"})
+		//winset(usr, "inventory_grid", "cells=[grid_item]")
 
-		var/r = blevel >= 20 ? (5) : (10)
-		if(risk==1)
+		var/r = 10//blevel >= 20 ? (5) : (10)
+		/*if(risk==1)
 			r+=2
 		if(risk>1)
-			r+=3
+			r+=3*/
+		if(risk == 1)
+			r += 2
+		else if(risk >= 2)
+			r += 5
+		else if(risk >= 3)
+			r += 10
+		else if(risk >= 4)
+			r += 15
+		var
+			rate_msg = ""
 		if(dominating_faction && dominating_faction == faction.village)
 			r += 5
-		if(double_xp_time)r *= 2
-		if(triple_xp_time)r *= 3
+			rate_msg += "Faction Boost + "
+		if(double_xp_time)
+			r *= 2
+			rate_msg = "2x Experience"
+		else if(triple_xp_time)
+			r *= 3
+			rate_msg = "3x Experience"
 		//if(src.blevel<20 && rate<10)
 		//	rate=10
 		//TODO, rate is 0?
@@ -809,8 +842,10 @@ mob/human
 		grid_item = 0
 		usr << output("Level", "full_stats_grid:1,[++grid_item]")
 		usr << output("[blevel]", "full_stats_grid:2,[grid_item]")
+		usr << output("Clan", "full_stats_grid:1,[++grid_item]")
+		usr << output("[clan]", "full_stats_grid:2,[grid_item]")
 		usr << output("Level Points", "full_stats_grid:1,[++grid_item]")
-		usr << output("[body]/[Req2Level(blevel)] (Rate: [r * lp_mult])", "full_stats_grid:2,[grid_item]")
+		usr << output("[body]/[Req2Level(blevel)] (Rate: [r * lp_mult]) [rate_msg?"([rate_msg])":""]", "full_stats_grid:2,[grid_item]")
 		usr << output("Stamina", "full_stats_grid:1,[++grid_item]")
 		usr << output("[curstamina]/[stamina] ([staminaregen>=0?"+[staminaregen]": "[staminaregen]"] regen)", "full_stats_grid:2,[grid_item]")
 		usr << output("Chakra", "full_stats_grid:1,[++grid_item]")
@@ -891,18 +926,24 @@ atom/Click()
 		var/mob/human/player/USR=usr
 		if(usr:stunned)
 			return
-		if(USR.Puppet1)
-			if(USR.Puppet1 != USR.Primary)
-				walk_towards(USR.Puppet1,src,2)
-		if(USR.Puppet2)
-			if(USR.Puppet2 != USR.Primary)
-				walk_towards(USR.Puppet2,src,2)
+
+		if(USR.puppetsout == 2)
+			if(USR.keys["shift"])
+				if(USR.Puppet2 && USR.Puppet2 != src && USR.Puppet2 != USR.Primary)
+					USR.Puppet2.pwalk_towards(USR.Puppet2,src,2)
+			else
+				if(USR.Puppet1 && USR.Puppet1 != src && USR.Puppet1 != USR.Primary)
+					USR.Puppet1.pwalk_towards(USR.Puppet1,src,2)
+		else if(USR.puppetsout == 1)
+			if(USR.Puppet1 && USR.Puppet1 != src && USR.Puppet1 != USR.Primary)
+				USR.Puppet1.pwalk_towards(USR.Puppet1,src,2)
+			if(USR.Puppet2 && USR.Puppet2 != src && USR.Puppet2 != USR.Primary)
+				USR.Puppet2.pwalk_towards(USR.Puppet2,src,2)
+
 		if(USR.pet)
 			var/mob/human/sandmonster/p=USR.Get_Sand_Pet()
 
-			if(p && !p.tired)
-				//p.tired=1
-				//spawn(10) p.tired=0
+			if(p && p.tired <= world.time)
 				walk_towards(p,src,1)
 
 			for(var/mob/human/player/npc/kage_bunshin/X in world)
@@ -911,16 +952,7 @@ atom/Click()
 					X.FilterTargets()
 					for(var/mob/T in X.targets)
 						X.RemoveTarget(T)
-					walk_towards(X,src,2)
-					spawn(20)
-						var/turf/T
-						if(X)
-							T=locate(X.x,X.y,X.z)
-						sleep(10)
-						if(X && T)
-							if(X.x==T.x && X.y==T.y && X.z==T.z)
-								walk(X,0)
-								X.icon_state=""
+					X.npc_walk_to(src, 2, 20)
 
 
 proc/same_client(var/mob/a, var/mob/b)

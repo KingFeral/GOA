@@ -37,16 +37,22 @@ obj
 			..()
 		proc
 			Setoff(mob/human/o)
+				set waitfor = 0
 				if(o == owner) return
 				src.setoff=1
-				spawn()
-					for(var/obj/explosive_tag/x in oview(1,src))
-						spawn() if(x) x.Setoff(o)
-					for(var/obj/trip/m in oview(1,src))
-						if(m.setoff==0)
-							spawn() if(m) m.Setoff(o)
+				for(var/obj/explosive_tag/x in oview(1,src))
+					if(x) x.Setoff(o)
+				for(var/obj/trip/m in oview(1,src))
+					if(m.setoff==0)
+						if(m) m.Setoff(o)
 
-				spawn(10)del(src)
+				sleep(10)
+				del(src)
+		Del()
+			if(loc == null)
+				return ..()
+			owner = null
+			loc = null
 
 	explosive_tag
 		icon='icons/note.dmi'
@@ -77,10 +83,10 @@ obj
 				r4=1
 			else
 				r4=0
-			if(r1)spawn()explosion(400*(1+0.3*trapskill),xx-1,xy-1,xz,usr,1)
-			if(r2)spawn()explosion(400*(1+0.3*trapskill),xx+1,xy+1,xz,usr,1)
-			if(r3)spawn()explosion(400*(1+0.3*trapskill),xx+1,xy-1,xz,usr,1)
-			if(r4)spawn()explosion(400*(1+0.3*trapskill),xx-1,xy+1,xz,usr,1)
+			if(r1)explosion(400*(1+0.3*trapskill),xx-1,xy-1,xz,usr,1)
+			if(r2)explosion(400*(1+0.3*trapskill),xx+1,xy+1,xz,usr,1)
+			if(r3)explosion(400*(1+0.3*trapskill),xx+1,xy-1,xz,usr,1)
+			if(r4)explosion(400*(1+0.3*trapskill),xx-1,xy+1,xz,usr,1)
 			explosion(600*(1+0.3*trapskill),xx,xy,xz,usr)
 			del(src)
 
@@ -88,6 +94,7 @@ obj
 		hospitalbed
 			verb
 				Interact(var/mob/q)
+					set waitfor = 0
 					set hidden=1
 					set src in oview(1)
 					if(q)
@@ -129,6 +136,7 @@ obj
 		bed
 			verb
 				Interact()
+					set waitfor = 0
 					set hidden=1
 					set src in oview(1)
 					if(usr.MissionTime)

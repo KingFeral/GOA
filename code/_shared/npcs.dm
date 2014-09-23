@@ -1,5 +1,6 @@
 mob/human/player/npc
 	var
+		doesnotattack=0
 		auto_ai = 1
 		nisguard=0
 		list/chattopic=new
@@ -40,7 +41,7 @@ mob/human/player/npc
 		wander=1
 		questable=0
 		dietype=1//0=KO,no death 1=delayed respawn 2=death till repop
-		respawndelay=600
+		respawndelay=3000
 		guard=0
 		interact="Talk"
 		blevel=80
@@ -61,7 +62,20 @@ mob/human/player/npc
 		projectiles=2
 		message ="Believe in the Will of Fire!"
 		delay=2
-		skillsx=list(KAWARIMI,WINDMILL_SHURIKEN,SHUNSHIN,BUNSHIN,LEAF_GREAT_WHIRLWIND,NIRVANA_FIST,KATON_PHOENIX_FIRE,KATON_FIREBALL)
+		skillsx=list(KAWARIMI,WINDMILL_SHURIKEN,SHUNSHIN,BUNSHIN,LEAF_WHIRLWIND,KATON_PHOENIX_FIRE,KATON_FIREBALL, KATON_ASH_BURNING, KATON_DRAGON_FIRE)
+
+		load_skills()
+			if(pick(0, 0, 1, 1, 1))
+				switch(pick("Uchiha", "Hyuuga", "Akimichi", "Nara"))
+					if("Uchiha")
+						skillsx.Add(SHARINGAN2)
+					if("Hyuuga")
+						skillsx.Add(KAITEN, GENTLE_FIST, BYAKUGAN, HAKKE_64)
+					if("Nara")
+						skillsx.Add(SHADOW_IMITATION, SHADOW_SEWING_NEEDLES)
+					if("Akimichi")
+						skillsx.Add(SIZEUP1)
+			..()
 
 	Suna_Guard
 		nisguard=1
@@ -71,7 +85,7 @@ mob/human/player/npc
 		wander=1
 		questable=0
 		dietype=1//0=KO,no death 1=delayed respawn 2=death till repop
-		respawndelay=600
+		respawndelay=3000
 		guard=0
 		interact="Talk"
 		rank = "Chuunin"
@@ -92,7 +106,17 @@ mob/human/player/npc
 		projectiles=2
 		message ="Suna Pride!"
 		delay=2
-		skillsx=list(KAWARIMI,WINDMILL_SHURIKEN,SHUNSHIN,BUNSHIN,LEAF_GREAT_WHIRLWIND,NIRVANA_FIST,FUUTON_GREAT_BREAKTHROUGH,FUUTON_WIND_BLADE)
+		skillsx=list(KAWARIMI,WINDMILL_SHURIKEN,SHUNSHIN,BUNSHIN,LEAF_WHIRLWIND,FUUTON_GREAT_BREAKTHROUGH,FUUTON_WIND_BLADE)
+
+		load_skills()
+			if(pick(0, 0, 1, 1, 1))
+				switch(pick("Deidara", "Sand Control"))
+					if("Deidara")
+						skillsx.Add(EXPLODING_BIRD)
+					if("Sand Control")
+						skillsx.Add(SAND_SUMMON, DESERT_FUNERAL, SAND_SHIELD, SAND_SHURIKEN, SAND_ARMOR)
+			..()
+
 	Mist_Guard
 		nisguard=1
 		//village="Kiri"
@@ -101,7 +125,7 @@ mob/human/player/npc
 		wander=1
 		questable=0
 		dietype=1//0=KO,no death 1=delayed respawn 2=death till repop
-		respawndelay=600
+		respawndelay=3000
 		guard=0
 		interact="Talk"
 		rank = "Chuunin"
@@ -122,7 +146,17 @@ mob/human/player/npc
 		projectiles=4
 		message ="I stand guard against those who wish to enter and die"
 		delay=2
-		skillsx=list(KAWARIMI,WINDMILL_SHURIKEN,SHUNSHIN,BUNSHIN,LEAF_GREAT_WHIRLWIND,NIRVANA_FIST,SUITON_VORTEX,SUITON_COLLISION_DESTRUCTION)
+		skillsx=list(KAWARIMI,WINDMILL_SHURIKEN,SHUNSHIN,BUNSHIN,LEAF_WHIRLWIND,SUITON_VORTEX,SUITON_COLLISION_DESTRUCTION,DOTON_IRON_SKIN,DOTON_CHAMBER,PARALYZE_GENJUTSU,DARKNESS_GENJUTSU)
+
+		load_skills()
+			if(pick(0, 0, 1, 1, 1))
+				switch(pick("Kaguya", "Haku"))
+					if("Kaguya")
+						skillsx.Add(BONE_BULLETS, BONE_SPINES, BONE_HARDEN)
+					if("Haku")
+						skillsx.Add(ICE_NEEDLES, ICE_SPIKE_EXPLOSION, DEMONIC_ICE_MIRRORS)
+			..()
+
 	Konoha_Civ1
 		locationdisc="Konoha"
 		name="Kotamaru"
@@ -427,7 +461,7 @@ mob/human/player/npc
 		hair_color="#000000"
 		killable=1
 		projectiles=0
-		message ="I'm so tired, why do I even wake up in the morning."
+		message ="I'm so p, why do I even wake up in the morning."
 		delay=2
 		skillsx=list(KAWARIMI,WINDMILL_SHURIKEN,BUNSHIN)
 	Konoha_2
@@ -864,7 +898,7 @@ mob/human/player/npc
 		dietype=0
 		respawndelay=0
 		str=55
-		guard=0
+		guard=0 //WORKING ON MAKING NPC MISSION TARGETS BOOST
 		interact="Talk"
 		con=55
 		rfx=55
@@ -1204,7 +1238,7 @@ mob/human/player/npc
 		projectiles=0
 		message ="I used to be a Chuunin from the Hidden Cloud Village, but I've retired."
 		delay=2
-		skillsx=list(KAWARIMI,WINDMILL_SHURIKEN,BUNSHIN,LEAF_GREAT_WHIRLWIND,EXPLODING_KUNAI,CHIDORI_CURRENT,CHIDORI)
+		skillsx=list(KAWARIMI,WINDMILL_SHURIKEN,BUNSHIN,LEAF_WHIRLWIND,EXPLODING_KUNAI,CHIDORI_CURRENT,CHIDORI)
 	Ninja_Guard
 		blevel=30
 

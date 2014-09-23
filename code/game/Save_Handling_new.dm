@@ -21,7 +21,7 @@ mob
 client
 	proc
 		SaveMob()
-			spawn()world.SaveMob(src.mob,src)
+			world.SaveMob(src.mob,src)
 
 mob
 	var/tmp/cansave=1
@@ -29,6 +29,7 @@ mob
 world
 	proc
 		SaveMob(mob/x,client/vrc, xkey=x.ckey)
+			//set waitfor = 0
 			if(RP)
 				return
 			if(!x)
@@ -99,6 +100,9 @@ world
 							if(o.deletable==0)
 								var/id = type2index(o.type)
 								if(id && isnum(id))
+									/*if(istype(o, /obj/items/usable) && o:oname == "Double Experience Scroll")
+										world.log << id
+										world.log << o.equipped*/
 									itemlist+=id
 									itemlist+=o.equipped
 						else
@@ -221,7 +225,7 @@ world
 
 				//for(var/client/M in SaveListen)
 				//	M<<"Saved [x.name] ([xkey])"
-				saves.SaveCharacter(xkey, inv, bar, strg, nums, lst)//spawn()Update_Save(xkey,S)
+				saves.SaveCharacter(xkey, inv, bar, strg, nums, lst)
 
 client
 	proc
@@ -420,7 +424,7 @@ client
 						if(skill.id == skill_id)
 							x.vars["macro[i]"] = skill
 							var/skillcard/card = new /skillcard(null, skill)
-							card.screen_loc = "[i+1],1"
+							card.screen_loc = "[i+4]:16,SOUTH"
 							x.player_gui += card
 							screen += card
 
@@ -429,8 +433,8 @@ client
 				if(!istext(element) || element == "/list")
 					x.elements -= element
 
-			if(x.money>100000000)
-				x.money=0
+			//if(x.money>100000000)
+			//	x.money=0
 		/*	if(x.blevel>150)
 				x.blevel=1
 			if(x.rfx>((x.blevel-1)*4+50))
@@ -494,12 +498,12 @@ client
 					L[5]=1
 				if(type!=null && ispath(type,/obj/items))
 					var/obj/items/o = new type(x)
-					if(equipped && !istype(o,/obj/items/usable) && !istype(o,/obj/items/Puppet_Stuff))
-						spawn(rand(10,30))o:Use(x)
+					if(equipped && !istype(o,/obj/items/usable) && !istype(o,/obj/items/Puppet/weapon))
+						o:Use(x)
 					else if(istype(o,/obj/items/usable))
 						o.equipped=equipped
-						spawn(30)if(o) o:Refreshcountdd(src.mob)
-					else if(istype(o,/obj/items/Puppet_Stuff))
+						if(o) new/Event(10, "refresh_item_count", list(o, x))//o:Refreshcountdd(src.mob)
+					else if(istype(o,/obj/items/Puppet/weapon))
 						if(equipped)
 							o.equipped=equipped
 							if(i==1)
@@ -526,23 +530,13 @@ client
 				if(!has_chuunin) new chuunin_type(x)
 
 			for(var/skill/skill in x.skills)
-				if(skill.cooldown) spawn() skill.DoCooldown(x, 1)
+				if(skill.cooldown) skill.DoCooldown(x, 1)
 
 			x.macro_set = params2list(lst[6])
 			// winset uses params form, so just pass that through to restore macros
 			if(x.macro_set.len)
 				winset(src, null, lst[6])
-/*			var/list/cusmac=params2list(lst[7])
-			var/list/used=new
-			spawn(30)
-				for(var/obj/O in x.contents)
-					if(cusmac["[type2index(O.type)]"]&&!used.Find(type2index(O.type)))
-						used+=type2index(O.type)
-						O.cust_macro=cusmac["[type2index(O.type)]"]
-						O.macover=image('fonts/Cambriacolor.dmi',icon_state="[O.cust_macro]")
-						O.overlays+=O.macover
-						var/mac = cusmac["[type2index(O.type)]"]
-						winset(src, "custom_macro_[mac]", "parent=macro;name=\"[mac]+REP\";command=\"custom-macro \\\"[mac]\\\"\"")*/
+
 			x.initialized = 1
 			src.mob=x
 			src.mob << "You are flagged and must <a href = ?action=remove-ez-flag>remove</a> it if you want to gain experience."
@@ -611,7 +605,7 @@ mob/charactermenu
 		if(!src.client)
 			return
 
-		spawn(10) if(src.client) src.client.ClientInitiate()
+		if(src.client) src.client.ClientInitiate()
 
 		name = "[key] (Character Menu)"
 		hasspaced = 0
@@ -623,12 +617,13 @@ mob/charactermenu
 client/var/list/chars
 
 client/New()
+	set waitfor = 0
 	..()
-	spawn(10)
-		while(!leaf_faction || !missing_faction || !mist_faction || !sand_faction) sleep(10)
-		src<<"Getting Character List.."
-		src.chars=saves.GetCharacterNames(ckey)//params2list(SendInterserverMessage("get_chars", list("key" = ckey)))
-		src<<"Retrieved Character List!"
+	sleep(10)
+	while(!leaf_faction || !missing_faction || !mist_faction || !sand_faction) sleep(10)
+	src<<"Getting Character List.."
+	src.chars=saves.GetCharacterNames(ckey)//params2list(SendInterserverMessage("get_chars", list("key" = ckey)))
+	src<<"Retrieved Character List!"
 
 mob
 	proc
@@ -1056,7 +1051,9 @@ mob
 	proc
 		Refresh_example()
 			for(var/image/o in src.screener)
-				del(o)
+				//del(o)
+				o.loc = null
+				screener -= o
 
 			usr.screener+=image(usr.icon,icon_state="",loc=locate_tag("maptag_creation_preview"),layer=MOB_LAYER,dir=usr.dir)
 			for(var/o in src.overlays)
@@ -1135,59 +1132,12 @@ var/savelead=10
 client
 	proc
 		Saveloop()
+			set waitfor = 0
 			sleep(savelead*600)
 			if(istype(src.mob,/mob/human/player)&&src.mob.initialized)
-				spawn()SaveMob(src)
-			spawn()Saveloop()
+				SaveMob(src)
+			Saveloop()
 
 var
 	list/savepriority=new
 	savedelay=50
-
-/*world
-	proc
-		wSaveLoop()
-			var/count=0
-			for(var/mob/human/player/x in world)
-				if(x.client)
-					count++
-			if(count)
-				savedelay=1200 /count
-				if(savedelay<50)
-					savedelay=50
-				for(var/x in savepriority)
-					var/i =0
-					for(var/mob/human/player/o in world)
-						if(o.key==x)
-							i++
-					if(!i)
-						savepriority.Remove(x)
-				for(var/mob/human/player/x in world)
-					if(x.client)
-						if(!savepriority.Find(x.key))
-							var/obj/q=new/obj()
-							q.name=x.key
-							savepriority+=q
-				var/mob/i =0
-				var/obj/playercard/e = savepriority[1]
-				for(var/mob/human/player/o in world)
-					if(o.client)
-						if(e.name==o.key)
-							i=o
-							goto out
-
-				out
-				if(i)
-					i.client.SaveMob(i.client)
-					world.log<<"saving: [i]"
-				var/list/newsavepriority=new
-
-				for(var/obj/playercard/b in savepriority)
-					if(b!=e)
-						newsavepriority+=b
-				savepriority=0
-				savepriority=newsavepriority
-
-			sleep(savedelay)
-			spawn()wSaveLoop()
-*/

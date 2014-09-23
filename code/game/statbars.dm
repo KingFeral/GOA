@@ -43,11 +43,11 @@ obj
 			o3.overlays+=image('icons/stambar.dmi',pixel_y=14,pixel_x=-1)
 			o4.overlays+=image('icons/stambar.dmi',pixel_y=14,pixel_x=-1)
 			o5.overlays+=image('icons/stambar.dmi',pixel_y=14,pixel_x=-1)
-			o1.screen_loc="2,17"
-			o2.screen_loc="3,17"
-			o3.screen_loc="4,17"
-			o4.screen_loc="5,17"
-			o5.screen_loc="6,17"
+			o1.screen_loc="2,NORTH"
+			o2.screen_loc="3,NORTH"
+			o3.screen_loc="4,NORTH"
+			o4.screen_loc="5,NORTH"
+			o5.screen_loc="6,NORTH"
 			o1.layer++
 			o1.overlays+=image('icons/stambar.dmi',icon_state="0,0",pixel_y=-10,layer=11)
 			o2.overlays+=image('icons/stambar.dmi',icon_state="1,0",pixel_y=-10,layer=11)
@@ -93,11 +93,11 @@ obj
 			o3.overlays+=image('icons/chakrabar.dmi',pixel_y=14,pixel_x=-1)
 			o4.overlays+=image('icons/chakrabar.dmi',pixel_y=14,pixel_x=-1)
 			o5.overlays+=image('icons/chakrabar.dmi',pixel_y=14,pixel_x=-1)
-			o1.screen_loc="7:16,17:0"
-			o2.screen_loc="8:16,17:0"
-			o3.screen_loc="9:16,17:0"
-			o4.screen_loc="10:16,17:0"
-			o5.screen_loc="11:16,17:0"
+			o1.screen_loc="7:16,NORTH"
+			o2.screen_loc="8:16,NORTH"
+			o3.screen_loc="9:16,NORTH"
+			o4.screen_loc="10:16,NORTH"
+			o5.screen_loc="11:16,NORTH"
 			o1.layer++
 			o1.overlays+=image('icons/chakrabar.dmi',icon_state="0,0",pixel_y=-7,layer=11)
 			o2.overlays+=image('icons/chakrabar.dmi',icon_state="1,0",pixel_y=-7,layer=11)
@@ -143,11 +143,11 @@ obj
 			o3.overlays+=image('icons/woundbar.dmi',pixel_y=14,pixel_x=-1)
 			o4.overlays+=image('icons/woundbar.dmi',pixel_y=14,pixel_x=-1)
 			o5.overlays+=image('icons/woundbar.dmi',pixel_y=14,pixel_x=-1)
-			o1.screen_loc="13,17"
-			o2.screen_loc="14,17"
-			o3.screen_loc="15,17"
-			o4.screen_loc="16,17"
-			o5.screen_loc="17,17"
+			o1.screen_loc="13,NORTH"
+			o2.screen_loc="14,NORTH"
+			o3.screen_loc="15,NORTH"
+			o4.screen_loc="16,NORTH"
+			o5.screen_loc="17,NORTH"
 			o1.layer++
 			o1.overlays+=image('icons/woundbar.dmi',icon_state="0,0",pixel_y=-8,layer=11)
 			o2.overlays+=image('icons/woundbar.dmi',icon_state="1,0",pixel_y=-8,layer=11)
@@ -182,10 +182,8 @@ mob
 mob/human/player/proc
 	StatBar_Refresh()
 		set background = 1
-		if(!EN[8])
-			sleep(200)
-			spawn()StatBar_Refresh()
-			return
+		set waitfor = 0
+
 		if(!src.client) return
 		if(src.loc && src.loc.loc)
 			if(src.loc.loc:safe==1)
@@ -193,7 +191,8 @@ mob/human/player/proc
 			else
 				src.pk=1
 		if(!src.stamina||!src.chakra||!src.maxwound)
-			spawn(100)src.StatBar_Refresh()
+			sleep(100)
+			src.StatBar_Refresh()
 			return
 		var/S=round((src.curstamina/src.stamina)*128)
 		var/C=round((src.curchakra/src.chakra)*128)
@@ -204,7 +203,7 @@ mob/human/player/proc
 				X.invisibility=99
 			stathid=1
 
-			spawn(20)src.StatBar_Refresh()
+			src.StatBar_Refresh()
 			return
 		else if(stathid && !src.hidestat)
 			for(var/atom/X in src.player_gui)
@@ -247,4 +246,5 @@ mob/human/player/proc
 				if(a<0)
 					a=0
 				s.icon_state="[a]"
-		spawn(10*wregenlag)src.StatBar_Refresh()
+		sleep(10*wregenlag)
+		src.StatBar_Refresh()

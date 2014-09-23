@@ -1,0 +1,23 @@
+PUPPETEER
+//-Poison Bomb doesn't work.
+//-Needle Gun doesn't work (icon doesn't show).
+
+WATER ELEMENT
+//-Lowered the damage on both Water Colliding Wave and Giant Water Colliding Wave.
+//-Water Dragon can be used without water but only does 60% of its damage. Changed the Skill Points to learn it from 800 to 2,000. Raised the damage considerably and made it multi-target capable.
+
+MISC
+//-Chakra Taijutsu Release was buffed (450 STR/CON and full Medical Training passives would deal roughly 2.1k). Also no longer takes boosts into account.
+//-Chakra Scalpels shouldn't slow as much from normal hits (given the dash).
+//-Raised Tajuu Shuriken's damage to 300 per shuriken (from 200).
+//MABS should use more kunai and do a minimum wound damage of 1. (MABs wound damage is based on Bombardment. Also increased the spread.)
+//Buff kunai (it needs a dash)
+//Buff taijutsu (needs a dash)
+//Buff Gates (levels 1-3 will allow the user to dash +x tiles when using taijutsu, x being equal to the Gate level. Gates 4+ will teleport when using taijutsu as long as the user is within x tiles of the target, x being equal to the Gate level + 1.) Able to be knocked out in Gates 1-3.
+
+BUGFIXES
+//-Darkness Genjutsu lasts forever?
+//-Nara's Shadow Bind is dense at the head.
+//-Doton Chamber can be crushed multiple times.
+//-Couldn't use skills while using Fear Genjutsu.
+//-Tajuu Shuriken kills don't count for the user.

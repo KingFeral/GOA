@@ -1,0 +1,67 @@
+PUPPETEER
+	-Needle Gun does not work (doesn't shoot).
+
+GATES // DONE
+	-Each Gate up to level 4 allows you to dash.
+	skills cost 25% more chakra, stamina bonus now 150%. gates 1-3, str/rfx increase, 1(or 2) tile dash on taijutsu, can only use kawa/shunshin. 
+Gate 1: 15% boost, 
+Gate 2: 25% boost 
+Gate 3: 35% boost, chakra refill, can not be ko'd
+Gate 4: 50% boost, stamina refill
+Gate 5: 65% boost
+youth: gain 1 wound every 3 seconds. amount increases by 1 every 30 seconds. every new gate reduces it by 5 seconds
+non-youths: gain 2 wounds every 3 seconds. amount increases by 1 every 25s. every new gate reduces by 5 seconds
+Gates now teleport/dash you to the closest side of the target (if you're behind him it will teleport you to his back)
+Gates 1-3 can be used indefinitely. Gate 4 has a 25s duration, Gate 5 has a 20s duration
+Add timer for gate duration
+Healing amount is reduced by 70% (can not be healed in gates)
+Drawback:
+youth: For every wound gained by gates, the user takes an extra (.50*wounds)% damage || (if you took 50 wounds from gates, you'd take an extra 25% damage)
+non-youth: For every wound gained by gates, the user takes an extra (1*wounds)% damage || (if you took 50 wound from gates, you'd take an extra 50% damage)
+
+BODY FLICKER
+	-Set the cooldown back to 10 seconds [at max passives].
+	-Costs stamina when used in Gates.
+
+FIRE ELEMENT
+	-Make an initial fire impact heavily slowdown and successive fire attacks cause explosion damage and a stun.
+
+MISC
+	-Set the mission cooldown to 10 minutes.
+	-Enable Rock Shinobi and turn them into bandits.
+	-Add in the new interface.
+
+MAINTENANCE
+	-Finish removing spawn()
+	-Add combination movement
+	//-Make sure AI that die stop looping (bandits).
+
+TODO LIST
+	//-Remove the Cha NPC (it'll be re-added as a purchasable for Kages while owning that map).
+	-Finish removing spawn()
+	-Add combination movement
+	//-Gates changes.
+	//-Set the mission cooldown to 10 minutes.
+	//-Add in the new interface.
+	//-Fix Needle Gun.
+	-Add War Guards (these guards appear after a village wins a war and guard the land; villagers can interact with one to exchange Faction Points for PvP rewards. These guards disappear after the map is reset (10 minutes).
+	//-Change the color of the self squad marker.
+	//-Make sure Cha is not capturable by default (I'll be adding water tower objectives that make it open to capture).
+	-Set up new skilltree windows.
+	//-Give puppet melee rend.
+	//-Make sure puppets can die and trigger cooldown on death.
+	//-Puppeteer's Needle Gun uses the Bombardment passive.
+	//-WOF Changes:
+		-Gains a +0.625% boost in all stats for every 25 wounds, maxing out at 100 wounds (for a 25% total boost in all stats with 100 wounds).
+	//Capacity Changes:
+		-Regenerates 25% stam at all times; full rate when chakra is full.
+		-4% of chakra converted to CON for the purpose of ninjutsu.
+	//Lower chidori senbons damage (should do 375 at 450 con max PP)
+	//Test escorts
+	//-Youths get 40% increased chakra costs and 60% stamina costs
+	//add anti-logger and combat flag
+
+FIXES
+	-When using Puppet Shield, the user can enter the shield if not already inside.
+	-Fixed Puppeteer's Needle Gun (also shoots diagonal now as an added bonus).
+	-Fixed Puppeteer's Poison-tipped blades (also buffed them in the process; works with the Open Wounds passive)

@@ -24,7 +24,6 @@ mob/corpse
 	density=0
 	var/carryingme=0
 	New(loc,mob/M)
-		set waitfor = 0
 		..()
 		src.icon=M.icon
 		src.overlays+=M.overlays
@@ -32,8 +31,13 @@ mob/corpse
 		src.icon_state="Dead"
 		src.dir=M.dir
 		src.blevel=M.blevel
-		sleep(6000)
-		carryingme:carrying -= src
+		new/Event(3000, "delayed_delete", list(src))
+
+	Del()
+		if(loc == null)
+			return ..()
+		if(carryingme)
+			carryingme:carrying -= src
 		carryingme = null
 		loc = null
 		//if(RP)

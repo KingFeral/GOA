@@ -1,11 +1,11 @@
 // BEGIN_INTERNALS
 /*
 MAP_ICON_TYPE: 0
-WINDOW: event.dm;code\game\Save_Handling_new.dm
+WINDOW: code\game\skills\Taijutsu_Strong_Fist_Style.dm;code\game\skills\Taijutsu_Arhat_Style.dm;code\_shared\skill_index.dm;code\game\skilltree.dm;code\_shared\npcs.dm;code\game\AI.dm;code\game\skills\Taijutsu.dm
 LAST_COMPILE_VERSION: 506.1247
-DIR: code code\_libs code\_libs\pif_MapLoader code\_shared code\game code\game\skills fonts icons old_map 
-FILE: code\game\Save_Handling_new.dm
-LAST_COMPILE_TIME: 1410047731
+DIR: code code\_libs code\_shared code\game code\game\skills icons icons\new icons\new\hud icons\new\minimap old_map 
+FILE: code\game\skills\Taijutsu_Strong_Fist_Style.dm
+LAST_COMPILE_TIME: 1411428593
 AUTO_FILE_DIR: OFF
 */
 // END_INTERNALS

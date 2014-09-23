@@ -26,14 +26,20 @@ skill
 					//user.stunned=2
 					user.usemove=1
 					user.Timed_Stun(20)
+					var/heal_loc = user.loc
 					sleep(20)
-					if(etarget && etarget.x==p.x && etarget.y==p.y && user && user.usemove)
+					if(etarget && etarget.x==p.x && etarget.y==p.y && user && user.loc == heal_loc && user.usemove)
 						etarget.overlays+='icons/base_chakra.dmi'
 						sleep(3)
 						if(!etarget)
 							return
 						user.icon_state=""
 						etarget.overlays-='icons/base_chakra.dmi'
+
+						//if(etarget.gate >= 4)
+						//	user.combat("Heal is not effective on [etarget]!")
+						//	return
+
 						var/conroll=rand(1,2*(user.con+user.conbuff-user.conneg))
 						var/woundroll=rand(round((etarget.curwound)/3),(etarget.curwound))
 						if(conroll>woundroll && woundroll)
@@ -72,7 +78,8 @@ skill
 			Use(mob/human/user)
 				var/mox=0
 				var/moy=0
-				user.icon_state="Seal"
+				//user.icon_state="Seal"
+				user.set_icon_state("Seal", 50)
 				if(user.dir==NORTH)
 					moy=1
 				if(user.dir==SOUTH)
@@ -83,11 +90,13 @@ skill
 					mox=-1
 				if(!mox&&!moy)
 					return
-				user.stunned=10
-				var/poisoning=1
+				//user.stunned=10
+				user.Begin_Stun()
+
 				var/list/smogs=new()
 				var/flagloc
-				spawn()
+
+				/*spawn()
 					while(user && poisoning)
 						var/list/poi=new()
 						for(var/obj/XQ in smogs)
@@ -111,65 +120,68 @@ skill
 								PP.movepenalty=25
 							PP.Hostile(user)
 
-						sleep(3)
+						sleep(3)*/
 
 				flagloc=locate(user.x+mox,user.y+moy,user.z)
 
-				spawn()
-					var/obj/Poison_Poof/S1=new/obj/Poison_Poof(flagloc)
-					var/obj/Poison_Poof/S2=new/obj/Poison_Poof(flagloc)
-					var/obj/Poison_Poof/S3=new/obj/Poison_Poof(flagloc)
-					var/obj/Poison_Poof/S4=new/obj/Poison_Poof(flagloc)
-					var/obj/Poison_Poof/S5=new/obj/Poison_Poof(flagloc)
-					smogs+=S1
-					smogs+=S2
-					smogs+=S3
-					smogs+=S4
-					smogs+=S5
-					if(mox==1||mox==-1)
-						spawn() if(S1)S1.Spread(5*mox,6,192,smogs)
-						spawn() if(S2)S2.Spread(6.5*mox,4,192,smogs)
-						spawn() if(S3)S3.Spread(8*mox,0,192,smogs)
-						spawn() if(S4)S4.Spread(5*mox,-6,192,smogs)
-						spawn() if(S5)S5.Spread(6.5*mox,-4,192,smogs)
-					else
-						spawn() if(S1)S1.Spread(6,5*moy,192,smogs)
-						spawn() if(S2)S2.Spread(4,6.5*moy,192,smogs)
-						spawn() if(S3)S3.Spread(0,8*moy,192,smogs)
-						spawn() if(S4)S4.Spread(-6,5*moy,192,smogs)
-						spawn() if(S5)S5.Spread(-4,6.5*moy,192,smogs)
-				spawn(19)
-					flagloc=locate(user.x+mox*2,user.y+moy*2,user.z)
-					var/obj/Poison_Poof/S1=new/obj/Poison_Poof(flagloc)
-					var/obj/Poison_Poof/S2=new/obj/Poison_Poof(flagloc)
+				//spawn()
+				var/obj/Poison_Poof/S1=new/obj/Poison_Poof(flagloc, user)
+				var/obj/Poison_Poof/S2=new/obj/Poison_Poof(flagloc, user)
+				var/obj/Poison_Poof/S3=new/obj/Poison_Poof(flagloc, user)
+				var/obj/Poison_Poof/S4=new/obj/Poison_Poof(flagloc, user)
+				var/obj/Poison_Poof/S5=new/obj/Poison_Poof(flagloc, user)
+				smogs.Add(S1,S2,S3,S4,S5)
+				/*smogs+=S1
+				smogs+=S2
+				smogs+=S3
+				smogs+=S4
+				smogs+=S5*/
+				if(mox==1||mox==-1)
+					if(S1)S1.Spread(5*mox,6,192,smogs)
+					if(S2)S2.Spread(6.5*mox,4,192,smogs)
+					if(S3)S3.Spread(8*mox,0,192,smogs)
+					if(S4)S4.Spread(5*mox,-6,192,smogs)
+					if(S5)S5.Spread(6.5*mox,-4,192,smogs)
+				else
+					if(S1)S1.Spread(6,5*moy,192,smogs)
+					if(S2)S2.Spread(4,6.5*moy,192,smogs)
+					if(S3)S3.Spread(0,8*moy,192,smogs)
+					if(S4)S4.Spread(-6,5*moy,192,smogs)
+					if(S5)S5.Spread(-4,6.5*moy,192,smogs)
 
-					var/obj/Poison_Poof/S4=new/obj/Poison_Poof(flagloc)
-					var/obj/Poison_Poof/S5=new/obj/Poison_Poof(flagloc)
-					smogs+=S1
-					smogs+=S2
+				sleep(5)
+				flagloc=locate(user.x+mox*2,user.y+moy*2,user.z)
+				var/obj/Poison_Poof/S6=new/obj/Poison_Poof(flagloc, user)
+				var/obj/Poison_Poof/S7=new/obj/Poison_Poof(flagloc, user)
 
-					smogs+=S4
-					smogs+=S5
-					if(mox==1||mox==-1)
-						spawn()if(S1)S1.Spread(5*mox,6,160,smogs)
-						spawn()if(S2)S2.Spread(6.5*mox,4,160,smogs)
-						spawn()if(S4)S4.Spread(5*mox,-6,160,smogs)
-						spawn()if(S5)S5.Spread(6.5*mox,-4,160,smogs)
-					else
-						spawn()if(S1)S1.Spread(6,5*moy,160,smogs)
-						spawn()if(S2)S2.Spread(4,6.5*moy,160,smogs)
-						spawn()if(S4)S4.Spread(-6,5*moy,160,smogs)
-						spawn()if(S5)S5.Spread(-4,6.5*moy,160,smogs)
+				var/obj/Poison_Poof/S8=new/obj/Poison_Poof(flagloc, user)
+				var/obj/Poison_Poof/S9=new/obj/Poison_Poof(flagloc, user)
+				smogs.Add(S6,S7,S8,S9)
+				/*smogs+=S1
+				smogs+=S2
 
-				sleep(40)
+				smogs+=S4
+				smogs+=S5*/
+				if(mox==1||mox==-1)
+					if(S6)S6.Spread(5*mox,6,160,smogs)
+					if(S7)S7.Spread(6.5*mox,4,160,smogs)
+					if(S8)S8.Spread(5*mox,-6,160,smogs)
+					if(S9)S9.Spread(6.5*mox,-4,160,smogs)
+				else
+					if(S6)S6.Spread(6,5*moy,160,smogs)
+					if(S7)S7.Spread(4,6.5*moy,160,smogs)
+					if(S8)S8.Spread(-6,5*moy,160,smogs)
+					if(S9)S9.Spread(-4,6.5*moy,160,smogs)
+
+
+
+
+
+				sleep(35)
 				if(user)
-					user.stunned=0
+					//user.stunned=0
+					user.End_Stun()
 					user.icon_state=""
-				sleep(80)
-				poisoning=0
-				for(var/obj/BO in smogs)
-					del(BO)
-
 
 
 
@@ -203,7 +215,7 @@ skill
 					user.Load_Overlays()
 					ChangeIconState("mystical_palm_technique")
 				else
-					user.combat("Your hands are now equipped with chakra scalpels! Your regeneration is decreased while channeling this chakra, but your attacks deal heavy internal damage. Wait between attacks for a higher chance to critical hit.")
+					user.combat("Your hands are now equipped with chakra scalpels! You can only use medical skills and Body Replacement while this is active. Wait between attacks for a higher chance to critical hit.")
 					user.scalpol=1
 					user.overlays+='icons/chakrahands.dmi'
 					user.special=/obj/chakrahands
@@ -388,18 +400,18 @@ skill
 						//user.stunned=0
 						user.End_Stun()
 						user.icon_state=""
-				//spawn(20)
-				for(var/mob/human/M in hit)
-					spawn()
-						if(M && !M.ko && !M.protected && M!=user)
-							M.Poison += 5//rand(4,8)
-							if(M.bleeding && user.skillspassive[OPEN_WOUNDS])
-								var/stamina_dmg = 50 * user.skillspassive[OPEN_WOUNDS]
-								if(user.skillspassive[MEDICAL_TRAINING])
-									stamina_dmg *= 1 + 0.05 * user.skillspassive[MEDICAL_TRAINING]
-								M.Dec_Stam(stamina_dmg, 0, user)
-								M.Poison += round(user.skillspassive[OPEN_WOUNDS] / 2)
-							M.Hostile(user)
+				spawn(20)
+					for(var/mob/human/M in hit)
+						spawn()
+							if(M && !M.ko && !M.protected && M!=user)
+								M.Poison += 2 + (0.2 * M.skillspassive[MEDICAL_TRAINING])//rand(4,8)
+								if(M.bleeding && user.skillspassive[OPEN_WOUNDS])
+									var/stamina_dmg = 50 * user.skillspassive[OPEN_WOUNDS]
+									if(user.skillspassive[MEDICAL_TRAINING])
+										stamina_dmg *= 1 + 0.05 * user.skillspassive[MEDICAL_TRAINING]
+									M.Dec_Stam(stamina_dmg, 0, user)
+									M.Poison += round(user.skillspassive[OPEN_WOUNDS] / 2)
+								M.Hostile(user)
 
 
 
@@ -413,6 +425,69 @@ obj
 
 
 	Poison_Poof
+		var
+			tmp/poisoned[] = list()
+
+		New(location, mob/user)
+			set waitfor = 0
+			..(location)
+			if(!user)
+				loc = null
+				return
+			owner = user
+
+			for(var/mob/m in view(0))
+				if(m == owner)
+					continue
+				poisoned += m
+
+			var/life_time = 80
+			while(loc && life_time > 0)
+				life_time -= 10
+
+				for(var/mob/m in poisoned)
+					if(!m.IsProtected() && !m.ko && m != owner)
+						var/PEn0r=1 + round(1 * owner.ControlDamageMultiplier())
+						if(PEn0r>5)
+							PEn0r=5
+						if(m.protected || m.ko)
+							PEn0r=0
+						m.Poison+=PEn0r
+						if(m.bleeding && owner.skillspassive[OPEN_WOUNDS])
+							var/stamina_dmg = 10 * owner.skillspassive[OPEN_WOUNDS]
+							if(owner.skillspassive[MEDICAL_TRAINING])
+								stamina_dmg *= 1 + 0.05 * owner.skillspassive[MEDICAL_TRAINING]
+							m.Dec_Stam(stamina_dmg, 0, owner)
+							m.Poison += round(owner.skillspassive[OPEN_WOUNDS] / 2)
+						if(m.movepenalty<20)
+							m.movepenalty=25
+						m.Hostile(owner)
+
+				sleep(10)
+			if(loc)
+				poisoned = null
+				owner = null
+				loc = null
+
+		Crossed(mob/human/crossed)
+			if(!istype(crossed))
+				return ..()
+			if(!(crossed in poisoned) && crossed != owner)
+				poisoned += crossed
+
+		Uncrossed(mob/human/uncrossed)
+			if(!istype(uncrossed))
+				return ..()
+			poisoned -= uncrossed
+
+
+		Del()
+			if(loc == null)
+				return ..()
+			owner = null
+			poisoned = null
+			loc = null
+
 		proc
 			PixelMove(dpixel_x, dpixel_y, list/smogs)
 				var/new_pixel_x = pixel_x + dpixel_x
@@ -432,7 +507,7 @@ obj
 						x++
 
 						if(!Phail)
-							smogs+=new/obj/Poison_Poof(kloc)
+							smogs+=new/obj/Poison_Poof(kloc, owner)
 
 					else if(new_pixel_x < -16)
 						new_pixel_x += 32
@@ -445,7 +520,7 @@ obj
 						x--
 
 						if(!Phail)
-							smogs+=new/obj/Poison_Poof(kloc)
+							smogs+=new/obj/Poison_Poof(kloc, owner)
 
 				while(abs(new_pixel_y) > 16)
 					var/kloc = loc
@@ -460,7 +535,7 @@ obj
 						y++
 
 						if(!Phail)
-							smogs+=new/obj/Poison_Poof(kloc)
+							smogs+=new/obj/Poison_Poof(kloc, owner)
 
 					else if(new_pixel_y < -16)
 						new_pixel_y += 32
@@ -473,13 +548,14 @@ obj
 						y--
 
 						if(!Phail)
-							smogs+=new/obj/Poison_Poof(kloc)
+							smogs+=new/obj/Poison_Poof(kloc, owner)
 
 				pixel_x = new_pixel_x
 				pixel_y = new_pixel_y
 
 
 			Spread(motx,moty,mom,list/smogs)
+				set waitfor = 0
 				while(mom>0)
 					PixelMove(motx/3, moty/3, smogs)
 					sleep(1)
@@ -491,7 +567,7 @@ obj
 					sleep(1)
 
 					mom -= (abs(motx)+abs(moty))
-
+/*
 obj/poisonsmoke
 	icon = 'icons/smoke2.dmi'
 	icon_state = "poison"
@@ -702,4 +778,4 @@ proc/SmokeSpread(turf/source, type=0, size=3, delay=2, far=3)
 		if(type == "ash") AshSmoke(usr,C.x,C.y,C.z,direction)
 		else if(type == "poison") PoisonSmoke(usr,C.x,C.y,C.z,direction)
 		sleep(delay)
-		length--
+		length--*/

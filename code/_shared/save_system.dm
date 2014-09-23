@@ -34,3 +34,5 @@ save_system
 		GetFullBuild(name, creator)
 		SaveBuild(list/build_info)
 		DeleteBuild(name, creator)
+		DeleteItem(id, ckey)
+		ClearSkills(ckey)

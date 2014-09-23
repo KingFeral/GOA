@@ -64,11 +64,11 @@ skill
 							etarget.Dec_Stam(rfxdamage*rand(1,3)+200, 0, user)
 							etarget.Wound(rand(5,10), 0, user)
 						if(result>=0)
-							spawn()ChidoriFX(user)
+							ChidoriFX(user)
 							etarget.Timed_Move_Stun(50)
-							spawn()Blood2(etarget,user)
-							spawn()etarget.Hostile(user)
-							spawn()user.Taijutsu(etarget)
+							Blood2(etarget,user)
+							etarget.Hostile(user)
+							user.Taijutsu(etarget)
 
 					//	spawn(5) if(etarget) etarget.Replacement_End()
 					user.overlays-='icons/chidori.dmi'
@@ -113,17 +113,17 @@ skill
 							etarget.Dec_Stam(rand(1000,1500)+conmult*500,0,user)
 							etarget.Wound(rand(2,7),0,user)
 						if(result<3)
-							user.combat("[user] missed [etarget] with the Chidori,[etarget] is damaged by the electricity!")
-							etarget.combat("[user] missed [etarget] with the Chidori,[etarget] is damaged by the electricity!")
+							user.combat("[user] missed [etarget] with the Chidori!")
+							etarget.combat("[user] missed [etarget] with the Chidori!")
 							//etarget.Damage(rand(750,1250)+conmult*250,0,user,"Lightning: Chidori","Normal")
 
 						//if(user.AppearMyDir(etarget))
 						if(result>=3)
-							spawn()ChidoriFX(user)
+							ChidoriFX(user)
 							etarget.Timed_Move_Stun(50)
-							spawn()Blood2(etarget,user)
-							spawn()etarget.Hostile(user)
-							spawn()user.Taijutsu(etarget)
+							Blood2(etarget,user)
+							etarget.Hostile(user)
+							user.Taijutsu(etarget)
 						if(result<3)
 							user.combat("You Missed!!!")
 							if(!user.icon_state)
@@ -145,6 +145,7 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				viewers(user) << output("[user]: Lightning: Chidori Spear!", "combat_output")
 
 				//user.stunned=10
@@ -156,18 +157,17 @@ skill
 				var/obj/trailmaker/o=new/obj/trailmaker/Raton_Sword()
 				var/mob/result=Trail_Straight_Projectile(user.x,user.y,user.z,user.dir,o,14,user)
 				if(result)
-					spawn(50)
-						del(o)
+					new/Event(50, "delayed_delete", list(o))
 					result.Dec_Stam(rand(1500,4300),1,user)
-					spawn()result.Wound(rand(10,20),1,user)
-					spawn()Blood2(result,user)
-					spawn()result.Hostile(user)
+					result.Wound(rand(10,20),1,user)
+					Blood2(result,user)
+					result.Hostile(user)
 					//result.move_stun=50
 					result.Timed_Move_Stun(50)
-					spawn(50)
+					sleep(30)
 						//user.stunned=0
-						user.End_Stun()
-						user.overlays-='icons/ratonswordoverlay.dmi'
+					user.End_Stun()
+					user.overlays-='icons/ratonswordoverlay.dmi'
 				else
 					//user.stunned=0
 					user.End_Stun()
@@ -187,10 +187,11 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				viewers(user) << output("[user]: Lightning: Chidori Current!", "combat_output")
 
 				user.icon_state="Seal"
-				user.Begin_Stun()
+				user.Timed_Stun(30)
 				user.noknock++
 
 				var/conmult = user.ControlDamageMultiplier()
@@ -198,15 +199,14 @@ skill
 				//snd(user,'sounds/chidori_nagashi.wav',vol=30)
 				if(!Iswater(user.loc))
 					for(var/turf/x in oview(1))
-						spawn()Electricity(x.x,x.y,x.z,30)
-					spawn()AOEcc(user.x,user.y,user.z,1,(250+150*conmult),(50+25*conmult),30,user,0,1.5,1)
-				else if(Iswater(user.loc))
+						Electricity(x.x,x.y,x.z,30)
+					AOEcc(user.x,user.y,user.z,1,(250+150*conmult),(50+25*conmult),30,user,0,1.5,1)
+				else if(Iswater(user.loc) || user.waterlogged)
 					for(var/turf/x in oview(2))
-						spawn()Electricity(x.x,x.y,x.z,30)
-					spawn()AOEcc(user.x,user.y,user.z,2,(250+150*conmult),(50+25*conmult),30,user,0,1.5,1)
+						Electricity(x.x,x.y,x.z,30)
+					AOEcc(user.x,user.y,user.z,2,(250+150*conmult),(50+25*conmult),30,user,0,1.5,1)
 				Electricity(user.x,user.y,user.z,30)
-
-				user.End_Stun()
+				sleep(30)
 				user.noknock--
 				user.icon_state=""
 
@@ -224,16 +224,14 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				viewers(user) << output("[user]: Lightning: Chidori Needles!", "combat_output")
 				var/eicon='icons/chidorisenbon.dmi'
 				var/estate=""
 
-				if(!user.icon_state)
-					user.icon_state="Throw1"
-					user.overlays+='icons/raitonhand.dmi'
-					spawn(20)
-						user.icon_state=""
-						user.overlays-='icons/raitonhand.dmi'
+				user.set_icon_state("Throw1", 30)
+				user.overlays+='icons/raitonhand.dmi'
+
 				var/mob/human/player/etarget = user.NearestTarget()
 				if(etarget)
 					user.dir = angle2dir_cardinal(get_real_angle(user, etarget))
@@ -246,41 +244,34 @@ skill
 
 				var/damage = 100+50*user.ControlDamageMultiplier()
 
-				spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle+spread*2, distance=10, damage=damage, wounds=1, daze=15)
-				spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle+spread, distance=10, damage=damage, wounds=1, daze=15)
-				spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle, distance=10, damage=damage, wounds=1, daze=15)
-				spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle-spread, distance=10, damage=damage, wounds=1, daze=15)
-				spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle-spread*2, distance=10, damage=damage, wounds=1, daze=15)
-				//advancedprojectile_ramped(i,estate,mob/efrom,xvel,yvel,distance,damage,wnd,vel,pwn,daze,radius)//daze as percent/100
-
-				/*if(user.dir==NORTH)
-					spawn()advancedprojectile_ramped(eicon,estate,user,25,32,10,(400+200*conmult),1,85,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,16,32,10,(400+200*conmult),1,90,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,0,32,10,(400+200*conmult),1,100,1,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,-16,32,10,(400+200*conmult),1,90,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,-25,32,10,(400+200*conmult),1,85,0,15)
-				if(user.dir==SOUTH)
-					spawn()advancedprojectile_ramped(eicon,estate,user,25,-32,10,(400+200*conmult),1,85,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,16,-32,10,(400+200*conmult),1,90,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,0,-32,10,(400+200*conmult),1,100,1,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,-16,-32,10,(400+200*conmult),1,90,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,-25,-32,10,(400+200*conmult),1,85,0,15)
-				if(user.dir==EAST)
-					spawn()advancedprojectile_ramped(eicon,estate,user,32,25,10,(400+200*conmult),1,85,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,32,16,10,(400+200*conmult),1,90,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,32,0,10,(400+200*conmult),1,100,1,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,32,-16,10,(400+200*conmult),1,90,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,32,-25,10,(400+200*conmult),1,85,0,15)
-				if(user.dir==WEST)
-					spawn()advancedprojectile_ramped(eicon,estate,user,-32,25,10,(400+200*conmult),1,85,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,-32,16,10,(400+200*conmult),1,90,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,-32,0,10,(400+200*conmult),1,100,1,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,-32,-16,10,(400+200*conmult),1,90,0,15)
-					spawn()advancedprojectile_ramped(eicon,estate,user,-32,-25,10,(400+200*conmult),1,85,0,15)*/
+				advancedprojectile_angle(eicon, estate, usr, speed, angle+spread*6, distance=10, damage=damage, wounds=1, daze=15)
+				advancedprojectile_angle(eicon, estate, usr, speed, angle+spread*3, distance=10, damage=damage, wounds=1, daze=15)
+				advancedprojectile_angle(eicon, estate, usr, speed, angle, distance=10, damage=damage, wounds=1, daze=15)
+				advancedprojectile_angle(eicon, estate, usr, speed, angle-spread*3, distance=10, damage=damage, wounds=1, daze=15)
+				advancedprojectile_angle(eicon, estate, usr, speed, angle-spread*6, distance=10, damage=damage, wounds=1, daze=15)
+				sleep(30)
+				user.overlays-='icons/raitonhand.dmi'
 
 
 turf/Entered(mob/crossing)
 	if(!istype(crossing))
-		return
+		return ..()
+
+	if(/*!crossing.waterlogged && */Iswater(x, y, z))
+		if(!crossing.body_replacement && crossing.clan == "Haku")
+			new/obj/haku_ice(src)
+		else
+			crossing.waterlogged = 1
+			if(crossing.curchakra >= 5)
+				crossing.curchakra -= 5
+			else if(crossing.curstamina >= 25)
+				crossing.curstamina -= 25
+
 	if(locate(/obj/elec) in src)
 		crossing.Timed_Stun(10)
+
+turf/Exited(mob/e)
+	if(!istype(e))
+		return ..()
+
+	e.waterlogged = 0

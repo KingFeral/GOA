@@ -1,0 +1,18 @@
+BUGS,
+//Brutality fails to destroy clones.
+Brutality doesn't do damage?
+Block-spam blocks all taijutsu.
+Jutsu can be used multiple times.
+//Rock Shinobi are not deleting properly. (FIXED, I THINK)
+//Escorts don't cross maps. (FIXED)
+
+TODO,
+Remove Pills' damage reduction.
+//Change Shunshin to 1.21.
+Change Body Replacement to Dan's version.
+Buff taijutsu damage (I'll buff combo for this)
+
+UPDATES,
+CTR is based more on CON than STR now. (The formula is: ((strength / 2) + (control) / 2) + 0.2 * medical training
+Changed Body Replacement to Dan's version (the old mechanics with a distance limit of 30 tiles)
+Changed Body Flicker's cooldown with capped Speed Demon passives back to 1 second. The chakra cost is 80 chakra.

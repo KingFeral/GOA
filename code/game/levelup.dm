@@ -6,49 +6,66 @@ mob/human/var/tmp
 	_img_levelpoints_cache
 	_img_skillpoints_cache
 
+
 mob/human/proc/Refresh_Stat_Screen()
-	if(!EN[9])
-		return
+	set waitfor = 0
+	//if(!EN[9])
+	//	return
 	if(!src)
 		return
 	if(!client)
 		return
 	if(_img_str_cache != round(str))
-		del Screen_Num[4]
+		//del Screen_Num[4]
+		if(Screen_Num[4])
+			var/image/cache_image = Screen_Num[4]
+			cache_image.loc = null
 		var/turf/over_loc = locate_tag("maptag_skilltree_str")
 		Screen_Num[4]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(str))
 		_img_str_cache = round(str)
 	if(_img_con_cache != round(con))
-		del Screen_Num[5]
+		if(Screen_Num[5])
+			var/image/cache_image = Screen_Num[5]
+			cache_image.loc = null
 		var/turf/over_loc = locate_tag("maptag_skilltree_con")
 		Screen_Num[5]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(con))
 		_img_con_cache = round(con)
 	if(_img_int_cache != round(int))
-		del Screen_Num[6]
+		if(Screen_Num[6])
+			var/image/cache_image = Screen_Num[6]
+			cache_image.loc = null
 		var/turf/over_loc = locate_tag("maptag_skilltree_int")
 		Screen_Num[6]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(int))
 		_img_int_cache = round(int)
 	if(_img_rfx_cache != round(rfx))
-		del Screen_Num[7]
+		if(Screen_Num[7])
+			var/image/cache_image = Screen_Num[7]
+			cache_image.loc = null
 		var/turf/over_loc = locate_tag("maptag_skilltree_rfx")
 		Screen_Num[7]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(rfx))
 		_img_rfx_cache = round(rfx)
 
 	//Refresh_Gold()
 	Refresh_Levelpoints()
-	//Refresh_Skillpoints()
+	Refresh_Skillpoints()
 
 mob/human/proc/Refresh_Levelpoints()
 	if(_img_levelpoints_cache != levelpoints)
-		del src.Screen_Num[1]
+		if(Screen_Num[1])
+			var/image/cache_image = Screen_Num[1]
+			cache_image.loc = null
 		var/turf/over_loc = locate_tag("maptag_skilltree_attrib")
 		Screen_Num[1]=DisplayNumberO(over_loc.x,over_loc.y,over_loc.z,levelpoints,"levelpoints")
 		_img_levelpoints_cache = levelpoints
 
 mob/human/proc/Refresh_Skillpoints()
 	if(_img_skillpoints_cache != skillpoints)
-		del src.Screen_Num[2]
-		del src.Screen_Num[3]
+		if(Screen_Num[2])
+			var/image/cache_image1 = Screen_Num[2]
+			cache_image1.loc = null
+		if(Screen_Num[3])
+			var/image/cache_image1 = Screen_Num[3]
+			cache_image1.loc = null
 		var/turf/over_loc = locate_tag("maptag_skilltree_skillpoints_clan")
 		Screen_Num[2]=DisplayNumberO(over_loc.x,over_loc.y,over_loc.z,skillpoints,"skillpoints")
 		over_loc = locate_tag("maptag_skilltree_skillpoints_nonclan")
@@ -77,36 +94,10 @@ mob/human/proc/Level_Up(S)
 		if((++con - 50) % clan_divider == 0) skillspassive[CONTROL]++
 		if((++rfx - 50) % clan_divider == 0) skillspassive[REFLEX]++
 		if((++int - 50) % clan_divider == 0) skillspassive[INTELLIGENCE]++
-		//var/base_amount = 50
-/*		var/base_mult = (src.clan == "Genius") ? (8) : (10)
-
-		var/strb=round(src.str/base_mult)
-		var/rfxb=round(src.rfx/base_mult)
-		var/intb=round(src.int/base_mult)
-		var/conb=round(src.con/base_mult)
-
-		++str
-		++rfx
-		++int
-		++con
-
-		var/strc=round(src.str/base_mult)
-		var/rfxc=round(src.rfx/base_mult)
-		var/intc=round(src.int/base_mult)
-		var/conc=round(src.con/base_mult)
-
-		if(strb!=strc)
-			src.skillspassive[STRENGTH]+=1
-		if(rfxb!=rfxc)
-			src.skillspassive[REFLEX]+=1
-		if(intb!=intc)
-			src.skillspassive[INTELLIGENCE]+=1
-		if(conb!=conc)
-			src.skillspassive[CONTROL]+=1*/
 
 	src.Refresh_Stat_Screen()
 
-	for(var/obj/gui/passives/gauge/Q in world)
+	for(var/obj/gui/passives/gauge/Q in global.passives)
 		if(Q.pindex==CONTROL || Q.pindex==STRENGTH || Q.pindex==INTELLIGENCE || Q.pindex==REFLEX)
 			var/client/C=src.client
 			if(C)C.Passive_Refresh(Q)
@@ -114,7 +105,7 @@ mob/human/proc/Level_Up(S)
 	//Refresh_Levelpoints()
 	//Refresh_Skillpoints()
 
-mob/var/list/Screen_Num[10]
+mob/var/list/Screen_Num//[10]
 mob/proc/DisplayNumber(dx,dy,dz,num,group)
 	if(num>999999)
 		num=999999
@@ -184,20 +175,22 @@ obj/gui/fakecards/arrow
 			if("int_uparrow") return "Intelligence"
 			if("con_uparrow") return "Control"
 
-	on_shift_click(mob/user)
-		//world << "CALLED"
+mob
+	verb/addpoints()
+		var/mob/user = src
+
 		if (user.initialized)
 			var
-			/*	list
+				list
 					increase_stats = list(
 											"Control",
 											"Strength",
 											"Intelligence",
 											"Reflex"
-										)*/
+										)
 
 			var
-				choose_stat = src.get_stat_name()//input("What stat do you want to increase?") as anything in increase_stats | null
+				choose_stat = input("What stat do you want to increase?") as anything in increase_stats | null
 				invest_points = input(user, "How many Attribute Points do you want to invest in [choose_stat]?") as num | null
 
 			invest_points = min(invest_points, usr.levelpoints)

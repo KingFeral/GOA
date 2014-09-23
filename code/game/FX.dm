@@ -1,34 +1,49 @@
 proc
-	Iswater(dx,dy,dz)
+	Iswater(atom/location)//(dx,dy,dz)
+		if(!location)
+			return 0
+		else if(args.len == 3) // for direct locations
+			var/xx = args[1]
+			var/yy = args[2]
+			var/zz = args[3]
+			location = locate(xx,yy,zz)
+
 		var/result=0
-		var/turf/water/X1 = istype(/turf/water, locate(dx, dy, dz))
-		var/obj/Water/X2 = locate(/obj/Water) in locate(dx, dy, dz)
-		if(X1)
+		var/turf/sourceloc = location//locate(dx, dy, dz)
+		var/turf/water/X1 = istype(sourceloc, /turf/water)
+		var/obj/Water/X2 = locate(/obj/Water) in sourceloc//locate(dx, dy, dz)
+		/*if(X1)
 			result=1
 		if(X2)
-			result=1
+			result=1*/
+		if(X1||X2)return 1
 		if(!result)
-			var/turf/Tt = locate(dx,dy,dz)
-			if(Tt)
-				if(Tt.underlays.Find('icons/water.dmi'))
+			//var/turf/Tt = locate(dx,dy,dz)
+			//if(Tt)
+			if(location.underlays.Find('icons/water.dmi'))
+				result=1
+			for(var/Uu in location.underlays)
+				var/t="[Uu:icon]"
+				if(t=="icons/water.dmi")
 					result=1
-				for(var/Uu in Tt.underlays)
-					var/t="[Uu:icon]"
-					if(t=="icons/water.dmi")
-						result=1
 
 		return result
 
 mob
 	proc/Earthquake(max_steps=5, offset_min=-2, offset_max=2)
+		set waitfor = 0
 		for(var/mob/M in viewers())
 			if(M.client)
-				spawn()
-					var/steps = 0
-					while(M && M.client && steps < max_steps)
-						M.client.pixel_y = rand(offset_min, offset_max)
-						sleep(1)
-						++steps
+				M.earthquake_effect(max_steps, offset_min, offset_max)
+
+
+	proc/earthquake_effect(max_steps, offset_min, offset_max)
+		set waitfor = 0
+		var/steps = 0
+		while(src && src.client && steps < max_steps)
+			src.client.pixel_y = rand(offset_min, offset_max)
+			sleep(1)
+			++steps
 
 	proc/Facedir(mob/x)
 		if(src.stunned||src.paralysed||src.ko||handseal_stun)
@@ -129,16 +144,19 @@ obj
 		density=0
 		layer=MOB_LAYER+1
 		New()
-			spawn(4)
-				del(src)
+			set waitfor = 0
+			sleep(4)
+			loc = null
 
 	overfx2
 		icon='icons/appeartai.dmi'
 		density=0
 		layer=MOB_LAYER+1
 		New()
-			spawn(3)
-				del(src)
+			set waitfor = 0
+			sleep(3)
+			//del(src)
+			loc = null
 
 obj
 	Poison_Poof
@@ -147,6 +165,7 @@ obj
 		layer = MOB_LAYER+3
 		animate_movement=0
 		New()
+			set waitfor = 0
 			..()
 			var/c=0
 			for(var/obj/Poison_Poof/X in oview(0))
@@ -154,14 +173,13 @@ obj
 			if(c>1)
 				del(src)
 			else
-				spawn()
-					src.underlays+=image('icons/poison2.dmi',icon_state="l",pixel_x=-32,layer=MOB_LAYER+2)
-					src.underlays+=image('icons/poison2.dmi',icon_state="r",pixel_x=32,layer=MOB_LAYER+2)
+				src.underlays+=image('icons/poison2.dmi',icon_state="l",pixel_x=-32,layer=MOB_LAYER+2)
+				src.underlays+=image('icons/poison2.dmi',icon_state="r",pixel_x=32,layer=MOB_LAYER+2)
 
-					src.underlays+=image('icons/poison2.dmi',icon_state="tr",pixel_y=32,pixel_x=16,layer=MOB_LAYER+2)
-					src.underlays+=image('icons/poison2.dmi',icon_state="br",pixel_y=-32,pixel_x=16,layer=MOB_LAYER+2)
-					src.underlays+=image('icons/poison2.dmi',icon_state="tl",pixel_y=32,pixel_x=-16,layer=MOB_LAYER+2)
-					src.underlays+=image('icons/poison2.dmi',icon_state="bl",pixel_y=-32,pixel_x=-16,layer=MOB_LAYER+2)
+				src.underlays+=image('icons/poison2.dmi',icon_state="tr",pixel_y=32,pixel_x=16,layer=MOB_LAYER+2)
+				src.underlays+=image('icons/poison2.dmi',icon_state="br",pixel_y=-32,pixel_x=16,layer=MOB_LAYER+2)
+				src.underlays+=image('icons/poison2.dmi',icon_state="tl",pixel_y=32,pixel_x=-16,layer=MOB_LAYER+2)
+				src.underlays+=image('icons/poison2.dmi',icon_state="bl",pixel_y=-32,pixel_x=-16,layer=MOB_LAYER+2)
 
 
 
@@ -170,14 +188,14 @@ obj/sandshield
 	var
 		list/dependants=new
 	New()
-		spawn()..()
-		spawn()
-			dependants+=new/obj/sandparts/bl(locate(src.x-1,src.y,src.z))
-			dependants+=new/obj/sandparts/bm(locate(src.x,src.y,src.z))
-			dependants+=new/obj/sandparts/br(locate(src.x+1,src.y,src.z))
-			dependants+=new/obj/sandparts/tl(locate(src.x-1,src.y+1,src.z))
-			dependants+=new/obj/sandparts/tm(locate(src.x,src.y+1,src.z))
-			dependants+=new/obj/sandparts/tr(locate(src.x+1,src.y+1,src.z))
+		set waitfor = 0
+		..()
+		dependants+=new/obj/sandparts/bl(locate(src.x-1,src.y,src.z))
+		dependants+=new/obj/sandparts/bm(locate(src.x,src.y,src.z))
+		dependants+=new/obj/sandparts/br(locate(src.x+1,src.y,src.z))
+		dependants+=new/obj/sandparts/tl(locate(src.x-1,src.y+1,src.z))
+		dependants+=new/obj/sandparts/tm(locate(src.x,src.y+1,src.z))
+		dependants+=new/obj/sandparts/tr(locate(src.x+1,src.y+1,src.z))
 
 
 	Del()
@@ -189,9 +207,13 @@ obj
 		density=1
 		layer=MOB_LAYER+1
 		icon='icons/HakuSpikes.dmi'
+		Del()
+			if(loc == null)
+				return ..()
+			loc = null
 proc
 	Haku_Spikes(dx,dy,dz)
-
+		set waitfor = 0
 		var/obj/x1=new/obj/hspike(locate(dx-1,dy+1,dz))
 		var/obj/x2=new/obj/hspike(locate(dx,dy+1,dz))
 		var/obj/x3=new/obj/hspike(locate(dx+1,dy+1,dz))
@@ -240,109 +262,119 @@ obj
 		icon='icons/sawarabi.dmi'
 		density=1
 		New(loc,mob/cause)
-			spawn()..()
+			..()
 			var/conbuff = 1
 			if(cause)
 				conbuff=(cause.con+cause.conbuff-cause.conneg)/100
-			spawn(1)
-				src.icon_state="fin"
-				flick("flick",src)
+			sleep(1)
+			src.icon_state="fin"
+			flick("flick",src)
 
-				for(var/mob/human/player/X in oview(0,src))
-					if(!X.icon_state)
-						flick("hurt",X)
-					X.Dec_Stam(rand(1500,5000) + 1000*conbuff, 0, cause)
-					X.Hostile(cause)
-					X.Wound(10, 0, cause)
-					spawn()Blood2(X)
-					//X.move_stun+=30
-					X.Timed_Move_Stun(30)
-				sleep(400)
-				del(src)
+			for(var/mob/human/player/X in oview(0,src))
+				if(!X.icon_state)
+					flick("hurt",X)
+				X.Dec_Stam(rand(1500,5000) + 1000*conbuff, 0, cause)
+				X.Hostile(cause)
+				X.Wound(10, 0, cause)
+				Blood2(X)
+				//X.move_stun+=30
+				X.Timed_Move_Stun(30)
+			/*sleep(400)
+			causer = null
+			loc = null*/
+		Del()
+			if(loc == null)
+				return ..()
+			causer = null
+			Causer = null
+			loc = null
+
 
 proc
-	SpireCircle(bx,by,bz,finrad,mob/cause)
-		var/rad=0
-		var/rad2=0
-		var/nx=bx
-		var/ny=by
-		var/nx2=bx
-		var/list/listx=new()
-		var/nx3=bx
-		var/nx4=bx
+	SpireCircle(bx, by, bz, finrad, mob/cause)
+		var/rad = 0
+		var/rad2 = 0
+		var/nx = bx
+		var/ny = by
+		var/nx2 = bx
+		var/list/listx = new()
+		var/nx3 = bx
+		var/nx4 = bx
 
-		while(rad<finrad)
-			rad+=2
-			rad2+=1
-			nx=bx+rad
-			nx2=bx+rad2
-			nx3=bx-rad
-			nx4=bx-rad2
-			var/diff=0
-			var/diff2=1
+		while(rad < finrad)
+			rad += 2
+			rad2 += 1
+			nx = bx + rad
+			nx2 = bx + rad2
+			nx3 = bx - rad
+			nx4 = bx - rad2
+			var/diff = 0
+			var/diff2 = 1
+
 			spawn()
-				var/mx2=nx2
-				if(rad2==1)
-					listx+=new/obj/Bonespire(locate(bx,ny+rad2,bz),cause)
-					listx+=new/obj/Bonespire(locate(bx,ny-rad2,bz),cause)
+				var/mx2 = nx2
+
+				if(rad2 == 1)
+					listx += new /obj/Bonespire(locate(bx, ny+rad2, bz), cause)
+					listx += new /obj/Bonespire(locate(bx, ny-rad2, bz), cause)
 				else
-					listx+=new/obj/Bonespire(locate(bx,ny+rad2-1,bz),cause)
-					listx+=new/obj/Bonespire(locate(bx,ny-rad2+1,bz),cause)
-				while(mx2>bx)
+					listx += new /obj/Bonespire(locate(bx, ny+rad2-1, bz), cause)
+					listx += new /obj/Bonespire(locate(bx, ny-rad2+1, bz), cause)
 
+				while(mx2 > bx)
+					listx += new /obj/Bonespire(locate(mx2, ny-diff2, bz), cause)
+					listx += new /obj/Bonespire(locate(mx2, ny+diff2, bz), cause)
 
-					listx+=new/obj/Bonespire(locate(mx2,ny-diff2,bz),cause)
-					listx+=new/obj/Bonespire(locate(mx2,ny+diff2,bz),cause)
-					mx2-=2
-
-					diff2+=2
+					mx2 -= 2
+					diff2 += 2
 
 			spawn()
-				var/mx=nx
-				while(mx>bx)
+				var/mx = nx
+				while(mx > bx)
 					if(diff)
-						listx+=new/obj/Bonespire(locate(mx,ny+diff,bz),cause)
-						listx+=new/obj/Bonespire(locate(mx,ny-diff,bz),cause)
+						listx += new /obj/Bonespire(locate(mx, ny+diff, bz), cause)
+						listx += new /obj/Bonespire(locate(mx, ny-diff, bz), cause)
 
-					mx-=2
+					mx -= 2
+					diff += 2
 
-					diff+=2
-
-			var/diff3=0
-			var/diff4=1
+			var/diff3 = 0
+			var/diff4 = 1
 
 			spawn()
-				var/mx2=nx4
-				if(rad2==1)
-					listx+=new/obj/Bonespire(locate(bx+rad2,ny,bz),cause)
-					listx+=new/obj/Bonespire(locate(bx-rad2,ny,bz),cause)
+				var/mx2 = nx4
+
+				if(rad2 == 1)
+					listx += new /obj/Bonespire(locate(bx+rad2, ny, bz), cause)
+					listx += new /obj/Bonespire(locate(bx-rad2, ny, bz), cause)
 				else
-					listx+=new/obj/Bonespire(locate(bx+rad2-1,ny,bz),cause)
-					listx+=new/obj/Bonespire(locate(bx-rad2+1,ny,bz),cause)
-				while(mx2<bx)
+					listx += new /obj/Bonespire(locate(bx+rad2-1, ny, bz), cause)
+					listx += new /obj/Bonespire(locate(bx-rad2+1, ny, bz), cause)
 
-
-					listx+=new/obj/Bonespire(locate(mx2,ny+diff4,bz),cause)
-					listx+=new/obj/Bonespire(locate(mx2,ny-diff4,bz),cause)
-					mx2+=2
-
-					diff4+=2
+				while(mx2 < bx)
+					listx += new /obj/Bonespire(locate(mx2, ny+diff4, bz), cause)
+					listx += new /obj/Bonespire(locate(mx2, ny-diff4, bz), cause)
+					mx2 += 2
+					diff4 += 2
 
 			spawn()
-				var/mx=nx3
-				while(mx<bx)
+				var/mx = nx3
+				while(mx < bx)
 					if(diff3)
-						listx+=new/obj/Bonespire(locate(mx,ny+diff3,bz),cause)
-						listx+=new/obj/Bonespire(locate(mx,ny-diff3,bz),cause)
+						listx += new /obj/Bonespire(locate(mx, ny+diff3, bz), cause)
+						listx += new /obj/Bonespire(locate(mx, ny-diff3, bz), cause)
 
-					mx+=2
+					mx += 2
+					diff3 += 2
 
-					diff3+=2
+			rad2 += 1
+			sleep(2)
 
-			rad2+=1
-			sleep(10)
+		sleep(5)
 		for(var/obj/Bonespire/E in listx)
-			E.causer=cause
+			E.causer = cause
+		new/Event(600, "delayed_delete", listx)
+
 obj
 	Testspire
 		icon='icons/sawarabi.dmi'
@@ -396,19 +428,29 @@ mob/human
 		icon='icons/gaarasand.dmi'
 		icon_state=""
 
+		proc/begin_life()
+			set waitfor = 0
+			. = 1
+			while(.)
+				. = 0
+				if(owner && get_dist(owner, src) < 20)
+					. = 1
+				sleep(50)
+			if(owner)
+				owner.pet -= src
+			del(src)
+
 		New()
 			src.underlays+=image('icons/sand-up.dmi',pixel_y=-10)
 			src.underlays+=image('icons/sand-down.dmi',pixel_y=10)
 			src.underlays+=image('icons/sand-right.dmi',pixel_x=-10)
 			src.underlays+=image('icons/sand-left.dmi',pixel_x=10)
-			spawn()
-				src.nopkloop()
+			src.nopkloop()
 		proc
 			P_Attack(mob/human/etarget,mob/human/owner)
-				if(tired)return
-				tired=1
-				spawn(30)
-					tired=0
+				if(tired>world.time)return
+				tired=world.time+15
+
 				for(var/mob/human/x in oview(7,src))
 					if(x==etarget)
 						walk_to(src,x,1,1)
@@ -424,27 +466,34 @@ mob/human
 						else
 							sleep(1)
 						if(hit)
-							src.overlays+=image('icons/Gaara.dmi',icon_state="sand-spikes")
-							spawn(9)
-								src.overlays-=image('icons/Gaara.dmi',icon_state="sand-spikes")
-								src.density=0
-								walk_to(src,owner,0,1)
-								sleep(6)
-								src.density=1
-								walk(src,0)
+							attack_reaction()
 							etarget.Dec_Stam(src.con*rand(50,150)/100)
 							if(!etarget.icon_state)
 								flick("hurt",etarget)
 							etarget.Hostile(owner)
 
+		var
+			mob/owner
 
+		proc/attack_reaction()
+			set waitfor = 0
+			src.overlays+=image('icons/Gaara.dmi',icon_state="sand-spikes")
+			sleep(9)
+			src.overlays-=image('icons/Gaara.dmi',icon_state="sand-spikes")
+			src.density=0
+			walk_to(src,owner,0,1)
+			sleep(6)
+			src.density=1
+			walk(src,0)
 
 		Del()
+			if(loc == null)
+				return ..()
 			src.invisibility=99
 			src.density=0
 			src.loc=locate(0,0,0)
-			sleep(100)
-			..()
+			owner = null
+			loc = null
 
 		Dec_Stam()
 			return
@@ -452,10 +501,11 @@ mob/human
 			return
 
 mob/proc/nopkloop()
+	set waitfor = 0
 	for(var/area/nopkzone/x in oview(0,src))
 		del(src)
 	sleep(10)
-	spawn()src.nopkloop()
+	src.nopkloop()
 obj/gatesaura
 	icon='icons/gateaura.dmi'
 	bl
@@ -502,6 +552,7 @@ mob/proc/Affirm_Icon_Ret()
 		return new/icon('icons/base_m3.dmi')
 
 mob/proc/Affirm_Icon()
+	set waitfor = 0
 	if(src.Size || src.Tank)
 		return
 	if(istype(src,/mob/human/Puppet/Karasu))
@@ -574,152 +625,6 @@ turf/water
 			del(ice)
 		return ..()
 
-//	New()
-//		if(sleepdie>0)
-	//		spawn(sleepdie+20)
-	//			del(src)
-	//	..()
-/*obj/Waters
-	icon='stickywater.dmi'
-	icon_state="still"
-	layer=TURF_LAYER+1
-	var
-		sleepdie=0
-	Enter(atom/movable/O)
-		if(istype(O,/mob/human))
-			if(O:curchakra>=150)
-				O:curchakra-=150
-				O:waterlogged=2
-				return 1
-			else
-				return 0
-		else
-			return 1
-
-	Exit(atom/movable/O)
-		if(istype(O,/mob/human))
-			O:waterlogged=0
-			return 1
-		else
-			return 1
-		..()
-
-obj/Waters_sides
-	icon='stickywater.dmi'
-	layer=TURF_LAYER
-	density=0
-	var
-		sleepdie=100
-	wl
-		icon_state="left"
-	wr
-		icon_state="right"
-	wd
-		icon_state="down"
-	wu
-		icon_state="up"
-	w0l
-		icon_state="left"
-	w0r
-		icon_state="right"
-	w0d
-		icon_state="down"
-	w0u
-		icon_state="up"
-obj/Water_sides2
-	icon='stickywater.dmi'
-	layer=TURF_LAYER
-	density=0
-	var
-		sleepdie=100
-	wl
-		icon_state="left"
-	wr
-		icon_state="right"
-	wd
-		icon_state="down"
-	wu
-		icon_state="up"
-	w0l
-		icon_state="left"
-	w0r
-		icon_state="right"
-	w0d
-		icon_state="down"
-	w0u
-		icon_state="up"*/
-//	New()
-	//	if(sleepdie>0)
-	//		spawn(sleepdie+20)
-	//			del(src)
-	//	..()
-/*obj/swamp
-	icon='icons/swamp.dmi'
-	icon_state="still"
-	layer=TURF_LAYER+1
-	var
-		sleepdie=0
-	Enter(atom/movable/O)
-		if(istype(O,/mob/human))
-			var/mob/human/X = O
-			if(X.curchakra>=15)
-				X.curchakra-=15
-				X.Wound(1,1)
-				X.movepenalty+=50
-				X.swamplogged=1
-				return 1
-			else
-				return 0
-		else
-			return 1
-
-	Exit(atom/movable/O)
-		if(istype(O,/mob/human))
-			O:swamplogged=0
-			return 1
-		else
-			return 1
-		..()
-	New(loc,charge,mob/U)
-		..()
-		spawn()
-			src.Causer=U
-			for(var/mob/human/X in oview(0,src))
-				if(X!=U)
-					X.move_stun+=50
-			while(src)
-				for(var/mob/human/X in oview(0,src))
-					X.Dec_Stam(round(charge/10),0,U)
-					X.Hostile(U)
-					if(pick(1,0,0,0))
-						if(X.move_stun<=0)X.move_stun+=2
-				sleep(5)
-
-//		if(sleepdie>0)
-	//		spawn(sleepdie+20)
-	//			del(src)
-	//	..()
-
-obj/swamp_sides
-	icon='icons/swamp.dmi'
-	layer=TURF_LAYER+0.2
-	density=0
-	var
-		sleepdie=100
-	sl
-		icon_state="left"
-	sr
-		icon_state="right"
-	sd
-		icon_state="down"
-	su
-		icon_state="up"*/
-
-//	New()
-	//	if(sleepdie>0)
-	//		spawn(sleepdie+20)
-	//			del(src)
-	//	..()
 
 obj/windblast
 	layer=MOB_LAYER
@@ -734,6 +639,7 @@ obj/windblast
 		icon_state="trail"
 proc
 	wet_proj(dx,dy,dz,eicon,estate,mob/human/u,dist,epower,emag)
+		set waitfor = 0
 		if(emag>=1)
 			if(u.dir==NORTH)
 				Wet_cap(u.x,u.y,u.z,SOUTH,emag,1200)
@@ -759,6 +665,7 @@ proc
 			M.dir=SOUTH
 		sleep(1)
 		var/stepsleft=dist
+		//var/alreadyhit[] = list()
 		while(stepsleft>0 && M )
 			if(M && u)
 				var/mob/hit
@@ -783,13 +690,12 @@ proc
 				stepsleft--
 				if(hit)
 					hit.Dec_Stam(epower,0,u)
-					spawn(1)
-						if(hit)
-							hit.Knockback(1,M.dir)
-							if(u)
-								spawn(2)
-									if(hit)
-										hit.Hostile(u)
+					//alreadyhit += hit
+					if(hit)
+						hit.Knockback(1,M.dir)
+						if(u)
+							if(hit)
+								hit.Hostile(u)
 		if(M.dir==NORTH)
 			M.y++
 		if(M.dir==SOUTH)
@@ -801,10 +707,12 @@ proc
 		if(emag>=1)
 			Wet_cap(M.x,M.y,M.z,M.dir,emag,1200)
 		sleep(1)
-		del(M)
+		M.loc = null//del(M)
+
 proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
-	spawn()
-		if(mag==1)
+	set waitfor = 0
+	switch(mag)
+		if(1)
 			var/obj/Water_sides/w1
 
 			if(xdir==NORTH)
@@ -815,9 +723,9 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w1=new/obj/Water_sides/wl(locate(dx,dy,dz))
 			if(xdir==EAST)
 				w1=new/obj/Water_sides/wr(locate(dx,dy,dz))
-			spawn(xdur)
-				del(w1)
-		if(mag==2)
+			sleep(xdur)
+			del(w1)
+		if(2)
 			var/obj/Water_sides/w1
 			var/obj/Water_sides/w2
 			var/obj/Water_sides/w3
@@ -837,11 +745,11 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w1=new/obj/Water_sides/wr(locate(dx,dy,dz))
 				w2=new/obj/Water_sides/wr(locate(dx,dy+1,dz))
 				w3=new/obj/Water_sides/wr(locate(dx,dy-1,dz))
-			spawn(xdur)
-				del(w1)
-				del(w2)
-				del(w3)
-		if(mag==3)
+			sleep(xdur)
+			del(w1)
+			del(w2)
+			del(w3)
+		if(3)
 			var/obj/Water_sides/w1
 			var/obj/Water_sides/w2
 			var/obj/Water_sides/w3
@@ -871,13 +779,13 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w3=new/obj/Water_sides/wr(locate(dx,dy-1,dz))
 				w4=new/obj/Water_sides/wr(locate(dx,dy+2,dz))
 				w5=new/obj/Water_sides/wr(locate(dx,dy-2,dz))
-			spawn(xdur)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-		if(mag==4)
+			sleep(xdur)
+			del(w1)
+			del(w2)
+			del(w3)
+			del(w4)
+			del(w5)
+		if(4)
 			var/obj/Water_sides/w1
 			var/obj/Water_sides/w2
 			var/obj/Water_sides/w3
@@ -917,15 +825,15 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w5=new/obj/Water_sides/wr(locate(dx,dy-2,dz))
 				w6=new/obj/Water_sides/wr(locate(dx,dy+3,dz))
 				w7=new/obj/Water_sides/wr(locate(dx,dy-3,dz))
-			spawn(xdur)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-				del(w6)
-				del(w7)
-		if(mag==5)
+			sleep(xdur)
+			del(w1)
+			del(w2)
+			del(w3)
+			del(w4)
+			del(w5)
+			del(w6)
+			del(w7)
+		if(5)
 			var/obj/Water_sides/w1
 			var/obj/Water_sides/w2
 			var/obj/Water_sides/w3
@@ -975,17 +883,17 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w7=new/obj/Water_sides/wr(locate(dx,dy-3,dz))
 				w8=new/obj/Water_sides/wr(locate(dx,dy+4,dz))
 				w9=new/obj/Water_sides/wr(locate(dx,dy-4,dz))
-			spawn(xdur)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-				del(w6)
-				del(w7)
-				del(w8)
-				del(w9)
-		if(mag>=6)
+			sleep(xdur)
+			del(w1)
+			del(w2)
+			del(w3)
+			del(w4)
+			del(w5)
+			del(w6)
+			del(w7)
+			del(w8)
+			del(w9)
+		else//if(mag>=6)
 			var/obj/Water_sides/w1
 			var/obj/Water_sides/w2
 			var/obj/Water_sides/w3
@@ -1045,23 +953,25 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w9=new/obj/Water_sides/wr(locate(dx,dy-4,dz))
 				w10=new/obj/Water_sides/wr(locate(dx,dy+5,dz))
 				w11=new/obj/Water_sides/wr(locate(dx,dy-5,dz))
-			spawn(xdur)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-				del(w6)
-				del(w7)
-				del(w8)
-				del(w9)
-				del(w10)
-				del(w11)
+			sleep(xdur)
+			del(w1)
+			del(w2)
+			del(w3)
+			del(w4)
+			del(w5)
+			del(w6)
+			del(w7)
+			del(w8)
+			del(w9)
+			del(w10)
+			del(w11)
+
 proc/Wet(dx,dy,dz,xdir,mag,xdur)
-	spawn()
-		var/obj/Water_sides/ws1
-		var/obj/Water_sides/ws2
-		if(mag==1)
+	set waitfor = 0
+	var/obj/Water_sides/ws1
+	var/obj/Water_sides/ws2
+	switch(mag)
+		if(1)
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 
 			if(xdir==NORTH||xdir==SOUTH)
@@ -1070,11 +980,11 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 			if(xdir==WEST||xdir==EAST)
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+1,dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-1,dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-		if(mag==2)
+			sleep(xdur)
+			del(ws1)
+			del(ws2)
+			del(w1)
+		if(2)
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
 			var/obj/Water/w3
@@ -1088,13 +998,13 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				w3=new/obj/Water(locate(dx,dy+1,dz))
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+2,dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-2,dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-		if(mag==3)
+			sleep(xdur)
+			del(ws1)
+			del(ws2)
+			del(w1)
+			del(w2)
+			del(w3)
+		if(3)
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
 			var/obj/Water/w3
@@ -1114,15 +1024,15 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				w5=new/obj/Water(locate(dx,dy+2,dz))
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+(mag),dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-(mag),dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-		if(mag==4)
+			sleep(xdur)
+			del(ws1)
+			del(ws2)
+			del(w1)
+			del(w2)
+			del(w3)
+			del(w4)
+			del(w5)
+		if(4)
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
 			var/obj/Water/w3
@@ -1147,17 +1057,17 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				w7=new/obj/Water(locate(dx,dy+3,dz))
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+(mag),dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-(mag),dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-				del(w6)
-				del(w7)
-		if(mag==5)
+			sleep(xdur)
+			del(ws1)
+			del(ws2)
+			del(w1)
+			del(w2)
+			del(w3)
+			del(w4)
+			del(w5)
+			del(w6)
+			del(w7)
+		if(5)
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
 			var/obj/Water/w3
@@ -1190,19 +1100,19 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+(mag),dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-(mag),dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-				del(w6)
-				del(w7)
-				del(w8)
-				del(w9)
-		if(mag>=6)
+			sleep(xdur)
+			del(ws1)
+			del(ws2)
+			del(w1)
+			del(w2)
+			del(w3)
+			del(w4)
+			del(w5)
+			del(w6)
+			del(w7)
+			del(w8)
+			del(w9)
+		else
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
 			var/obj/Water/w3
@@ -1240,31 +1150,28 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				w11=new/obj/Water(locate(dx,dy+5,dz))
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+(mag),dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-(mag),dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-				del(w6)
-				del(w7)
-				del(w8)
-				del(w9)
-				del(w10)
-				del(w11)
+			sleep(xdur)
+			del(ws1)
+			del(ws2)
+			del(w1)
+			del(w2)
+			del(w3)
+			del(w4)
+			del(w5)
+			del(w6)
+			del(w7)
+			del(w8)
+			del(w9)
+			del(w10)
+			del(w11)
 
 
 mob/var
 	obj/Contract=0
 	Contract2=0
-proc/Poof(dx,dy,dz)
-	spawn()
-		var/obj/o = new/obj/effect(locate(dx,dy,dz))
-		o.icon='icons/smoke.dmi'
-		spawn(8)
-			del(o)
+proc/Poof(location)//(dx,dy,dz)
+	smoke_effect(location)
+
 obj/jashin_circle
 	layer=OBJ_LAYER+0.9
 	density=0
@@ -1272,53 +1179,11 @@ obj/jashin_circle
 
 
 proc/Blood2(mob/X,mob/human/U)
-	spawn()
-		if(!X)return
-		if(U&&U.HasSkill(BLOOD_BIND))
-			spawn()U.Blood_Add(X)
-		var/obj/o=new/obj/effect(locate(X.x,X.y,X.z))
-		o.icon='icons/blood.dmi'
-		var/r=rand(1,7)
-		flick("[r]",o)
+	blood_effect(X, U)
 
-		var/obj/undereffect/x=new/obj/undereffect(locate(X.x,X.y,X.z))
-		spawn()
-			x.uowner=X
-			for(var/obj/undereffect/G in locate(X))
-				var/nopk=0
-				for(var/area/O in orange(0,src))
-					if(istype(O,/area/nopkzone))
-						nopk=1
 
-				if(!nopk)
-					G.uowner=X
-				else
-					G.uowner=0
-		spawn(9)
-			del(o)
-			if(!x)return
-			x.icon='icons/blood.dmi'
-			var/v=rand(1,7)
-			x.icon_state="l[v]"
-			spawn(600)
-				del(x)
-proc/Blood(dx,dy,dz)
-	spawn()
-
-		var/obj/o=new/obj/effect(locate(dx,dy,dz))
-		o.icon='icons/blood.dmi'
-		var/r=rand(1,7)
-		flick("[r]",o)
-		var/obj/x=new/obj/undereffect(locate(dx,dy,dz))
-		spawn(9)
-			del(o)
-			if(!x)return
-			x.icon='icons/blood.dmi'
-			var/v=rand(1,7)
-			x.icon_state="l[v]"
-			spawn(600)
-				del(x)
 proc/ChidoriFX(mob/human/o)
+	set waitfor = 0
 	var/obj/c = new/obj/effect()
 	o.icon_state="PunchA-2"
 	c.icon='icons/chidori2.dmi'
@@ -1331,20 +1196,27 @@ proc/ChidoriFX(mob/human/o)
 	if(o.dir==WEST)
 		c.pixel_x-=22
 	o.overlays+=c
-	spawn(20)
-		o.overlays-=c
-		del(c)
-		o.icon_state=""
+	sleep(20)
+	o.overlays-=c
+	c.loc = null
+	o.icon_state=""
 obj/ForcePressure
 	icon='icons/wind.dmi'
 	layer=MOB_LAYER+1
 	density=0
 	New(loc,dirx)
+		set waitfor = 0
 		..()
 		src.dir=dirx
-		spawn(20)
-			del(src)
+		sleep(20)
+		del(src)
+	Del()
+		if(loc == null)
+			return ..()
+		loc = null
+
 proc/Force_pressure(dx,dy,dz,obj/O)
+	set waitfor = 0
 	var/Odir=NORTH
 	if(O)Odir=O.dir
 	sleep(3)
@@ -1422,7 +1294,7 @@ obj
 
 
 			Move()
-				spawn()Force_pressure(src.x,src.y,src.z,src)
+				Force_pressure(src.x,src.y,src.z,src)
 				return ..()
 		Del()
 			if(src.spawner)
@@ -1503,10 +1375,10 @@ obj
 				if(!blocked)
 					for(var/obj/X in src.parts)
 						if(X!=src)
-							spawn()step(X,X.dir)
+							step(X,X.dir)
 					for(var/mob/X in src.Pwned)
 					//	if(abs(X.x-src.x)<4 && abs(X.y-src.y)<4)
-						spawn() if(X) X.loc=locate(src.x,src.y,src.z)
+						if(X) X.loc=loc//locate(src.x,src.y,src.z)
 
 			return ..()
 
@@ -1519,6 +1391,15 @@ obj
 		density=0
 		icon='icons/gust.dmi'
 		projdisturber=1
+
+		proc/begin_life(delay=0)
+			set waitfor = 0
+			icon_state="blow"
+			walk(src, dir)
+			sleep(delay)
+			walk(src, 0)
+			loc = null
+
 proc/Gust(dx,dy,dz,xdir,mag,xdist)
 	var/list/xlist[]=new()
 	if(mag==1)
@@ -1551,15 +1432,11 @@ proc/Gust(dx,dy,dz,xdir,mag,xdist)
 			xlist+=new/obj/Gustfx(locate(dx,dy-2,dz))
 
 	for(var/obj/Gustfx/o in xlist)
-		spawn()
-			o.dir=xdir
-			o.icon_state="blow"
-			walk(o,o.dir)
-			sleep(xdist)
-			walk(o,0)
-			del(o)
+		o.dir = xdir
+		o.begin_life(xdist)
 	del(xlist)
 proc/PoisonCloud(dx,dy,dz,mag,dur)
+	set waitfor = 0
 	var/list/xlist=new
 	if(mag==1)
 
@@ -1589,158 +1466,159 @@ proc/PoisonCloud(dx,dy,dz,mag,dur)
 		P8.pixel_x=-12
 		P8.pixel_y=12
 		xlist+= new/obj/Poison(locate(dx,dy,dz))
-		xlist+=P1
+		xlist.Add(P1,P2,P3,P4,P5,P6,P7,P8)
+		/*xlist+=P1
 		xlist+=P2
 		xlist+=P3
 		xlist+=P4
 		xlist+=P5
 		xlist+=P6
 		xlist+=P7
-		xlist+=P8
+		xlist+=P8*/
 	for(var/obj/vx in xlist)
 		vx.projdisturber=1
 
-	spawn()
-		sleep(dur)
-		for(var/obj/vv in xlist)
-			del(vv)
+	sleep(dur)
+	for(var/obj/vv in xlist)
+		del(vv)
 proc/Fire(dx,dy,dz,mag,dur)
+	set waitfor = 0
 	var/list/xlist=new
 	if(mag==1)
-		xlist+= new/obj/Fire/f1(locate(dx-1,dy+mag,dz))
-		xlist+= new/obj/Fire/f2(locate(dx-1,dy,dz))
-		xlist+= new/obj/Fire/f3(locate(dx-1,dy-1,dz))
-		xlist+= new/obj/Fire/f4(locate(dx,dy+1,dz))
-		xlist+= new/obj/Fire/f5(locate(dx,dy,dz))
-		xlist+= new/obj/Fire/f6(locate(dx,dy-1,dz))
-		xlist+= new/obj/Fire/f7(locate(dx+1,dy+mag,dz))
-		xlist+= new/obj/Fire/f8(locate(dx+1,dy,dz))
-		xlist+= new/obj/Fire/f9(locate(dx+1,dy-mag,dz))
+		xlist.Add(new/obj/Fire/f1(locate(dx-1,dy+mag,dz)),
+		new/obj/Fire/f2(locate(dx-1,dy,dz)),
+		new/obj/Fire/f3(locate(dx-1,dy-1,dz)),
+		new/obj/Fire/f4(locate(dx,dy+1,dz)),
+		new/obj/Fire/f5(locate(dx,dy,dz)),
+		new/obj/Fire/f6(locate(dx,dy-1,dz)),
+		new/obj/Fire/f7(locate(dx+1,dy+mag,dz)),
+		new/obj/Fire/f8(locate(dx+1,dy,dz)),
+		new/obj/Fire/f9(locate(dx+1,dy-mag,dz)))
 
 	if(mag>=2)
 
-		xlist+= new/obj/Fire/f5(locate(dx-1,dy-1,dz))
-		xlist+= new/obj/Fire/f5(locate(dx+1,dy-1,dz))
-		xlist+= new/obj/Fire/f5(locate(dx-1,dy+1,dz))
-		xlist+= new/obj/Fire/f5(locate(dx+1,dy+1,dz))
-		xlist+= new/obj/Fire/f5(locate(dx,dy-1,dz))
-		xlist+= new/obj/Fire/f5(locate(dx+1,dy,dz))
-		xlist+= new/obj/Fire/f5(locate(dx-1,dy,dz))
-		xlist+= new/obj/Fire/f5(locate(dx,dy+1,dz))
+		xlist.Add(new/obj/Fire/f5(locate(dx-1,dy-1,dz)),
+		new/obj/Fire/f5(locate(dx+1,dy-1,dz)),
+		new/obj/Fire/f5(locate(dx-1,dy+1,dz)),
+		new/obj/Fire/f5(locate(dx+1,dy+1,dz)),
+		new/obj/Fire/f5(locate(dx,dy-1,dz)),
+		new/obj/Fire/f5(locate(dx+1,dy,dz)),
+		new/obj/Fire/f5(locate(dx-1,dy,dz)),
+		new/obj/Fire/f5(locate(dx,dy+1,dz)),
 
 
-		xlist+= new/obj/Fire/f4(locate(dx,dy+2,dz))
-		xlist+= new/obj/Fire/f1(locate(dx-1,dy+2,dz))
-		xlist+= new/obj/Fire/f7(locate(dx+1,dy+2,dz))
+		new/obj/Fire/f4(locate(dx,dy+2,dz)),
+		new/obj/Fire/f1(locate(dx-1,dy+2,dz)),
+		new/obj/Fire/f7(locate(dx+1,dy+2,dz)),
 
-		xlist+= new/obj/Fire/f1(locate(dx-2,dy+1,dz))
-		xlist+= new/obj/Fire/f2(locate(dx-2,dy,dz))
-		xlist+= new/obj/Fire/f3(locate(dx-2,dy-1,dz))
+		new/obj/Fire/f1(locate(dx-2,dy+1,dz)),
+		new/obj/Fire/f2(locate(dx-2,dy,dz)),
+		new/obj/Fire/f3(locate(dx-2,dy-1,dz)),
 
-		xlist+= new/obj/Fire/f3(locate(dx-1,dy-2,dz))
-		xlist+= new/obj/Fire/f6(locate(dx,dy-2,dz))
-		xlist+= new/obj/Fire/f9(locate(dx+1,dy-2,dz))
+		new/obj/Fire/f3(locate(dx-1,dy-2,dz)),
+		new/obj/Fire/f6(locate(dx,dy-2,dz)),
+		new/obj/Fire/f9(locate(dx+1,dy-2,dz)),
 
-		xlist+= new/obj/Fire/f7(locate(dx+2,dy+1,dz))
-		xlist+= new/obj/Fire/f8(locate(dx+2,dy,dz))
-		xlist+= new/obj/Fire/f9(locate(dx+2,dy-1,dz))
+		new/obj/Fire/f7(locate(dx+2,dy+1,dz)),
+		new/obj/Fire/f8(locate(dx+2,dy,dz)),
+		new/obj/Fire/f9(locate(dx+2,dy-1,dz)),
 
-		xlist+= new/obj/Fire/f5(locate(dx,dy,dz))
+		new/obj/Fire/f5(locate(dx,dy,dz)))
 	for(var/obj/vx in xlist)
 		vx.projdisturber=1
 
-	spawn()
-		sleep(dur)
-		for(var/obj/vv in xlist)
-			del(vv)
+	sleep(dur)
+	for(var/obj/vv in xlist)
+		del(vv)
 
 proc/Ash(dx,dy,dz,dur)
+	set waitfor = 0
 	var/list/X=new
-	X+= new/obj/Ash/f5(locate(dx,dy,dz))
-	X+= new/obj/Ash/f5(locate(dx+1,dy,dz))
-	X+= new/obj/Ash/f5(locate(dx+2,dy,dz))
-	X+= new/obj/Ash/f5(locate(dx+3,dy,dz))
-	X+= new/obj/Ash/f5(locate(dx-1,dy,dz))
-	X+= new/obj/Ash/f5(locate(dx-2,dy,dz))
-	X+= new/obj/Ash/f5(locate(dx-3,dy,dz))
-	X+= new/obj/Ash/f5(locate(dx,dy+1,dz))
-	X+= new/obj/Ash/f5(locate(dx,dy+2,dz))
-	X+= new/obj/Ash/f5(locate(dx,dy+3,dz))
-	X+= new/obj/Ash/f5(locate(dx,dy-1,dz))
-	X+= new/obj/Ash/f5(locate(dx,dy-2,dz))
-	X+= new/obj/Ash/f5(locate(dx,dy-3,dz))
+	X.Add(new/obj/Ash/f5(locate(dx,dy,dz)),
+	new/obj/Ash/f5(locate(dx+1,dy,dz)),
+	new/obj/Ash/f5(locate(dx+2,dy,dz)),
+	new/obj/Ash/f5(locate(dx+3,dy,dz)),
+	new/obj/Ash/f5(locate(dx-1,dy,dz)),
+	new/obj/Ash/f5(locate(dx-2,dy,dz)),
+	new/obj/Ash/f5(locate(dx-3,dy,dz)),
+	new/obj/Ash/f5(locate(dx,dy+1,dz)),
+	new/obj/Ash/f5(locate(dx,dy+2,dz)),
+	new/obj/Ash/f5(locate(dx,dy+3,dz)),
+	new/obj/Ash/f5(locate(dx,dy-1,dz)),
+	new/obj/Ash/f5(locate(dx,dy-2,dz)),
+	new/obj/Ash/f5(locate(dx,dy-3,dz)),
 
-	X+= new/obj/Ash/f5(locate(dx+1,dy+3,dz))
-	X+= new/obj/Ash/f5(locate(dx+2,dy+3,dz))
-	X+= new/obj/Ash/f5(locate(dx-1,dy+3,dz))
-	X+= new/obj/Ash/f5(locate(dx-2,dy+3,dz))
-	X+= new/obj/Ash/f5(locate(dx+1,dy-3,dz))
-	X+= new/obj/Ash/f5(locate(dx+2,dy-3,dz))
-	X+= new/obj/Ash/f5(locate(dx-1,dy-3,dz))
-	X+= new/obj/Ash/f5(locate(dx-2,dy-3,dz))
-	X+= new/obj/Ash/f5(locate(dx+1,dy+2,dz))
-	X+= new/obj/Ash/f5(locate(dx+2,dy+2,dz))
-	X+= new/obj/Ash/f5(locate(dx-1,dy+2,dz))
-	X+= new/obj/Ash/f5(locate(dx-2,dy+2,dz))
-	X+= new/obj/Ash/f5(locate(dx+1,dy-2,dz))
-	X+= new/obj/Ash/f5(locate(dx+2,dy-2,dz))
-	X+= new/obj/Ash/f5(locate(dx-1,dy-2,dz))
-	X+= new/obj/Ash/f5(locate(dx-2,dy-2,dz))
-	X+= new/obj/Ash/f5(locate(dx-3,dy+2,dz))
-	X+= new/obj/Ash/f5(locate(dx+3,dy+2,dz))
-	X+= new/obj/Ash/f5(locate(dx+3,dy-2,dz))
-	X+= new/obj/Ash/f5(locate(dx-3,dy-2,dz))
-	X+= new/obj/Ash/f5(locate(dx+1,dy+1,dz))
-	X+= new/obj/Ash/f5(locate(dx+2,dy+1,dz))
-	X+= new/obj/Ash/f5(locate(dx-1,dy+1,dz))
-	X+= new/obj/Ash/f5(locate(dx-2,dy+1,dz))
-	X+= new/obj/Ash/f5(locate(dx+1,dy-1,dz))
-	X+= new/obj/Ash/f5(locate(dx+2,dy-1,dz))
-	X+= new/obj/Ash/f5(locate(dx-1,dy-1,dz))
-	X+= new/obj/Ash/f5(locate(dx-2,dy-1,dz))
-	X+= new/obj/Ash/f5(locate(dx-3,dy+1,dz))
-	X+= new/obj/Ash/f5(locate(dx+3,dy+1,dz))
-	X+= new/obj/Ash/f5(locate(dx+3,dy-1,dz))
-	X+= new/obj/Ash/f5(locate(dx-3,dy-1,dz))
+	new/obj/Ash/f5(locate(dx+1,dy+3,dz)),
+	new/obj/Ash/f5(locate(dx+2,dy+3,dz)),
+	new/obj/Ash/f5(locate(dx-1,dy+3,dz)),
+	new/obj/Ash/f5(locate(dx-2,dy+3,dz)),
+	new/obj/Ash/f5(locate(dx+1,dy-3,dz)),
+	new/obj/Ash/f5(locate(dx+2,dy-3,dz)),
+	new/obj/Ash/f5(locate(dx-1,dy-3,dz)),
+	new/obj/Ash/f5(locate(dx-2,dy-3,dz)),
+	new/obj/Ash/f5(locate(dx+1,dy+2,dz)),
+	new/obj/Ash/f5(locate(dx+2,dy+2,dz)),
+	new/obj/Ash/f5(locate(dx-1,dy+2,dz)),
+	new/obj/Ash/f5(locate(dx-2,dy+2,dz)),
+	new/obj/Ash/f5(locate(dx+1,dy-2,dz)),
+	new/obj/Ash/f5(locate(dx+2,dy-2,dz)),
+	new/obj/Ash/f5(locate(dx-1,dy-2,dz)),
+	new/obj/Ash/f5(locate(dx-2,dy-2,dz)),
+	new/obj/Ash/f5(locate(dx-3,dy+2,dz)),
+	new/obj/Ash/f5(locate(dx+3,dy+2,dz)),
+	new/obj/Ash/f5(locate(dx+3,dy-2,dz)),
+	new/obj/Ash/f5(locate(dx-3,dy-2,dz)),
+	new/obj/Ash/f5(locate(dx+1,dy+1,dz)),
+	new/obj/Ash/f5(locate(dx+2,dy+1,dz)),
+	new/obj/Ash/f5(locate(dx-1,dy+1,dz)),
+	new/obj/Ash/f5(locate(dx-2,dy+1,dz)),
+	new/obj/Ash/f5(locate(dx+1,dy-1,dz)),
+	new/obj/Ash/f5(locate(dx+2,dy-1,dz)),
+	new/obj/Ash/f5(locate(dx-1,dy-1,dz)),
+	new/obj/Ash/f5(locate(dx-2,dy-1,dz)),
+	new/obj/Ash/f5(locate(dx-3,dy+1,dz)),
+	new/obj/Ash/f5(locate(dx+3,dy+1,dz)),
+	new/obj/Ash/f5(locate(dx+3,dy-1,dz)),
+	new/obj/Ash/f5(locate(dx-3,dy-1,dz)),
 
-	X+= new/obj/Ash/f4(locate(dx,dy+4,dz))
-	X+= new/obj/Ash/f4(locate(dx-1,dy+4,dz))
-	X+= new/obj/Ash/f4(locate(dx+1,dy+4,dz))
+	new/obj/Ash/f4(locate(dx,dy+4,dz)),
+	new/obj/Ash/f4(locate(dx-1,dy+4,dz)),
+	new/obj/Ash/f4(locate(dx+1,dy+4,dz)),
 
-	X+= new/obj/Ash/f6(locate(dx,dy-4,dz))
-	X+= new/obj/Ash/f6(locate(dx-1,dy-4,dz))
-	X+= new/obj/Ash/f6(locate(dx+1,dy-4,dz))
+	new/obj/Ash/f6(locate(dx,dy-4,dz)),
+	new/obj/Ash/f6(locate(dx-1,dy-4,dz)),
+	new/obj/Ash/f6(locate(dx+1,dy-4,dz)),
 
-	X+= new/obj/Ash/f8(locate(dx+4,dy,dz))
-	X+= new/obj/Ash/f8(locate(dx+4,dy+1,dz))
-	X+= new/obj/Ash/f8(locate(dx+4,dy-1,dz))
+	new/obj/Ash/f8(locate(dx+4,dy,dz)),
+	new/obj/Ash/f8(locate(dx+4,dy+1,dz)),
+	new/obj/Ash/f8(locate(dx+4,dy-1,dz)),
 
-	X+= new/obj/Ash/f2(locate(dx-4,dy-1,dz))
-	X+= new/obj/Ash/f2(locate(dx-4,dy+1,dz))
-	X+= new/obj/Ash/f2(locate(dx-4,dy,dz))
+	new/obj/Ash/f2(locate(dx-4,dy-1,dz)),
+	new/obj/Ash/f2(locate(dx-4,dy+1,dz)),
+	new/obj/Ash/f2(locate(dx-4,dy,dz)),
 
-	X+= new/obj/Ash/f1(locate(dx-4,dy+2,dz))
-	X+= new/obj/Ash/f1(locate(dx-3,dy+3,dz))
-	X+= new/obj/Ash/f1(locate(dx-2,dy+4,dz))
+	new/obj/Ash/f1(locate(dx-4,dy+2,dz)),
+	new/obj/Ash/f1(locate(dx-3,dy+3,dz)),
+	new/obj/Ash/f1(locate(dx-2,dy+4,dz)),
 
-	X+= new/obj/Ash/f7(locate(dx+4,dy+2,dz))
-	X+= new/obj/Ash/f7(locate(dx+3,dy+3,dz))
-	X+= new/obj/Ash/f7(locate(dx+2,dy+4,dz))
+	new/obj/Ash/f7(locate(dx+4,dy+2,dz)),
+	new/obj/Ash/f7(locate(dx+3,dy+3,dz)),
+	new/obj/Ash/f7(locate(dx+2,dy+4,dz)),
 
-	X+= new/obj/Ash/f3(locate(dx-4,dy-2,dz))
-	X+= new/obj/Ash/f3(locate(dx-3,dy-3,dz))
-	X+= new/obj/Ash/f3(locate(dx-2,dy-4,dz))
+	new/obj/Ash/f3(locate(dx-4,dy-2,dz)),
+	new/obj/Ash/f3(locate(dx-3,dy-3,dz)),
+	new/obj/Ash/f3(locate(dx-2,dy-4,dz)),
 
-	X+= new/obj/Ash/f9(locate(dx+4,dy-2,dz))
-	X+= new/obj/Ash/f9(locate(dx+3,dy-3,dz))
-	X+= new/obj/Ash/f9(locate(dx+2,dy-4,dz))
+	new/obj/Ash/f9(locate(dx+4,dy-2,dz)),
+	new/obj/Ash/f9(locate(dx+3,dy-3,dz)),
+	new/obj/Ash/f9(locate(dx+2,dy-4,dz)))
 	for(var/obj/O1 in X)
 		O1.projdisturber=1
-	spawn()
-		sleep(dur)
-		for(var/obj/O in X)
-			del(O)
-		del(X)
+
+	sleep(dur)
+	for(var/obj/O in X)
+		del(O)
+	del(X)
 
 
 obj
@@ -1859,8 +1737,17 @@ obj/Poison
 	icon_state="cloud"
 	density=0
 	layer=MOB_LAYER+1
-obj/Fire
 
+	Del()
+		if(loc == null)
+			return ..()
+		loc = null
+
+obj/Fire
+	Del()
+		if(loc == null)
+			return ..()
+		loc = null
 	f1
 		icon='icons/katon.dmi'
 		icon_state="1"
@@ -1907,7 +1794,10 @@ obj/Fire
 		density=0
 		layer=MOB_LAYER+1
 obj/Ash
-
+	Del()
+		if(loc == null)
+			return ..()
+		loc = null
 	f1
 		icon='icons/ashfire.dmi'
 		icon_state="1"
@@ -1954,232 +1844,176 @@ obj/Ash
 		density=0
 		layer=MOB_LAYER+1
 
+
+
 proc/AOEPoison(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,poi,stun)
+	set waitfor = 0
 	var/obj/M=new/obj(locate(xx,xy,xz))
 	var/i=duration
 	while(i>0)
 		i-=10
 		for(var/mob/human/O in oview(radius,M))
-			spawn()
-				if(O)
-					if(!O.stunned && !O.ko && !O.protected)
-						O.Timed_Stun(12)
-					O.Dec_Stam(stamdamage,0,attacker)
-					O.Poison+=poi
-					O.Hostile(attacker)
+			AOEPoisoned(O, attacker, stamdamage, poi)
 		sleep(10)
-	del(M)
+	//del(M)
+	M.loc = null
+
+proc/AOEPoisoned(mob/poisoned, mob/attacker, stamdamage, poison)
+	set waitfor = 0
+	if(!poisoned)
+		return
+	if(!poisoned.stunned && !poisoned.ko && !poisoned.IsProtected())
+		poisoned.Timed_Stun(10)
+	poisoned.Dec_Stam(stamdamage, 0, attacker)
+	poisoned.Poison += poison
+	poisoned.Hostile(attacker)
+
 proc/AOE(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun)
+	set waitfor = 0
 	var/obj/M=new/obj(locate(xx,xy,xz))
 	var/i=duration
 	while(i>0)
 		i-=10
 		for(var/mob/human/O in oview(radius,M))
-			spawn()
-				if(O)
-					O.Wound(rand(0,wo),0,attacker)
-					if(!O.stunned && !O.ko && !O.protected)
-						O.Timed_Stun(10)
-					O.Dec_Stam(stamdamage,0,attacker)
-					O.Hostile(attacker)
+			AOEed(O, attacker, stamdamage, wo, stun)
 		sleep(10)
-	del(M)
+	M.loc = null
+
+proc/AOEed(mob/hit, mob/attacker, stamdamage, wounds, stun)
+	set waitfor = 0
+	hit.Wound(rand(0,wounds),0,attacker)
+	if(stun)
+		stun = stun*10
+		if(hit.move_stun<stun)
+			hit.Timed_Move_Stun(stun)
+	hit.Timed_Stun(10)
+	hit.Dec_Stam(stamdamage,0,attacker)
+	hit.Hostile(attacker)
 
 proc/AOEx(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun)
+	set waitfor = 0
 	var/obj/M=new/obj(locate(xx,xy,xz))
 	var/i=duration
 	while(i>0)
 		i-=10
 		for(var/mob/human/O in oview(radius,M))
 			if(O!=attacker)
-				spawn()
-					O.Wound(rand(0,wo),0,attacker)
-					if(stun)
-						stun = stun*10
-						if(O.move_stun<stun)
-							//O.move_stun=stun
-							O.Timed_Move_Stun(stun)
-					O.Dec_Stam(stamdamage,0,attacker)
-					O.Hostile(attacker)
-
+				AOExed(O, attacker, stamdamage, wo, stun)
 		sleep(10)
-	del(M)
+	M.loc = null
+
+proc/AOExed(mob/hit, mob/attacker, stamdamage, wounds, stun)
+	set waitfor = 0
+	hit.Wound(rand(0,wounds),0,attacker)
+	if(stun)
+		stun = stun*10
+		if(hit.move_stun<stun)
+			hit.Timed_Move_Stun(stun)
+	hit.Dec_Stam(stamdamage,0,attacker)
+	hit.Hostile(attacker)
+
 mob/var/justwalk=0
 proc/AOExk(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun,knock)
+	set waitfor = 0
 	var/obj/M=new/obj(locate(xx,xy,xz))
 	var/i=duration
 	while(i>0)
 		i-=10
 		for(var/mob/human/O in oview(radius,M))
 			if(O!=attacker)
-				spawn()
-					if(O)
-						O.Wound(rand(0,wo),0,attacker)
-						O.Dec_Stam(stamdamage,0,attacker)
-						O.Hostile(attacker)
-						if(O && knock)
-							var/ns=0
-							var/ew=0
-							if(O.x>xx)
-								ew=1
-							if(O.x<xx)
-								ew=2
-							if(O.y<xy)
-								ns=2
-							if(O.y>xy)
-								ns=1
-							if(O&&ns==1 &&ew==0)
-								O.Knockback(knock+1,NORTH)
-							if(O&&ns==2 &&ew==0)
-								O.Knockback(knock+1,SOUTH)
-							if(O&&ns==1 &&ew==1)
-								O.Knockback(knock+1,NORTHEAST)
-							if(O&&ns==1 &&ew==2)
-								O.Knockback(knock+1,NORTHWEST)
-							if(O&&ns==2 &&ew==1)
-								O.Knockback(knock+1,SOUTHEAST)
-							if(O&&ns==2 &&ew==2)
-								O.Knockback(knock+1,SOUTHWEST)
-							if(O&&ns==0 &&ew==1)
-								O.Knockback(knock+1,EAST)
-							if(O&&ns==0 &&ew==2)
-								O.Knockback(knock+1,WEST)
-						if(O) O.Timed_Move_Stun(stun)//O.move_stun+=stun*10
+				AOExked(xx,xy,xz,O,attacker,stamdamage,wo,stun,knock)
 		sleep(10)
 	del(M)
+
+proc/AOExked(xx,xy,xz,mob/O, mob/attacker, stamdamage, wo, stun, knock)
+	set waitfor = 0
+	if(O && O != attacker)
+		O.Wound(rand(0,wo),0,attacker)
+		O.Dec_Stam(stamdamage,0,attacker)
+		O.Hostile(attacker)
+		if(O && knock)
+			var/ns=0
+			var/ew=0
+			if(O.x>xx)
+				ew=1
+			if(O.x<xx)
+				ew=2
+			if(O.y<xy)
+				ns=2
+			if(O.y>xy)
+				ns=1
+			if(O&&ns==1 &&ew==0)
+				O.Knockback(knock+1,NORTH)
+			if(O&&ns==2 &&ew==0)
+				O.Knockback(knock+1,SOUTH)
+			if(O&&ns==1 &&ew==1)
+				O.Knockback(knock+1,NORTHEAST)
+			if(O&&ns==1 &&ew==2)
+				O.Knockback(knock+1,NORTHWEST)
+			if(O&&ns==2 &&ew==1)
+				O.Knockback(knock+1,SOUTHEAST)
+			if(O&&ns==2 &&ew==2)
+				O.Knockback(knock+1,SOUTHWEST)
+			if(O&&ns==0 &&ew==1)
+				O.Knockback(knock+1,EAST)
+			if(O&&ns==0 &&ew==2)
+				O.Knockback(knock+1,WEST)
+		if(O) O.Timed_Move_Stun(stun)//O.move_stun+=stun*10
+
 proc/AOExk2(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun,knock)
+	set waitfor = 0
 	var/obj/M=new/obj(locate(xx,xy,xz))
 	var/i=duration
 	while(i>0)
 		i-=10
 		for(var/mob/human/O in oview(radius,M))
-			spawn()
-				O.Wound(rand(0,wo),0,attacker)
-				O.Dec_Stam(stamdamage,0,attacker)
-				O.Hostile(attacker)
-				if(knock && O)
-					var/ns=0
-					var/ew=0
-					if(O.x>xx)
-						ew=1
-					if(O.x<xx)
-						ew=2
-					if(O.y<xy)
-						ns=2
-					if(O.y>xy)
-						ns=1
-					if(ns==1 &&ew==0)
-						O.Knockback(knock+1,NORTH)
-					if(ns==2 &&ew==0)
-						O.Knockback(knock+1,SOUTH)
-					if(ns==1 &&ew==1)
-						O.Knockback(knock+1,NORTHEAST)
-					if(ns==1 &&ew==2)
-						O.Knockback(knock+1,NORTHWEST)
-					if(ns==2 &&ew==1)
-						O.Knockback(knock+1,SOUTHEAST)
-					if(ns==2 &&ew==2)
-						O.Knockback(knock+1,SOUTHWEST)
-					if(ns==0 &&ew==1)
-						O.Knockback(knock+1,EAST)
-					if(ns==0 &&ew==2)
-						O.Knockback(knock+1,WEST)
-				if(O)
-					//O.move_stun+=stun*10
-					O.Timed_Move_Stun(10)
+			AOExked(xx,xy,xz,O,attacker,stamdamage,wo,stun,knock)
 		sleep(10)
-	del(M)
+	//del(M)
+	M.loc = null
 
 
 proc/AOEcc(xx, xy, xz, radius, stamdamage, stamdamage2, duration, mob/human/attacker, wo, stun, knock)
+	set waitfor = 0
 	var/obj/M = new /obj(locate(xx, xy, xz))
 	var/i = duration
 	var/list/gotcha[] = list()
 	while(i > 0)
 		i -= 10
 		for(var/mob/human/O in oview(radius, M))
-			spawn() if(O && O != attacker && !O.IsProtected())
-				//O = O.Replacement_Start(attacker)
-				if(!gotcha.Find(O.realname))
-					//O.Damage(stamdamage, rand(0, wo), attacker, "AOEcc", "Normal")
-					O.Dec_Stam(stamdamage2, 0, attacker)
-					O.Wound(rand(0, wo), 0, attacker)
-					gotcha.Add(O.realname)
-				else
-					//O.Damage(stamdamage2, rand(0, wo), attacker, "AOEcc", "Normal")
-					O.Dec_Stam(stamdamage2, 0, attacker)
-					O.Wound(rand(0, wo), 0, attacker)
-				O.Hostile(attacker)
-				if(!O.ko && O.icon_state != "hurt") O.icon_state = "hurt"
-				O.Timed_Stun(11)
-				O.Timed_Move_Stun(stun*10)
-				//spawn(5) if(O) O.Replacement_End()
+			if(O != attacker)
+				AOEcced(gotcha, O, attacker,stamdamage,stamdamage2,wo,stun,knock)
 		sleep(10)
 	for(var/mob/human/O in oview(radius, M))
-		spawn() if(O  && O != attacker && knock)
-			var/ns = 0
-			var/ew = 0
-			if(O.x > xx)
-				ew = 1
-			if(O.x < xx)
-				ew = 2
-			if(O.y < xy)
-				ns = 2
-			if(O.y > xy)
-				ns = 1
-			//O = O.Replacement_Start(attacker)
-			if(ns == 1 && ew == 0)
-				O.Knockback(knock+1, NORTH)
-			if(ns == 2 && ew == 0)
-				O.Knockback(knock+1, SOUTH)
-			if(ns == 1 && ew == 1)
-				O.Knockback(knock+1, NORTHEAST)
-			if(ns == 1 && ew == 2)
-				O.Knockback(knock+1, NORTHWEST)
-			if(ns == 2 && ew == 1)
-				O.Knockback(knock+1, SOUTHEAST)
-			if(ns == 2 && ew == 2)
-				O.Knockback(knock+1, SOUTHWEST)
-			if(ns == 0 && ew == 1)
-				O.Knockback(knock+1, EAST)
-			if(ns == 0 && ew == 2)
-				O.Knockback(knock+1, WEST)
-			if(!gotcha.Find(O.realname))
-				//O.Damage(stamdamage, rand(0, wo), attacker, "AOEcc", "Normal")
-				O.Dec_Stam(stamdamage, 0, attacker)
-				O.Wound(rand(0, wo), 0, attacker)
-			else
-				//O.Damage(stamdamage2, rand(0, wo), attacker, "AOEcc", "Normal")
-				O.Dec_Stam(stamdamage2, 0, attacker)
-				O.Wound(rand(0, wo), 0, attacker)
-			O.Hostile(attacker)
-			O.Timed_Stun(4)
-			O.Timed_Move_Stun(stun*10)
-			//spawn(5) if(O) O.Replacement_End()
-		spawn(5) if(!O.ko && O.icon_state == "hurt") O.icon_state = ""
+		AOExked(xx,xy,xz,O,attacker,stamdamage,wo,stun,knock)
 	M.loc = null
+
+proc/AOEcced(list/gotcha, mob/O, mob/attacker, stamdamage,stamdamage2,wo,stun,knock)
+	set waitfor = 0
+	if(O && O != attacker && !O.IsProtected())
+		if(!gotcha.Find(O.realname))
+			O.Dec_Stam(stamdamage2, 0, attacker)
+			O.Wound(rand(0, wo), 0, attacker)
+			gotcha.Add(O.realname)
+		else
+			O.Dec_Stam(stamdamage2, 0, attacker)
+			O.Wound(rand(0, wo), 0, attacker)
+		O.Hostile(attacker)
+		if(!O)
+			return
+		if(!O.ko && O.icon_state != "hurt") O.icon_state = "hurt"
+		O.Timed_Stun(15)
+		O.Timed_Move_Stun(stun*10)
 
 mob/var/tmp/noknock=0
 mob/proc/Knockback(k,xdir)
-/*
-	for(var/obj/Shield/s in oview(1,src))
-		if(istype(src, /mob/human/Puppet))
-			if(src == s.owner)
-				return 1
-		if(istype(src, /mob/human/player))
-			if(Puppet1)
-				if(Puppet1 == s.owner)
-					return 1
-			else if(Puppet2)
-				if(Puppet2 == s.owner)
-					return 1*/
-	if(!istype(src,/mob/human/npc)&&src.paralysed==0&&!src.stunned&&!src.ko&&!src.mane&&!noknock)
+	set waitfor = 0
+
+	if(!istype(src,/mob/human/npc)&&src.paralysed==0&&/*!src.stunned&&*/!src.ko&&!src.mane&&!noknock)
 		if(!src.icon_state)
 			src.icon_state="hurt"
 		if(!src.cantreact)
-			src.cantreact=1
-			spawn(10)
-				src.cantreact=0
+			src.timed_reaction_stun(10)
 		src.animate_movement=2
 		var/i=k
 		var/reflected = 0
@@ -2281,6 +2115,7 @@ mob/proc/Knockback(k,xdir)
 			if(src.icon_state=="hurt")
 				src.icon_state=""
 proc/WaveDamage(mob/human/u,mag,dam,knockback,xdist)
+	set waitfor = 0
 	var/dir = u.dir
 	var/turf/center = u.loc
 	var/distance = xdist
@@ -2303,177 +2138,25 @@ proc/WaveDamage(mob/human/u,mag,dam,knockback,xdist)
 			for(var/mob/human/M in T)
 				if(!istype(M, /mob/human/npc) && !(M in hit))
 					hit += M
-					spawn() if(M) M.Knockback(knockback,dir)
+					if(M) M.Knockback(knockback,dir)
 					M.Dec_Stam(dam,0,u)
-					spawn() if(M) M.Hostile(u)
+					if(M) M.Hostile(u)
 
 		sleep(1)
-/*
-	for(var/mob/human/x in oview(xdist*2))
-		if(!istype(x,/mob/human/npc))
-			spawn()
-				if(u && x)
-					var/hit=0
-					switch(dir)
-						if(NORTH)
-							if(x.y-usr.y >0)//aboveme
-								sleep(x.y-u.y)
-								if(!x || !u)continue
-								if(abs(x.x-u.x) <mag &&x.y-u.y >0 &&x.z==u.z) //not escaping the width
-									hit=1
-						if(SOUTH)
-							if(usr.y-x.y >0)//belowme
-								sleep(u.y-x.y)
-								if(!x || !usr)continue
-								if(abs(x.x-u.x) <mag &&u.y-x.y >0 &&x.z==u.z) //not escaping the width
-									hit=1
-						if(EAST)
-							if(x.x-usr.x >0)
-								sleep(x.x-u.x)
-								if(!x || !u)continue
-								if(abs(x.y-u.y) <mag &&x.x-u.x >0 &&x.z==u.z) //not escaping the width
-									hit=1
-						if(WEST)
-							if(usr.x-x.x>0)
-								sleep(u.x-x.x)
-								if(!x || !u)continue
-								if(abs(x.y-u.y) <mag &&u.x-x.x>0 &&x.z==u.z) //not escaping the width
-									hit=1
-					if(hit&&x)
-						x.Knockback(knockback,dir)
-						spawn()if(x) x.Dec_Stam(dam,0,u)
-						spawn()if(x) x.Hostile(u)*/
-
-proc/Wind_Blast(dx,dy,dz,xdir,xdist,var/mob/human/u)
-	var/list/xlist[]=new()
 
 
-	if(xdir==NORTH||xdir==SOUTH)
-		xlist+=new/obj/windblast(locate(dx,dy,dz))
-		xlist+=new/obj/windblast/wplus/(locate(dx+1,dy,dz))
-		xlist+=new/obj/windblast/wminus(locate(dx-1,dy,dz))
-	if(xdir==EAST||xdir==WEST)
-		xlist+=new/obj/windblast(locate(dx,dy,dz))
-		xlist+=new/obj/windblast/wplus/(locate(dx,dy+1,dz))
-		xlist+=new/obj/windblast/wminus(locate(dx,dy-1,dz))
 
 
-	var/stepsleft=xdist
-	for(var/obj/windblast/o in xlist)
-		spawn()
-			o.dir=xdir
-	var/f
-	sleep(2)
-	while(stepsleft>0 && xlist)
-		if(xlist)
-			var/mob/hit
-
-			for(var/obj/windblast/o in xlist)
-				if(!istype(o,/obj/windblast/windtrail))
-					spawn()
-						walk(o,o.dir)
-						var/ox=o.x
-						var/oy=o.y
-						var/oz=o.z
-
-						sleep(1)
-						if(f==1)
-							spawn(1)
-								var/obj/j = new/obj/windblast/windtrail(locate(ox,oy,oz))
-								j.dir=xdir
-								xlist+=j
-						else
-							spawn(0)
-								var/obj/j = new/obj/windblast/windtrail()
-								if(xdir==NORTH)
-									j.pixel_y=-32
-								if(xdir==SOUTH)
-									j.pixel_y=32
-								if(xdir==EAST)
-									j.pixel_x=-32
-								if(xdir==WEST)
-									j.pixel_x=32
-								j.dir=xdir
-								xlist+=j
-								o.overlays+=j
-						walk(o,0)
-
-						for(var/mob/human/O in get_step(o,xdir))
-							spawn()
-								if(istype(O,/mob/human))
-									if(O!=u)
-										hit=O
-								if(hit)
-									spawn(1)
-										hit.Knockback(2,xdir)
-									hit.Dec_Stam(350,0,u)
-									hit.Hostile(u)
-
-			stepsleft--
-			f=1
-			sleep(1)
-	sleep(2)
-	for(var/obj/windblast/o in xlist)
-		del(o)
-	del(xlist)
-proc/Wind_Pulse(dx,dy,dz,xdir,xdist,var/mob/human/u)
-	var/list/xlist[]=new()
-
-
-	if(xdir==NORTH||xdir==SOUTH)
-		xlist+=new/obj(locate(dx,dy,dz))
-		xlist+=new/obj(locate(dx+1,dy,dz))
-		xlist+=new/obj(locate(dx-1,dy,dz))
-	if(xdir==EAST||xdir==WEST)
-		xlist+=new/obj(locate(dx,dy,dz))
-		xlist+=new/obj(locate(dx,dy+1,dz))
-		xlist+=new/obj(locate(dx,dy-1,dz))
-
-
-	var/stepsleft=xdist
-	for(var/obj/o in xlist)
-		spawn()
-			o.dir=xdir
-
-	sleep(2)
-	while(stepsleft>0 && xlist)
-		if(xlist)
-			var/mob/hit
-
-			for(var/obj/o in xlist)
-				if(!istype(o,/obj/windblast/windtrail))
-					spawn()
-						walk(o,o.dir)
-
-						sleep(1)
-						walk(o,0)
-
-						for(var/mob/human/O in get_step(o,xdir))
-							spawn()
-								if(istype(O,/mob/human))
-									if(O!=u)
-										hit=O
-								if(hit)
-									spawn(1)
-										hit.Knockback(2,xdir)
-									hit.Dec_Stam(250,0,u)
-									hit.Hostile(u)
-
-			stepsleft--
-			sleep(1)
-	sleep(2)
-	for(var/obj/o in xlist)
-		del(o)
-	del(xlist)
 proc/Electricity(dx,dy,dz,dur)
+	set waitfor = 0
 	var/obj/elec/o = new/obj/elec(locate(dx,dy,dz))
-	var/i=dur
+	var/i = dur
 	while(i>0)
 		var/r=rand(1,15)
 		o.icon_state="[r]"
 		sleep(1)
 		i--
-	del(o)
+	o.loc = null
 
 obj
 	elec
@@ -2481,70 +2164,11 @@ obj
 		icon_state=""
 		density=0
 
-/*proc/Make_Swamp(dx,dy,dz,mob/U,charge)
-	var/C=charge
-	if(U.stunned<=10)
-		U.stunned=0
-	//U.charginmahlazer=0
-	//U.chargecuz=0
-	var/spread=1
-	var/list/sides=new()
-	var/list/main=new()
-	sides+= new/obj/swamp_sides/sd(locate(dx,dy-1,dz))
-	sides+= new/obj/swamp_sides/su(locate(dx,dy+1,dz))
-	sides+= new/obj/swamp_sides/sr(locate(dx+1,dy,dz))
-	sides+= new/obj/swamp_sides/sl(locate(dx-1,dy,dz))
-	var/obj/center=new/obj/swamp(locate(dx,dy,dz),C,U)
-	main+=center
 
-	sleep(2)
-	var/tots=1
-	if(C>500)
-		tots=2
-	if(C>1000)
-		tots=3
-	if(C>1500)
-		tots=4
-	if(C>2500)
-		tots=5
-	while(spread<tots)
-		spread++
-		for(var/turf/t in oview(spread-1,center))
-			var/hasswamp=0
-			for(var/obj/swamp/m in t.contents)
-				hasswamp=1
-			if(hasswamp==0)
-				main+=new/obj/swamp(locate(t.x,t.y,t.z),C,U)
-		for(var/obj/swamp_sides/sd/o in sides)
-			o.y--
-		for(var/obj/swamp_sides/su/o in sides)
-			o.y++
-		for(var/obj/swamp_sides/sr/o in sides)
-			o.x++
-		for(var/obj/swamp_sides/sl/o in sides)
-			o.x--
-		var/mspread=spread-1
-		sides+=new/obj/swamp_sides/sd(locate(dx-mspread,dy-1-mspread,dz))
-		sides+=new/obj/swamp_sides/sd(locate(dx+mspread,dy-1-mspread,dz))
-		sides+=new/obj/swamp_sides/su(locate(dx+mspread,dy+1+mspread,dz))
-		sides+=new/obj/swamp_sides/su(locate(dx-mspread,dy+1+mspread,dz))
-		sides+=new/obj/swamp_sides/sr(locate(dx+mspread+1,dy+mspread,dz))
-		sides+=new/obj/swamp_sides/sr(locate(dx+mspread+1,dy-mspread,dz))
-		sides+=new/obj/swamp_sides/sl(locate(dx-mspread-1,dy+mspread,dz))
-		sides+=new/obj/swamp_sides/sl(locate(dx-mspread-1,dy-mspread,dz))
-
-		sleep(5)
-	for(var/obj/d in sides)
-		d.Causer=U
-
-	sleep(300)
-	for(var/obj/d in sides)
-		del(d)
-	for(var/obj/d in main)
-		del(d)*/
 obj
 	var
 		mob/Causer
+
 proc/Trail_Straight_Projectile(dx,dy,dz,xdir,obj/trailmaker/proj,xdur,mob/maker)
 	proj.loc=locate(dx,dy,dz)
 	proj.dir=xdir
@@ -2575,15 +2199,27 @@ proc/Trail_Straight_Projectile(dx,dy,dz,xdir,obj/trailmaker/proj,xdur,mob/maker)
 		if(proj)
 			proj.loc = null
 		return 0
+
 mob/human/clay
 	var/power=0
 	var/mob/owner
+	var/tmp/explosionsize = 3
 	icon='icons/clay-animals.dmi'
 	bird
 		icon_state="bird"
 	spider
+		explosionsize = 5
 		icon_state="spider"
 		mouse_drag_pointer=MOUSE_HAND_POINTER
+		New(location, damage, mob/user,modified)
+			set waitfor = 0
+			..()
+			sleep(10)
+			if(user && user.keys && !user.keys["shift"])
+				var/mob/target = user.MainTarget()
+				if(target) walk_to(src, target, 0, 2)
+					//MouseDrop(target,0,target)
+
 		MouseDrop(D,turf/Start,turf/getta)
 			if(usr==src.owner)
 				if(D)
@@ -2602,16 +2238,18 @@ mob/human/clay
 		src.owner=u
 	proc
 		Explode()
+			set waitfor = 0
 			if(src.icon)
 				src.icon=null
 				src.density=0
-				explosion(src.power,src.x,src.y,src.z,src.owner,0,3)
+				explosion(src.power,src.x,src.y,src.z,src.owner,0,src.explosionsize)
 				if(owner && istype(owner,/mob/human/player))
 					for(var/obj/trigger/exploding_spider/T in owner.triggers)
 						if(T.spider == src) owner.RemoveTrigger(T)
 				del(src)
 
 proc/Homing_Projectile_bang(mob/U,mob/human/clay/proj,xdur,mob/human/M,lag)
+	set waitfor = 0
 	if(M && U && proj)
 		proj.dir=U.dir
 		var/i = 8
@@ -2642,10 +2280,11 @@ proc/Homing_Projectile_bang(mob/U,mob/human/clay/proj,xdur,mob/human/M,lag)
 				for(var/mob/human/R in get_step(proj,proj.dir))
 					if(R)
 						proj.density=0
+						//proj.loc = R.loc
 						//R.move_stun+=10
-						R.Timed_Move_Stun(10)
-						spawn(1)
-							if(proj) proj.density=1
+						R.Timed_Stun(15)
+						hit = R
+						//	if(proj) proj.density=1
 			if(proj)
 				walk(proj,proj.dir)
 				sleep(1)
@@ -2657,6 +2296,7 @@ proc/Homing_Projectile_bang(mob/U,mob/human/clay/proj,xdur,mob/human/M,lag)
 			i--
 		if(!proj) return
 		if(hit)
+			hit.movepenalty += 10
 			proj.Explode()
 		else
 			proj.Explode()
@@ -2797,262 +2437,281 @@ obj
 			list/trails=new
 			first=0
 			trail_target
+
+	/*Del()
+			if(loc == null) return ..()
+
+			for(var/obj/trail in trails)
+				trail.loc = null
+
+			trails = null
+			trail_target = null
+			loc = null*/
+
 		Raton_Sword
 			icon='icons/ratonsword.dmi'
 			Move()
+				set waitfor = 0
 				var/turf/old_loc = src.loc
 				var/d = ..()
-				spawn()
-					if(d)
-						if(first==0)
-							first=1
-						else
-							var/obj/O = new(old_loc)
-							O.dir = src.dir
-							O.icon = 'icons/ratonsword.dmi'
-							O.icon_state="trail"
-							src.trails += O
+				if(d)
+					if(first==0)
+						first=1
+					else
+						var/obj/O = new(old_loc)
+						O.dir = src.dir
+						O.icon = 'icons/ratonsword.dmi'
+						O.icon_state="trail"
+						src.trails += O
 				return d
 
 			Del()
 				for(var/obj/o in src.trails)
 					o.loc = null
 				..()
+
 		Dragon_Fire
 			icon='icons/dragonfire.dmi'
 			Move()
+				set waitfor = 0
 				var/turf/old_loc = src.loc
 				var/d = ..()
-				spawn()
-					if(d)
-						if(first==0)
-							first=1
-						else
-							var/obj/O = new(old_loc)
-							O.dir = src.dir
-							O.icon = 'icons/dragonfire.dmi'
-							O.icon_state="tail"
-							src.trails += O
-							O.layer=MOB_LAYER+2
+				if(d)
+					if(first==0)
+						first=1
+					else
+						var/obj/O = new(old_loc)
+						O.dir = src.dir
+						O.icon = 'icons/dragonfire.dmi'
+						O.icon_state="tail"
+						src.trails += O
+						O.layer=MOB_LAYER+2
 				return d
 
 			Del()
 				for(var/obj/o in src.trails)
 					o.loc = null
 				..()
+
 		Mud_Slide
 			icon='icons/earthflow.dmi'
 			var/list/gotmob=new
 			Move()
+				set waitfor = 0
 				var/turf/old_loc = src.loc
 				var/d = ..()
 				if(loc.density)
 					loc = old_loc
 					walk(src, 0)
-				spawn()
-					if(d)
-						if(length(gotmob))
-							for(var/mob/M in gotmob)
-								if(get_dist(M,src)<=2)
-									var/turf/T=locate(src.x,src.y,src.z)
-									if(T&&!T.density)M.loc=locate(T.x,T.y,T.z)
-								else
-									gotmob-=M
+				if(d)
+					if(length(gotmob))
+						for(var/mob/M in gotmob)
+							if(get_dist(M,src)<=2)
+								var/turf/T=locate(src.x,src.y,src.z)
+								if(T&&!T.density)M.loc=locate(T.x,T.y,T.z)
+							else
+								gotmob-=M
 
-						if(first==0)
-							first=1
-						else
-							var/obj/O = new(old_loc)
-							O.dir = src.dir
-							O.icon = 'icons/earthflow.dmi'
-							O.icon_state="tail"
-							src.trails += O
+					if(first==0)
+						first=1
+					else
+						var/obj/O = new(old_loc)
+						O.dir = src.dir
+						O.icon = 'icons/earthflow.dmi'
+						O.icon_state="tail"
+						src.trails += O
 				return d
 
 			Del()
+				if(loc == null)
+					return ..()
 				for(var/obj/o in src.trails)
 					o.loc = null
-				..()
+				trails = null
+				loc = null
+
 		Shadowneedle
 			density=1
 			layer=MOB_LAYER
 			icon='icons/shadowneedle2.dmi'
 			pixel_y=-10
 			Move()
+				set waitfor = 0
 				var/turf/old_loc = src.loc
 				var/d = ..()
-				spawn()
-					if(d)
-						var/obj/O = new(old_loc)
-						O.dir = src.dir
-						var/obj/m=new/obj/trail/shadowtrail2(O)
-						m.dir=O.dir
-						m.icon_state="patch"
-						var/obj/n=new/obj/trail/shadowtrail2(O)
-						n.dir=O.dir
-						n.icon_state="patch"
-						if(O.dir==NORTHEAST)
-							src.pixel_y=16
-							src.pixel_x=16
-							O.pixel_y=16
-							O.pixel_x=16
-							m.pixel_y=-16
-							m.pixel_x=-16
-							n.pixel_y=16
-							n.pixel_x=16
-						if(O.dir==SOUTHEAST)
-							src.pixel_y=-16
-							src.pixel_x=16
-							O.pixel_y=-16
-							O.pixel_x=16
-							m.pixel_y=16
-							m.pixel_x=-16
-							n.pixel_y=-16
-							n.pixel_x=16
-						if(O.dir==NORTHWEST)
-							src.pixel_y=16
-							src.pixel_x=-16
-							O.pixel_y=16
-							O.pixel_x=-16
-							m.pixel_y=-16
-							m.pixel_x=16
-							n.pixel_y=16
-							n.pixel_x=-16
-						if(O.dir==SOUTHWEST)
-							src.pixel_y=-16
-							src.pixel_x=-16
-							O.pixel_y=-16
-							O.pixel_x=-16
-							m.pixel_y=16
-							m.pixel_x=16
-							n.pixel_y=-16
-							n.pixel_x=-16
-						if(O.dir==NORTH)
-							src.pixel_y=16
-							src.pixel_x=0
-							O.pixel_y=16
-							m.pixel_y=-16
-							n.pixel_y=16
+				if(d)
+					var/obj/O = new(old_loc)
+					O.dir = src.dir
+					var/obj/m=new/obj/trail/shadowtrail2(O)
+					m.dir=O.dir
+					m.icon_state="patch"
+					var/obj/n=new/obj/trail/shadowtrail2(O)
+					n.dir=O.dir
+					n.icon_state="patch"
+					if(O.dir==NORTHEAST)
+						src.pixel_y=16
+						src.pixel_x=16
+						O.pixel_y=16
+						O.pixel_x=16
+						m.pixel_y=-16
+						m.pixel_x=-16
+						n.pixel_y=16
+						n.pixel_x=16
+					if(O.dir==SOUTHEAST)
+						src.pixel_y=-16
+						src.pixel_x=16
+						O.pixel_y=-16
+						O.pixel_x=16
+						m.pixel_y=16
+						m.pixel_x=-16
+						n.pixel_y=-16
+						n.pixel_x=16
+					if(O.dir==NORTHWEST)
+						src.pixel_y=16
+						src.pixel_x=-16
+						O.pixel_y=16
+						O.pixel_x=-16
+						m.pixel_y=-16
+						m.pixel_x=16
+						n.pixel_y=16
+						n.pixel_x=-16
+					if(O.dir==SOUTHWEST)
+						src.pixel_y=-16
+						src.pixel_x=-16
+						O.pixel_y=-16
+						O.pixel_x=-16
+						m.pixel_y=16
+						m.pixel_x=16
+						n.pixel_y=-16
+						n.pixel_x=-16
+					if(O.dir==NORTH)
+						src.pixel_y=16
+						src.pixel_x=0
+						O.pixel_y=16
+						m.pixel_y=-16
+						n.pixel_y=16
 
-						if(O.dir==SOUTH)
-							src.pixel_y=-16
-							src.pixel_x=0
-							O.pixel_y=-16
-							m.pixel_y=16
-							n.pixel_y=-16
-						if(O.dir==EAST)
-							src.pixel_x=16
-							src.pixel_y=0
-							O.pixel_x=16
-							m.pixel_x=-16
-							n.pixel_x=16
-						if(O.dir==WEST)
-							src.pixel_x=-16
-							src.pixel_y=0
-							O.pixel_x=-16
-							m.pixel_x=16
-							n.pixel_x=-16
-						O.underlays+=m
-						spawn(1)O.underlays+=n
-						O.icon = 'icons/shadowneedletrail.dmi'
-						src.trails += O
+					if(O.dir==SOUTH)
+						src.pixel_y=-16
+						src.pixel_x=0
+						O.pixel_y=-16
+						m.pixel_y=16
+						n.pixel_y=-16
+					if(O.dir==EAST)
+						src.pixel_x=16
+						src.pixel_y=0
+						O.pixel_x=16
+						m.pixel_x=-16
+						n.pixel_x=16
+					if(O.dir==WEST)
+						src.pixel_x=-16
+						src.pixel_y=0
+						O.pixel_x=-16
+						m.pixel_x=16
+						n.pixel_x=-16
+					O.underlays+=m
+					O.underlays+=n
+					O.icon = 'icons/shadowneedletrail.dmi'
+					src.trails += O
 				return d
 
 			Del()
 				for(var/obj/o in src.trails)
 					o.loc = null
 				..()
+
 		Shadow
-			density=1
+			density=0
 			layer=OBJ_LAYER
 			icon='icons/shadowbind.dmi'
 			pixel_y=-10
 			Move()
+				set waitfor = 0
 				var/turf/old_loc = src.loc
 				var/d = ..()
-				spawn()
-					if(d)
-						var/obj/O = new(old_loc)
-						O.dir = src.dir
-						var/obj/m=new/obj/trail/shadowtrail(O)
-						m.dir=O.dir
-						m.icon_state="patch"
-						var/obj/n=new/obj/trail/shadowtrail(O)
-						n.dir=O.dir
-						n.icon_state="patch"
-						if(O.dir==NORTHEAST)
-							src.pixel_y=16
-							src.pixel_x=16
-							O.pixel_y=16
-							O.pixel_x=16
-							m.pixel_y=-16
-							m.pixel_x=-16
-							n.pixel_y=16
-							n.pixel_x=16
-						if(O.dir==SOUTHEAST)
-							src.pixel_y=-16
-							src.pixel_x=16
-							O.pixel_y=-16
-							O.pixel_x=16
-							m.pixel_y=16
-							m.pixel_x=-16
-							n.pixel_y=-16
-							n.pixel_x=16
-						if(O.dir==NORTHWEST)
-							src.pixel_y=16
-							src.pixel_x=-16
-							O.pixel_y=16
-							O.pixel_x=-16
-							m.pixel_y=-16
-							m.pixel_x=16
-							n.pixel_y=16
-							n.pixel_x=-16
-						if(O.dir==SOUTHWEST)
-							src.pixel_y=-16
-							src.pixel_x=-16
-							O.pixel_y=-16
-							O.pixel_x=-16
-							m.pixel_y=16
-							m.pixel_x=16
-							n.pixel_y=-16
-							n.pixel_x=-16
-						if(O.dir==NORTH)
-							src.pixel_y=16
-							src.pixel_x=0
-							O.pixel_y=16
-							m.pixel_y=-16
-							n.pixel_y=16
+				if(d)
+					var/obj/O = new(old_loc)
+					O.dir = src.dir
+					var/obj/m=new/obj/trail/shadowtrail(O)
+					m.dir=O.dir
+					m.icon_state="patch"
+					var/obj/n=new/obj/trail/shadowtrail(O)
+					n.dir=O.dir
+					n.icon_state="patch"
+					if(O.dir==NORTHEAST)
+						src.pixel_y=16
+						src.pixel_x=16
+						O.pixel_y=16
+						O.pixel_x=16
+						m.pixel_y=-16
+						m.pixel_x=-16
+						n.pixel_y=16
+						n.pixel_x=16
+					if(O.dir==SOUTHEAST)
+						src.pixel_y=-16
+						src.pixel_x=16
+						O.pixel_y=-16
+						O.pixel_x=16
+						m.pixel_y=16
+						m.pixel_x=-16
+						n.pixel_y=-16
+						n.pixel_x=16
+					if(O.dir==NORTHWEST)
+						src.pixel_y=16
+						src.pixel_x=-16
+						O.pixel_y=16
+						O.pixel_x=-16
+						m.pixel_y=-16
+						m.pixel_x=16
+						n.pixel_y=16
+						n.pixel_x=-16
+					if(O.dir==SOUTHWEST)
+						src.pixel_y=-16
+						src.pixel_x=-16
+						O.pixel_y=-16
+						O.pixel_x=-16
+						m.pixel_y=16
+						m.pixel_x=16
+						n.pixel_y=-16
+						n.pixel_x=-16
+					if(O.dir==NORTH)
+						src.pixel_y=16
+						src.pixel_x=0
+						O.pixel_y=16
+						m.pixel_y=-16
+						n.pixel_y=16
 
-						if(O.dir==SOUTH)
-							src.pixel_y=-16
-							src.pixel_x=0
-							O.pixel_y=-16
-							m.pixel_y=16
-							n.pixel_y=-16
-						if(O.dir==EAST)
-							src.pixel_x=16
-							src.pixel_y=0
-							O.pixel_x=16
-							m.pixel_x=-16
-							n.pixel_x=16
-						if(O.dir==WEST)
-							src.pixel_x=-16
-							src.pixel_y=0
-							O.pixel_x=-16
-							m.pixel_x=16
-							n.pixel_x=-16
-						O.pixel_y-=10
-						src.pixel_y-=10
-						O.underlays+=m
-						spawn(1)O.underlays+=n
-						O.icon = 'icons/shadowbindtrail.dmi'
-						src.trails += O
+					if(O.dir==SOUTH)
+						src.pixel_y=-16
+						src.pixel_x=0
+						O.pixel_y=-16
+						m.pixel_y=16
+						n.pixel_y=-16
+					if(O.dir==EAST)
+						src.pixel_x=16
+						src.pixel_y=0
+						O.pixel_x=16
+						m.pixel_x=-16
+						n.pixel_x=16
+					if(O.dir==WEST)
+						src.pixel_x=-16
+						src.pixel_y=0
+						O.pixel_x=-16
+						m.pixel_x=16
+						n.pixel_x=-16
+					O.pixel_y-=10
+					src.pixel_y-=10
+					O.underlays+=m
+					O.underlays+=n
+					O.icon = 'icons/shadowbindtrail.dmi'
+					src.trails += O
 				return d
 
 			Del()
 				for(var/obj/o in src.trails)
 					o.loc = null
 				..()
+
 		Water_Dragon
 			density=1
 			layer=MOB_LAYER+2
@@ -3061,87 +2720,87 @@ obj
 			Move()
 				var/turf/old_loc = src.loc
 				var/d = ..()
-				spawn()
-					if(d)
-						var/obj/O = new(old_loc)
-						O.dir = src.dir
-						var/obj/m=new/obj/trail/watertrail(O)
-						m.dir=O.dir
-						m.icon_state="patch"
-						var/obj/n=new/obj/trail/watertrail(O)
-						n.dir=O.dir
-						n.icon_state="patch"
-						if(O.dir==NORTHEAST)
-							src.pixel_y=16
-							src.pixel_x=16
-							O.pixel_y=16
-							O.pixel_x=16
-							m.pixel_y=-16
-							m.pixel_x=-16
-							n.pixel_y=16
-							n.pixel_x=16
-						if(O.dir==SOUTHEAST)
-							src.pixel_y=-16
-							src.pixel_x=16
-							O.pixel_y=-16
-							O.pixel_x=16
-							m.pixel_y=16
-							m.pixel_x=-16
-							n.pixel_y=-16
-							n.pixel_x=16
-						if(O.dir==NORTHWEST)
-							src.pixel_y=16
-							src.pixel_x=-16
-							O.pixel_y=16
-							O.pixel_x=-16
-							m.pixel_y=-16
-							m.pixel_x=16
-							n.pixel_y=16
-							n.pixel_x=-16
-						if(O.dir==SOUTHWEST)
-							src.pixel_y=-16
-							src.pixel_x=-16
-							O.pixel_y=-16
-							O.pixel_x=-16
-							m.pixel_y=16
-							m.pixel_x=16
-							n.pixel_y=-16
-							n.pixel_x=-16
-						if(O.dir==NORTH)
-							src.pixel_y=16
-							src.pixel_x=0
-							O.pixel_y=16
-							m.pixel_y=-16
-							n.pixel_y=16
+				if(d)
+					var/obj/O = new(old_loc)
+					O.dir = src.dir
+					var/obj/m=new/obj/trail/watertrail(O)
+					m.dir=O.dir
+					m.icon_state="patch"
+					var/obj/n=new/obj/trail/watertrail(O)
+					n.dir=O.dir
+					n.icon_state="patch"
+					if(O.dir==NORTHEAST)
+						src.pixel_y=16
+						src.pixel_x=16
+						O.pixel_y=16
+						O.pixel_x=16
+						m.pixel_y=-16
+						m.pixel_x=-16
+						n.pixel_y=16
+						n.pixel_x=16
+					if(O.dir==SOUTHEAST)
+						src.pixel_y=-16
+						src.pixel_x=16
+						O.pixel_y=-16
+						O.pixel_x=16
+						m.pixel_y=16
+						m.pixel_x=-16
+						n.pixel_y=-16
+						n.pixel_x=16
+					if(O.dir==NORTHWEST)
+						src.pixel_y=16
+						src.pixel_x=-16
+						O.pixel_y=16
+						O.pixel_x=-16
+						m.pixel_y=-16
+						m.pixel_x=16
+						n.pixel_y=16
+						n.pixel_x=-16
+					if(O.dir==SOUTHWEST)
+						src.pixel_y=-16
+						src.pixel_x=-16
+						O.pixel_y=-16
+						O.pixel_x=-16
+						m.pixel_y=16
+						m.pixel_x=16
+						n.pixel_y=-16
+						n.pixel_x=-16
+					if(O.dir==NORTH)
+						src.pixel_y=16
+						src.pixel_x=0
+						O.pixel_y=16
+						m.pixel_y=-16
+						n.pixel_y=16
 
-						if(O.dir==SOUTH)
-							src.pixel_y=-16
-							src.pixel_x=0
-							O.pixel_y=-16
-							m.pixel_y=16
-							n.pixel_y=-16
-						if(O.dir==EAST)
-							src.pixel_x=16
-							src.pixel_y=0
-							O.pixel_x=16
-							m.pixel_x=-16
-							n.pixel_x=16
-						if(O.dir==WEST)
-							src.pixel_x=-16
-							src.pixel_y=0
-							O.pixel_x=-16
-							m.pixel_x=16
-							n.pixel_x=-16
-						O.underlays+=m
-						spawn(1)O.underlays+=n
-						O.icon = 'icons/watertrail.dmi'
-						src.trails += O
+					if(O.dir==SOUTH)
+						src.pixel_y=-16
+						src.pixel_x=0
+						O.pixel_y=-16
+						m.pixel_y=16
+						n.pixel_y=-16
+					if(O.dir==EAST)
+						src.pixel_x=16
+						src.pixel_y=0
+						O.pixel_x=16
+						m.pixel_x=-16
+						n.pixel_x=16
+					if(O.dir==WEST)
+						src.pixel_x=-16
+						src.pixel_y=0
+						O.pixel_x=-16
+						m.pixel_x=16
+						n.pixel_x=-16
+					O.underlays+=m
+					O.underlays+=n
+					O.icon = 'icons/watertrail.dmi'
+					src.trails += O
 				return d
 
 			Del()
 				for(var/obj/o in src.trails)
 					o.loc = null
 				..()
+
 obj/earthcage
 	icon='icons/dotoncage.dmi'
 	layer=MOB_LAYER
@@ -3150,16 +2809,21 @@ obj/earthcage
 	density=0
 	var
 		crushed
+	Del()
+		if(loc == null)
+			return ..()
+		loc = null
 
 
 proc/Doton_Cage(dx,dy,dz,dur)
+	set waitfor = 0
 	var/obj/bl=new/obj/earthcage(locate(dx,dy,dz))
 	var/obj/br=new/obj/earthcage(locate(dx+1,dy,dz))
 	var/obj/tl=new/obj/earthcage(locate(dx,dy+1,dz))
 	var/obj/tr=new/obj/earthcage(locate(dx+1,dy+1,dz))
-	spawn()flick("bl",bl)
-	spawn()flick("br",br)
-	spawn()flick("tl",tl)
+	flick("bl",bl)
+	flick("br",br)
+	flick("tl",tl)
 	flick("tr",tr)
 	bl.icon_state="bls"
 	br.icon_state="brs"
@@ -3202,6 +2866,7 @@ obj
 		pixel_x=16
 
 proc/Hakke_Circle(mob/u,mob/t)
+	set waitfor = 0
 	var/list/listx=new
 	listx+=image('icons/hakke64.dmi',locate(u.x,u.y,u.z),icon_state="1,1",layer=TURF_LAYER+1)
 	listx+=image('icons/hakke64.dmi',locate(u.x,u.y+1,u.z),icon_state="1,2",layer=TURF_LAYER+1)
@@ -3222,6 +2887,16 @@ proc/Hakke_Circle(mob/u,mob/t)
 		del(x)
 	del(listx)
 
+mob
+	proc/hakke_animation(iterations)
+		set waitfor = 0
+		if(!src)
+			return
+		for(, iterations > 0, iterations--)
+			flick("PunchA-1",src)
+			sleep(1)
+			flick("PunchA-2",src)
+
 mob/proc/Hakke_Pwn(mob/e)
 	if(e)
 		//src.stunned+=10
@@ -3232,212 +2907,79 @@ mob/proc/Hakke_Pwn(mob/e)
 		src.overlays+='icons/hakkehand.dmi'
 		e.combat("[src]: Two")
 		src.combat("[src]: Two")
-		spawn()
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-		spawn() if(e) e.Chakrahit()
+		hakke_animation(1)
+		if(e) e.Chakrahit()
 		sleep(10)
 		if(!e || !src) return
 		e.combat("[src]: Four")
 		src.combat("[src]: Four")
-		spawn()
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-		spawn() if(e) e.Chakrahit()
+		hakke_animation(2)
+		if(e) e.Chakrahit()
 		sleep(20)
 		if(!e || !src) return
 		e.combat("[src]: Eight")
 		src.combat("[src]: Eight")
-		spawn()
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-		spawn() if(e) e.Chakrahit()
+		hakke_animation(4)
+		if(e) e.Chakrahit()
 		sleep(20)
 		if(!e || !src) return
 		e.combat("[src]: Sixteen")
 		src.combat("[src]: Sixteen")
-		spawn()
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-
-		spawn() if(e) e.Chakrahit()
-		spawn() if(e) e.Chakrahit()
+		hakke_animation(8)
+		if(e) e.Chakrahit()
+		if(e) e.Chakrahit()
 		sleep(20)
 		if(!e || !src) return
 		e.combat("[src]: Thirty-two")
 		src.combat("[src]: Thirty-two")
-		spawn()
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-		spawn() if(e) e.Chakrahit()
-		spawn() if(e) e.Chakrahit()
-		spawn() if(e) e.Chakrahit()
+		hakke_animation(16)
+		if(e) e.Chakrahit()
+		if(e) e.Chakrahit()
+		if(e) e.Chakrahit()
 
 		sleep(20)
 		if(!e || !src) return
 		e.combat("[src]: Sixty Four!")
 		src.combat("[src]: Sixty Four!")
-		spawn()
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-			if(src) flick("PunchA-1",src)
-			sleep(1)
-			if(src) flick("PunchA-2",src)
-			sleep(1)
-		spawn() if(e) e.Chakrahit()
-		spawn() if(e) e.Chakrahit()
-		spawn() if(e) e.Chakrahit()
-		spawn() if(e) e.Chakrahit()
+		hakke_animation(32)
+		if(e) e.Chakrahit()
+		if(e) e.Chakrahit()
+		if(e) e.Chakrahit()
+		if(e) e.Chakrahit()
 		//e.stunned=0
 		e.End_Stun()
 		e.Knockback(3,src.dir)
 		src.overlays-='icons/hakkehand.dmi'
 
 mob/proc/Chakrahit()
-	spawn()
-		var/obj/o=new/obj/effect(locate(src.x,src.y,src.z))
-		o.icon='icons/chakrahit.dmi'
-		var/r=rand(1,4)
-		flick("[r]",o)
-		spawn(20)
-			del(o)
+	set waitfor = 0
+	var/obj/o=new/obj/effect(locate(src.x,src.y,src.z))
+	o.icon='icons/chakrahit.dmi'
+	var/r=rand(1,4)
+	flick("[r]",o)
+	sleep(20)
+	//del(o)
+	o.loc = null
+
 mob/proc/Chakrahit2()
-	spawn()
-		var/obj/o=new/obj/effect(locate(src.x,src.y,src.z))
-		o.icon='icons/chakrahit.dmi'
-		var/r=rand(1,4)
-		flick("[r]",o)
-		spawn(4)
-			del(o)
+	set waitfor = 0
+	var/obj/o=new/obj/effect(locate(src.x,src.y,src.z))
+	o.icon='icons/chakrahit.dmi'
+	var/r=rand(1,4)
+	flick("[r]",o)
+	sleep(4)
+	//del(o)
+	o.loc = null
+
 mob/proc/Chakrahit3()
-	spawn()
-		var/obj/o=new/obj/effect(locate(src.x,src.y,src.z))
-		o.icon='icons/chakrahit2.dmi'
-		var/r=rand(1,4)
-		flick("[r]",o)
-		spawn(4)
-			del(o)
+	set waitfor = 0
+	var/obj/o=new/obj/effect(locate(src.x,src.y,src.z))
+	o.icon='icons/chakrahit2.dmi'
+	var/r=rand(1,4)
+	flick("[r]",o)
+	sleep(4)
+	//del(o)
+	o.loc = null
 
 obj
 	explosion
@@ -3460,15 +3002,15 @@ obj
 			pixel_y=-16
 proc
 	explosion(power,dx,dy,dz,mob/u,dontknock,dist)
+		set waitfor = 0
 		var/d=4
 		if(dist)d=dist
-		if(u.skillspassive[TRAP_MASTERY])
+		if(u && u.skillspassive[TRAP_MASTERY])
 			power *= 1+ 0.02 * u.skillspassive[TRAP_MASTERY]
 		new/obj/Explosion(locate(dx,dy,dz),u,power,d,0,0,dontknock)
 proc
 	explosion_spread(power,dx,dy,dz,mob/u,dontknock)
-
-		spawn()explosion(1500,dx,dy,dz,u,0,6)
+		explosion(power,dx,dy,dz,u,0,6)
 
 mob/proc/Tag_Interact(obj/explosive_tag/U)
 	switch(input(usr,"What do you want to do to this Explosive Tag", "Trap",) in list("Disarm","Set Trap","Hide","Nothing"))
@@ -3496,299 +3038,6 @@ mob/proc/Tag_Interact(obj/explosive_tag/U)
 			if(U)
 				U.icon_state="blank"
 
-
-
-
-/*proc
-	wet_proj2(dx,dy,dz,eicon,estate,mob/human/u,dist,epower,emag)
-		if(emag>=1)
-			if(u.dir==NORTH)
-				Wet_cap2(u.x,u.y,u.z,SOUTH,emag,1200)
-			if(u.dir==SOUTH)
-				Wet_cap2(u.x,u.y,u.z,NORTH,emag,1200)
-			if(u.dir==WEST)
-				Wet_cap2(u.x,u.y,u.z,EAST,emag,1200)
-			if(u.dir==EAST)
-				Wet_cap2(u.x,u.y,u.z,WEST,emag,1200)
-
-
-		var/obj/proj/M = new/obj/proj(locate(dx,dy,dz))
-		M.density=0
-		M.icon=eicon
-		M.icon_state=estate
-
-		if(u.dir==NORTH||u.dir==SOUTH||u.dir==EAST||u.dir==WEST)
-			M.dir=u.dir
-		if(u.dir==NORTHEAST||u.dir==NORTHWEST)
-			M.dir=NORTH
-		else if(u.dir==SOUTHEAST|u.dir==SOUTHWEST)
-			M.dir=SOUTH
-		sleep(1)
-		var/stepsleft=dist
-		while(stepsleft>0 && M )
-			if(M && u)
-				var/mob/hit
-				for(var/mob/O in get_step(M,M.dir))
-					if(istype(O,/mob/human))
-						if(O!=u && !O.ko &&!O.protected)
-							hit=O
-
-			//	walk(M,M.dir)
-				if(M.dir==NORTH)
-					M.y++
-				if(M.dir==SOUTH)
-					M.y--
-				if(M.dir==EAST)
-					M.x++
-				if(M.dir==WEST)
-					M.x--
-				sleep(1)
-				if(emag>=1)
-					Wet2(M.x,M.y,M.z,M.dir,emag,300)
-				walk(M,0)
-				stepsleft--
-				if(hit)
-					hit.Dec_Stam(epower,0,u)
-					spawn(1)
-						hit.move_stun=50
-						if(u)
-							spawn(2)if(hit && u) hit.Hostile(u)
-		if(M.dir==NORTH)
-			M.y++
-		if(M.dir==SOUTH)
-			M.y--
-		if(M.dir==EAST)
-			M.x++
-		if(M.dir==WEST)
-			M.x--
-		if(emag>=1)
-			Wet_cap2(M.x,M.y,M.z,M.dir)
-		sleep(1)
-		del(M)*/
-/*proc/Wet_cap2(dx,dy,dz,xdir)
-	spawn()
-		var/obj/Water_sides2/w1
-		var/obj/Water_sides2/w2
-		var/obj/Water_sides2/w3
-		if(xdir==NORTH)
-			w1=new/obj/Water_sides2/wu(locate(dx,dy,dz))
-			w2=new/obj/Water_sides2/wu(locate(dx-1,dy,dz))
-			w3=new/obj/Water_sides2/wu(locate(dx+1,dy,dz))
-		if(xdir==SOUTH)
-			w1=new/obj/Water_sides2/wd(locate(dx,dy,dz))
-			w2=new/obj/Water_sides2/wd(locate(dx-1,dy,dz))
-			w3=new/obj/Water_sides2/wd(locate(dx+1,dy,dz))
-		if(xdir==WEST)
-			w1=new/obj/Water_sides2/wl(locate(dx,dy,dz))
-			w2=new/obj/Water_sides2/wl(locate(dx,dy+1,dz))
-			w3=new/obj/Water_sides2/wl(locate(dx,dy-1,dz))
-		if(xdir==EAST)
-			w1=new/obj/Water_sides2/wr(locate(dx,dy,dz))
-			w2=new/obj/Water_sides2/wr(locate(dx,dy+1,dz))
-			w3=new/obj/Water_sides2/wr(locate(dx,dy-1,dz))
-		spawn(150)
-			del(w1)
-			del(w2)
-			del(w3)*/
-/*
-proc/Wet2(dx,dy,dz,xdir,mag,xdur)
-	xdur=150
-	spawn()
-		var/obj/Waters_sides/ws1
-		var/obj/Waters_sides/ws2
-		if(mag==1)
-			var/obj/Waters/w1= new/obj/Waters(locate(dx,dy,dz))
-
-			if(xdir==NORTH||xdir==SOUTH)
-				ws1=new/obj/Waters_sides/wr(locate(dx+1,dy,dz))
-				ws2=new/obj/Waters_sides/wl(locate(dx-1,dy,dz))
-			if(xdir==WEST||xdir==EAST)
-				ws1=new/obj/Waters_sides/wu(locate(dx,dy+1,dz))
-				ws2=new/obj/Waters_sides/wd(locate(dx,dy-1,dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-		if(mag==2)
-			var/obj/Waters/w1= new/obj/Waters(locate(dx,dy,dz))
-			var/obj/Waters/w2
-			var/obj/Waters/w3
-			if(xdir==1||xdir==2)
-				w2=new/obj/Waters(locate(dx-1,dy,dz))
-				w3=new/obj/Waters(locate(dx+1,dy,dz))
-				ws1=new/obj/Waters_sides/wr(locate(dx+2,dy,dz))
-				ws2=new/obj/Waters_sides/wl(locate(dx-2,dy,dz))
-			if(xdir==8||xdir==4)
-				w2=new/obj/Waters(locate(dx,dy-1,dz))
-				w3=new/obj/Waters(locate(dx,dy+1,dz))
-				ws1=new/obj/Waters_sides/wu(locate(dx,dy+2,dz))
-				ws2=new/obj/Waters_sides/wd(locate(dx,dy-2,dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-		if(mag==3)
-			var/obj/Waters/w1= new/obj/Waters(locate(dx,dy,dz))
-			var/obj/Waters/w2
-			var/obj/Waters/w3
-			var/obj/Waters/w4
-			var/obj/Waters/w5
-			if(xdir==NORTH||xdir==SOUTH)
-				w2=new/obj/Waters(locate(dx-1,dy,dz))
-				w3=new/obj/Waters(locate(dx+1,dy,dz))
-				w4=new/obj/Waters(locate(dx-2,dy,dz))
-				w5=new/obj/Waters(locate(dx+2,dy,dz))
-				ws1=new/obj/Waters_sides/wr(locate(dx+(mag),dy,dz))
-				ws2=new/obj/Waters_sides/wl(locate(dx-(mag),dy,dz))
-			if(xdir==WEST||xdir==EAST)
-				w2=new/obj/Waters(locate(dx,dy-1,dz))
-				w3=new/obj/Waters(locate(dx,dy+1,dz))
-				w4=new/obj/Waters(locate(dx,dy-2,dz))
-				w5=new/obj/Waters(locate(dx,dy+2,dz))
-				ws1=new/obj/Waters_sides/wu(locate(dx,dy+(mag),dz))
-				ws2=new/obj/Waters_sides/wd(locate(dx,dy-(mag),dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-		if(mag==4)
-			var/obj/Waters/w1= new/obj/Waters(locate(dx,dy,dz))
-			var/obj/Waters/w2
-			var/obj/Waters/w3
-			var/obj/Waters/w4
-			var/obj/Waters/w5
-			var/obj/Waters/w6
-			var/obj/Waters/w7
-			if(xdir==NORTH||xdir==SOUTH)
-				w2=new/obj/Waters(locate(dx-1,dy,dz))
-				w3=new/obj/Waters(locate(dx+1,dy,dz))
-				w4=new/obj/Waters(locate(dx-2,dy,dz))
-				w5=new/obj/Waters(locate(dx+2,dy,dz))
-				w6=new/obj/Waters(locate(dx-3,dy,dz))
-				w7=new/obj/Waters(locate(dx+3,dy,dz))
-				ws1=new/obj/Waters_sides/wr(locate(dx+(mag),dy,dz))
-				ws2=new/obj/Waters_sides/wl(locate(dx-(mag),dy,dz))
-			if(xdir==WEST||xdir==EAST)
-				w3=new/obj/Waters(locate(dx,dy+1,dz))
-				w4=new/obj/Waters(locate(dx,dy-2,dz))
-				w5=new/obj/Waters(locate(dx,dy+2,dz))
-				w6=new/obj/Waters(locate(dx,dy-3,dz))
-				w7=new/obj/Waters(locate(dx,dy+3,dz))
-				ws1=new/obj/Waters_sides/wu(locate(dx,dy+(mag),dz))
-				ws2=new/obj/Waters_sides/wd(locate(dx,dy-(mag),dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-				del(w6)
-				del(w7)
-		if(mag==5)
-			var/obj/Waters/w1= new/obj/Waters(locate(dx,dy,dz))
-			var/obj/Waters/w2
-			var/obj/Waters/w3
-			var/obj/Waters/w4
-			var/obj/Waters/w5
-			var/obj/Waters/w6
-			var/obj/Waters/w7
-			var/obj/Waters/w8
-			var/obj/Waters/w9
-			if(xdir==NORTH||xdir==SOUTH)
-				w2=new/obj/Waters(locate(dx-1,dy,dz))
-				w3=new/obj/Waters(locate(dx+1,dy,dz))
-				w4=new/obj/Waters(locate(dx-2,dy,dz))
-				w5=new/obj/Waters(locate(dx+2,dy,dz))
-				w6=new/obj/Waters(locate(dx-3,dy,dz))
-				w7=new/obj/Waters(locate(dx+3,dy,dz))
-				w8=new/obj/Waters(locate(dx-3,dy,dz))
-				w9=new/obj/Waters(locate(dx+3,dy,dz))
-				ws1=new/obj/Waters_sides/wr(locate(dx+(mag),dy,dz))
-				ws2=new/obj/Waters_sides/wl(locate(dx-(mag),dy,dz))
-			if(xdir==WEST||xdir==EAST)
-				w2=new/obj/Waters(locate(dx,dy-1,dz))
-				w3=new/obj/Waters(locate(dx,dy+1,dz))
-				w4=new/obj/Waters(locate(dx,dy-2,dz))
-				w5=new/obj/Waters(locate(dx,dy+2,dz))
-				w6=new/obj/Waters(locate(dx,dy-3,dz))
-				w7=new/obj/Waters(locate(dx,dy+3,dz))
-				w8=new/obj/Waters(locate(dx,dy-4,dz))
-				w9=new/obj/Waters(locate(dx,dy+4,dz))
-
-				ws1=new/obj/Waters_sides/wu(locate(dx,dy+(mag),dz))
-				ws2=new/obj/Waters_sides/wd(locate(dx,dy-(mag),dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-				del(w6)
-				del(w7)
-				del(w8)
-				del(w9)
-		if(mag>=6)
-			var/obj/Waters/w1= new/obj/Waters(locate(dx,dy,dz))
-			var/obj/Waters/w2
-			var/obj/Waters/w3
-			var/obj/Waters/w4
-			var/obj/Waters/w5
-			var/obj/Waters/w6
-			var/obj/Waters/w7
-			var/obj/Waters/w8
-			var/obj/Waters/w9
-			var/obj/Waters/w10
-			var/obj/Waters/w11
-			if(xdir==NORTH||xdir==SOUTH)
-				w2=new/obj/Waters(locate(dx-1,dy,dz))
-				w3=new/obj/Waters(locate(dx+1,dy,dz))
-				w4=new/obj/Waters(locate(dx-2,dy,dz))
-				w5=new/obj/Waters(locate(dx+2,dy,dz))
-				w6=new/obj/Waters(locate(dx-3,dy,dz))
-				w7=new/obj/Waters(locate(dx+3,dy,dz))
-				w8=new/obj/Waters(locate(dx-4,dy,dz))
-				w9=new/obj/Waters(locate(dx+4,dy,dz))
-				w10=new/obj/Waters(locate(dx-5,dy,dz))
-				w11=new/obj/Waters(locate(dx+5,dy,dz))
-				ws1=new/obj/Waters_sides/wr(locate(dx+(mag),dy,dz))
-				ws2=new/obj/Waters_sides/wl(locate(dx-(mag),dy,dz))
-			if(xdir==WEST||xdir==EAST)
-				w2=new/obj/Waters(locate(dx,dy-1,dz))
-				w3=new/obj/Waters(locate(dx,dy+1,dz))
-				w4=new/obj/Waters(locate(dx,dy-2,dz))
-				w5=new/obj/Waters(locate(dx,dy+2,dz))
-				w6=new/obj/Waters(locate(dx,dy-3,dz))
-				w7=new/obj/Waters(locate(dx,dy+3,dz))
-				w8=new/obj/Waters(locate(dx,dy-4,dz))
-				w9=new/obj/Waters(locate(dx,dy+4,dz))
-				w10=new/obj/Waters(locate(dx,dy-5,dz))
-				w11=new/obj/Waters(locate(dx,dy+5,dz))
-				ws1=new/obj/Waters_sides/wu(locate(dx,dy+(mag),dz))
-				ws2=new/obj/Waters_sides/wd(locate(dx,dy-(mag),dz))
-			spawn(xdur)
-				del(ws1)
-				del(ws2)
-				del(w1)
-				del(w2)
-				del(w3)
-				del(w4)
-				del(w5)
-				del(w6)
-				del(w7)
-				del(w8)
-				del(w9)
-				del(w10)
-				del(w11)*/
 obj
 	wind_bullet
 		New()
@@ -3796,17 +3045,3 @@ obj
 			src.overlays+=image('icons/windbullet.dmi',icon_state = "dr",pixel_x=16,pixel_y=-16)
 			src.overlays+=image('icons/windbullet.dmi',icon_state = "ul",pixel_x=-16,pixel_y=16)
 			src.overlays+=image('icons/windbullet.dmi',icon_state = "ur",pixel_x=16,pixel_y=16)
-
-/*mob/human/player
-	Del()
-		if(!istype(src,/mob/human/player/npc))
-			src.density=0
-			src.targetable=0
-			src.invisibility=100
-			sleep(10)
-			src.loc=locate(0,0,0)
-			for(var/image/X in src.Imgs)
-				del(X)
-				sleep(1)
-
-			..()*/

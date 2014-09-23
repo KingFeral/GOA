@@ -16,21 +16,22 @@ skill
 						Error(user, "Earth: Iron Skin is already active.")
 						return 0
 
+					if(user.boneharden)
+						Error(user, "You are channeling chakra to Bone Harden.")
+						return 0
 
 			Use(mob/human/user)
-				if(user.boneharden)
-					user.combat("Your bones unharden")
-					user.boneharden=0
+				set waitfor = 0
 				viewers(user) << output("[user]: Earth: Iron Skin!", "combat_output")
 				if(user.playergender=="male")
 					user.icon='icons/base_m_stoneskin.dmi'
 				else
 					user.icon='icons/base_m_stoneskin.dmi'
 				user.ironskin=1
-				spawn(300 + round(50*user.ControlDamageMultiplier()))
-					if(user)
-						user.ironskin=0
-						user.reIcon()
+				sleep(300 + round(50*user.ControlDamageMultiplier()))
+				if(user)
+					user.ironskin = 0
+					user.reIcon()
 
 
 
@@ -54,6 +55,7 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				//user.stunned=1
 				user.Timed_Stun(10)
 				viewers(user) << output("[user]: Earth: Dungeon Chamber of Nothingness!", "combat_output")
@@ -67,23 +69,18 @@ skill
 					var/ex=etarget.x
 					var/ey=etarget.y
 					var/ez=etarget.z
-					spawn()Doton_Cage(ex,ey,ez,100)
+					Doton_Cage(ex,ey,ez,100)
 					sleep(4)
 					if(etarget)
 						if(ex==etarget.x&&ey==etarget.y&&ez==etarget.z)
-							//etarget.stunned=10
 							etarget.Timed_Stun(100)
 							etarget.layer=MOB_LAYER-1
 							etarget.paralysed=1
-							spawn()
-								while(etarget&&ex==etarget.x&&ey==etarget.y&&ez==etarget.z)
-									sleep(2)
-								if(etarget)
-									etarget.paralysed=0
-									//etarget.stunned=0
-							spawn(100)
-								if(etarget)
-									etarget.paralysed=0
+							while(etarget&&ex==etarget.x&&ey==etarget.y&&ez==etarget.z)
+								sleep(2)
+							if(etarget)
+								etarget.paralysed=0
+								etarget.End_Stun()
 
 
 
@@ -104,10 +101,11 @@ skill
 				for(var/obj/earthcage/o in oview(8))
 					if(o.crushed)
 						continue
+					o.crushed = TRUE
 					o.icon='icons/dotoncagecrushed.dmi'
 					for(var/mob/human/m in oview(0,o))
 						m.Crush(user)
-
+					break
 
 
 
@@ -142,7 +140,7 @@ skill
 						if(M!=user && !(M in o.gotmob))
 							o.gotmob+=M
 							M.Dec_Stam(rand(600,900)+200*conmult,0,user)
-							spawn()M.Hostile(user)
+							M.Hostile(user)
 
 					for(var/turf/T in get_step(o,user_dir))
 						if(T.density)
@@ -152,7 +150,7 @@ skill
 					distance--
 					for(var/mob/human/player/M in o.gotmob)
 						M.Dec_Stam(rand(70,100)+20*conmult,0,user)
-						spawn()M.Hostile(user)
+						M.Hostile(user)
 				del(O)
 				del(o)
 
@@ -163,5 +161,5 @@ mob/human/proc
 	Crush(mob/u)
 		src.Wound(rand(15,30),0,u)
 		src.Dec_Stam(3000,0,u)
-		spawn()Blood2(src,u)
-		spawn()src.Hostile(u)
+		Blood2(src,u)
+		src.Hostile(u)

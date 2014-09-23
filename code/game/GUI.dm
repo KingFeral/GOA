@@ -1,7 +1,7 @@
 obj
 	decoy
 		density=1
-		New()
+		/*New()
 			var/tx
 			while(src)
 				tx=src.x
@@ -13,7 +13,7 @@ obj
 					if(src.dir==EAST)
 						src.dir=WEST
 					else
-						src.dir=EAST
+						src.dir=EAST*/
 
 obj/kunai_melee
 	icon='icons/kunai_melee.dmi'
@@ -53,8 +53,10 @@ mob
 
 				//usr.pint=0
 				usr:Level_Up("con")
+				return 1
 			else
 				usr<<"'Control' cannot exceed [(usr.blevel)*3+50] (+[effective_level]/[usr.blevel] levelup bonus points) at your current level."
+				return 0
 
 	proc/increase_rfx()
 		usr = src
@@ -80,8 +82,10 @@ mob
 
 				//usr.pint=0
 				usr:Level_Up("rfx")
+				return 1
 			else
 				usr<<"'Reflex' cannot exceed [(usr.blevel)*3+50] (+[effective_level]/[usr.blevel] levelup bonus points) at your current level."
+				return 0
 
 	proc/increase_int()
 		usr = src
@@ -108,8 +112,10 @@ mob
 
 				//usr.pint=0
 				usr:Level_Up("int")
+				return 1
 			else
 				usr << "'Intelligence' cannot exceed [(usr.blevel)*3+50] (+[effective_level]/[usr.blevel] levelup bonus points) at your current level."
+				return 0
 
 	proc/increase_str()
 		usr = src
@@ -135,9 +141,10 @@ mob
 
 				//usr.pint=0
 				usr:Level_Up("str")
+				return 1
 			else
 				usr<<"'Strength' cannot exceed [(usr.blevel)*3+50] (+[effective_level]/[usr.blevel] levelup bonus points) at your current level."
-
+				return 0
 
 obj
 	gui
@@ -1818,7 +1825,7 @@ obj
 		icon='icons/gui.dmi'
 		code=73
 		icon_state="leaf_great_whirlwind"
-		sindex=LEAF_GREAT_WHIRLWIND
+		sindex=LEAF_WHIRLWIND
 		staminacost=100
 		cooldown=20
 		Click()
@@ -2520,7 +2527,7 @@ obj
 			code=101
 			New(client/C)
 				if(!C||!istype(C,/client))return
-				screen_loc="1,17"
+				screen_loc="WEST,NORTH"
 				C.screen+=src
 				..()
 			Click()
@@ -2553,12 +2560,12 @@ obj
 
 		triggercard
 			exempt=1
-			icon='icons/gui.dmi'
+			icon='icons/new/hud/trigger.dmi'
 			icon_state="trigger"
 			code=252
 			New(client/C)
 				if(!C||!istype(C,/client))return
-				screen_loc="1,1"
+				screen_loc = "WEST,SOUTH"
 				C.screen+=src
 				..()
 			Click()
@@ -2572,9 +2579,11 @@ obj/log
 	icon_state=""
 	density=1
 	New()
+		set waitfor = 0
 		src.icon_state="kawa"
-		spawn(20)
-			del(src)
+		sleep(20)
+		//del(src)
+		loc = null
 mob
 	var
 		BMM=0
@@ -2710,6 +2719,16 @@ obj
 						screen_loc="17,2"
 						C.screen+=src
 						..()
+
+		placeholder_numbers
+			icon = 'icons/new/hud/skillbar_numbers.png'
+			screen_loc = "5, 1"
+			layer = 25
+
+			New(client/c)
+				if(c)
+					c.screen += src
+
 		placeholder
 			icon='icons/gui.dmi'
 			icon_state=""
@@ -2722,76 +2741,86 @@ obj
 				if(C)
 					var/mob/X=C.mob
 					if(orig)
-						X.player_gui+=new/obj/gui/placeholder/placeholder1(C)
-						X.player_gui+=new/obj/gui/placeholder/placeholder2(C)
-						X.player_gui+=new/obj/gui/placeholder/placeholder3(C)
-						X.player_gui+=new/obj/gui/placeholder/placeholder4(C)
-						X.player_gui+=new/obj/gui/placeholder/placeholder5(C)
-						X.player_gui+=new/obj/gui/placeholder/placeholder6(C)
-						X.player_gui+=new/obj/gui/placeholder/placeholder7(C)
-						X.player_gui+=new/obj/gui/placeholder/placeholder8(C)
-						X.player_gui+=new/obj/gui/placeholder/placeholder9(C)
-						X.player_gui+=new/obj/gui/placeholder/placeholder0(C)
+						X.player_gui.Add(new/obj/gui/placeholder/placeholder1(C),
+						new/obj/gui/placeholder/placeholder2(C),
+						new/obj/gui/placeholder/placeholder3(C),
+						new/obj/gui/placeholder/placeholder4(C),
+						new/obj/gui/placeholder/placeholder5(C),
+						new/obj/gui/placeholder/placeholder6(C),
+						new/obj/gui/placeholder/placeholder7(C),
+						new/obj/gui/placeholder/placeholder8(C),
+						new/obj/gui/placeholder/placeholder9(C),
+						new/obj/gui/placeholder/placeholder0(C))
 					else
 						..()
 			placeholder1
 				orig=0
 				New(client/C)
-					screen_loc="2,1"
+					overlays += image(icon, "slot1 0,0", layer = 20, pixel_y = -4)
+					screen_loc="5:16,1"
 					C.screen+=src
 					..()
 			placeholder2
 				orig=0
 				New(client/C)
-					screen_loc="3,1"
+					overlays += image(icon, "slot2 0,0", layer = 20, pixel_y = -4)
+					screen_loc="6:16,1"
 					C.screen+=src
 					..()
 			placeholder3
 				orig=0
 				New(client/C)
-					screen_loc="4,1"
+					overlays += image(icon, "slot3 0,0", layer = 20, pixel_y = -4)
+					screen_loc="7:16,1"
 					C.screen+=src
 					..()
 			placeholder4
 				orig=0
 				New(client/C)
-					screen_loc="5,1"
+					overlays += image(icon, "slot4 0,0", layer = 20, pixel_y = -4)
+					screen_loc="8:16,1"
 					C.screen+=src
 					..()
 			placeholder5
 				orig=0
 				New(client/C)
-					screen_loc="6,1"
+					overlays += image(icon, "slot5 0,0", layer = 20, pixel_y = -4)
+					screen_loc="9:16,1"
 					C.screen+=src
 					..()
 			placeholder6
 				orig=0
 				New(client/C)
-					screen_loc="7,1"
+					overlays += image(icon, "slot6 0,0", layer = 20, pixel_y = -4)
+					screen_loc="10:16,1"
 					C.screen+=src
 					..()
 			placeholder7
 				orig=0
 				New(client/C)
-					screen_loc="8,1"
+					overlays += image(icon, "slot7 0,0", layer = 20, pixel_y = -4)
+					screen_loc="11:16,1"
 					C.screen+=src
 					..()
 			placeholder8
 				orig=0
 				New(client/C)
-					screen_loc="9,1"
+					overlays += image(icon, "slot8 0,0", layer = 20, pixel_y = -4)
+					screen_loc="12:16,1"
 					C.screen+=src
 					..()
 			placeholder9
 				orig=0
 				New(client/C)
-					screen_loc="10,1"
+					overlays += image(icon, "slot9 0,0", layer = 20, pixel_y = -4)
+					screen_loc="13:16,1"
 					C.screen+=src
 					..()
 			placeholder0
 				orig=0
 				New(client/C)
-					screen_loc="11,1"
+					overlays += image(icon, "slot10 0,0", layer = 20, pixel_y = -4)
+					screen_loc="14:16,1"
 					C.screen+=src
 					..()
 
@@ -3196,27 +3225,30 @@ mob
 			set hidden=1
 			if(istype(usr,/mob/human/player))
 				for(var/obj/gui/skillcards/skillcard/O in usr.client.screen)
-					spawn()O.Click()
+					O.Click()
 		macattack()
 			set name = "macattack"
 			set hidden=1
 			if(istype(usr,/mob/human/player))
-				for(var/obj/gui/skillcards/attackcard/O in usr.client.screen)
-					spawn()O.Click()
+				usr.attackv()
+				/*for(var/obj/gui/skillcards/attackcard/O in usr.client.screen)
+					O.Click()*/
 
 		macdefend()
 			set name = "macdefend"
 			set hidden=1
 			if(istype(usr,/mob/human/player))
-				for(var/obj/gui/skillcards/defendcard/O in usr.client.screen)
-					spawn()O.Click()
+				usr.defendv()
+			/*	for(var/obj/gui/skillcards/defendcard/O in usr.client.screen)
+					O.Click()*/
 
 		macinteract()
 			set name = "macinteract"
 			set hidden=1
 			if(istype(usr,/mob/human/player))
-				for(var/obj/gui/skillcards/interactcard/O in usr.client.screen)
-					spawn()O.Click()
+				usr.interactv()
+				/*for(var/obj/gui/skillcards/interactcard/O in usr.client.screen)
+					O.Click()*/
 
 			else if(istype(usr,/mob/charactermenu))
 				if(!EN[10])
@@ -3232,9 +3264,10 @@ mob
 		macuse()
 			set name = "macuse"
 			set hidden=1
-			if(istype(usr,/mob/human/player))
+			usr.usev()
+			/*if(istype(usr,/mob/human/player))
 				for(var/obj/gui/skillcards/usecard/O in usr.client.screen)
-					spawn()O.Click()
+					O.Click()*/
 		mactrigger()
 			set name = "mactrigger"
 			set hidden=1
@@ -3299,11 +3332,11 @@ mob
 			if(!istype(usr,/mob/human/player))return
 			for(var/obj/O in usr.client.screen)
 				if(O.cust_macro==S)
-					spawn()O.Click()
+					O.Click()
 					return
 			for(var/obj/O in usr.contents)
 				if(O.cust_macro==S)
-					spawn()O.Click()
+					O.Click()
 					return
 
 			// remove the coverimage

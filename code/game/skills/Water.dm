@@ -14,22 +14,24 @@ skill
 				viewers(user) << output("[user]: Water: Giant Vortex!", "combat_output")
 
 				var/conmult = user.ControlDamageMultiplier()
+				var/stamina_damage = (user.waterlogged) ? 100 * conmult : 50 * conmult
+				//stamina_damage /= 2
 
 				//user.stunned=1.5
 				user.Timed_Stun(10)
-				spawn()wet_proj(user.x,user.y,user.z,'icons/watervortex.dmi',"",user,9,(225*conmult+700),2)
+				wet_proj(user.x,user.y,user.z,'icons/watervortex.dmi',"",user,9,stamina_damage,2)
 				if(user.dir==NORTH||user.dir==SOUTH)
-					spawn()wet_proj(user.x+1,user.y,user.z,'icons/watervortex.dmi',"",user,9,(225*conmult+700),0)
-					spawn()wet_proj(user.x-1,user.y,user.z,'icons/watervortex.dmi',"",user,9,(225*conmult+700),0)
+					wet_proj(user.x+1,user.y,user.z,'icons/watervortex.dmi',"",user,9,stamina_damage,0)
+					wet_proj(user.x-1,user.y,user.z,'icons/watervortex.dmi',"",user,9,stamina_damage,0)
 				if(user.dir==EAST||user.dir==WEST)
-					spawn()wet_proj(user.x,user.y-1,user.z,'icons/watervortex.dmi',"",user,9,(225*conmult+700),0)
-					spawn()wet_proj(user.x,user.y+1,user.z,'icons/watervortex.dmi',"",user,9,(225*conmult+700),0)
+					wet_proj(user.x,user.y-1,user.z,'icons/watervortex.dmi',"",user,9,stamina_damage,0)
+					wet_proj(user.x,user.y+1,user.z,'icons/watervortex.dmi',"",user,9,stamina_damage,0)
 
 
 
 
 		bursting_water_shockwave
-			id = SUTION_SHOCKWAVE
+			id = SUITON_SHOCKWAVE
 			name = "Water: Bursting Water Shockwave"
 			icon_state = "exploading_water_shockwave"
 			default_chakra_cost = 500
@@ -42,32 +44,34 @@ skill
 				viewers(user) << output("[user]: Water: Bursting Water Shockwave!", "combat_output")
 
 				var/conmult = user.ControlDamageMultiplier()
+				var/stamina_damage = (user.waterlogged) ? 200 * conmult : 100 * conmult
+				//stamina_damage /= 2
 
 				//user.stunned=3
 				user.Timed_Stun(15)
-				spawn()wet_proj(user.x,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),6)
+				wet_proj(user.x,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),6)
 				if(user.dir==NORTH||user.dir==SOUTH)
-					spawn()wet_proj(user.x+1,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x-1,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x+2,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x-2,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x+3,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x-3,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x+4,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x-4,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x+5,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x-5,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
+					wet_proj(user.x+1,user.y,user.z,'icons/watershockwave.dmi',"",user,14,stamina_damage,0)
+					wet_proj(user.x-1,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x+2,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x-2,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x+3,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x-3,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x+4,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x-4,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x+5,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x-5,user.y,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
 				if(user.dir==EAST||user.dir==WEST)
-					spawn()wet_proj(user.x,user.y+1,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x,user.y-1,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x,user.y+2,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x,user.y-2,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x,user.y+3,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x,user.y-3,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x,user.y+4,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x,user.y-4,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x,user.y+5,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
-					spawn()wet_proj(user.x,user.y-5,user.z,'icons/watershockwave.dmi',"",user,14,(1000+500*conmult),0)
+					wet_proj(user.x,user.y+1,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x,user.y-1,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x,user.y+2,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x,user.y-2,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x,user.y+3,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x,user.y-3,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x,user.y+4,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x,user.y-4,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x,user.y+5,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
+					wet_proj(user.x,user.y-5,user.z,'icons/watershockwave.dmi',"",user,14,(stamina_damage),0)
 
 
 
@@ -82,12 +86,12 @@ skill
 
 
 
-			IsUsable(mob/user)
+			/*IsUsable(mob/user)
 				. = ..()
 				if(.)
 					if(!Iswater(user.x,user.y,user.z))
 						Error(user, "You must be standing on water to use this technique.")
-						return 0
+						return 0*/
 
 
 			Use(mob/human/user)
@@ -95,10 +99,35 @@ skill
 
 				//user.stunned=10
 				user.Begin_Stun()
-				var/conmult = user.ControlDamageMultiplier()
-				var/mob/human/player/etarget = user.MainTarget()
 
-				if(etarget)
+				var
+					conmult = user.ControlDamageMultiplier()
+					stamina_damage = 1000 + 1300 * conmult
+					targets[] = user.NearestTargets(num = 10)
+
+				//if(!user.waterlogged)
+				//	stamina_damage *= 0.6
+
+				if(targets && targets.len)
+					var/count = 0
+					for(var/mob/m in targets)
+						user.water_dragon(m, ++count)
+
+					while(user && user.water_dragons)
+						sleep(1)
+				else
+					var/obj/trailmaker/o = new/obj/trailmaker/Water_Dragon()
+					var/mob/result = Trail_Straight_Projectile(user.x,user.y,user.z,user.dir,o,8)
+					if(result)
+						result.Knockback(2,o.dir)
+						//new/Event(1, "delayed_delete", list(o))
+						result.Dec_Stam(stamina_damage, 0, user)
+						result.Hostile(user)
+						o.dispose()
+
+				user.End_Stun()
+
+	/*			if(etarget)
 					var/obj/trailmaker/o=new/obj/trailmaker/Water_Dragon()
 					var/mob/result=Trail_Homing_Projectile(user.x,user.y,user.z,user.dir,o,20,etarget)
 					if(result)
@@ -106,7 +135,7 @@ skill
 						spawn(1)
 							del(o)
 						result.Dec_Stam((1000 + 1000*conmult),0,user)
-						spawn()result.Hostile(user)
+						result.Hostile(user)
 				else
 					var/obj/trailmaker/o=new/obj/trailmaker/Water_Dragon()
 					var/mob/result=Trail_Straight_Projectile(user.x,user.y,user.z,user.dir,o,8)
@@ -115,9 +144,9 @@ skill
 						spawn(1)
 							del(o)
 						result.Dec_Stam((1000 + 1000*conmult),0,user)
-						spawn()result.Hostile(user)
+						result.Hostile(user)
 				//user.stunned=0
-				user.End_Stun()
+				user.End_Stun()*/
 
 		collision_destruction
 			id = SUITON_COLLISION_DESTRUCTION
@@ -175,7 +204,7 @@ skill
 					if(found>10)found=10
 					if(hit && etarget)
 						etarget.Dec_Stam((1400 + 400*conmult + found*50),0,user)
-						spawn()etarget.Hostile(user)
+						etarget.Hostile(user)
 					sleep(50)
 					//if(etarget)etarget.stunned=0
 					//user.stunned=0
@@ -183,3 +212,30 @@ skill
 					user.End_Stun()
 					if(O)del(O)
 					user.icon_state=""
+
+mob
+	var/tmp/water_dragons = 0
+
+mob/proc/water_dragon(mob/target, count = 0)
+	set waitfor = 0
+	if(!src || !target)
+		return
+
+	water_dragons++
+
+	var
+		obj/trailmaker/o = new/obj/trailmaker/Water_Dragon()
+		mob/result = Trail_Homing_Projectile(x, y, z, dir, o, 20, target)
+		conmult = ControlDamageMultiplier()
+		stamina_damage = 1000 + 1300 * conmult * (1 - 0.2 * count)
+
+	if(!waterlogged)
+		stamina_damage *= 0.6
+
+	if(result)
+		result.Knockback(2, o.dir)
+		//new/Event(1, "delayed_delete", list(o))
+		result.Dec_Stam(stamina_damage, 0, src)
+		result.Hostile(src)
+		o.dispose()
+	water_dragons--

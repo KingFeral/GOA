@@ -1,3 +1,28 @@
+var/global/bypass_stuns[] = list(
+	BONE_HARDEN,
+	SAND_ARMOR
+	)
+
+var/global/scalpels_only[] = list(
+	MEDIC,
+	POISON_MIST,
+	MYSTICAL_PALM,
+	IMPORTANT_BODY_PTS_DISTURB,
+	PHOENIX_REBIRTH,
+	POISON_NEEDLES,
+	KAWARIMI,
+	)
+
+var/list/noncombat_skills = list(
+	BYAKUGAN,
+	SHARINGAN1,
+	SHARINGAN2,
+	)
+
+mob
+	var/tmp/skillcooldown=0
+	var/tmp/lastskilltime=0
+
 skill
 	var
 		name
@@ -20,9 +45,12 @@ skill
 		skill/master
 		face_nearest = 0
 		modified
+		noskillbar
 
 	proc
 		IsUsable(mob/user)
+			if(user.skillusecool > world.time || user.skillcooldown)
+				return 0
 			if(cooldown > 0)
 				Error(user, "Cooldown Time ([cooldown] seconds)")
 				return 0
@@ -35,7 +63,10 @@ skill
 			else if(user.supplies < SupplyCost(user))
 				Error(user, "Insufficient Supplies ([user.supplies]/[SupplyCost(user)])")
 				return 0
-			else if(user.gate && ChakraCost(user) && !istype(src, /skill/taijutsu/gates))
+			else if(user.scalpol && !(id in scalpels_only))
+				Error(user, "You can only use medical ninjutsu and Body Replacement while Chakra Scalpels are active.")
+				return 0
+			else if(user.gate && ChakraCost(user) && !istype(src, /skill/taijutsu/gates) && !(istype(src, /skill/body_replacement) || istype(src, /skill/body_flicker)))
 				Error(user, "This skill cannot be used while a gate is active")
 				return 0
 			else if(user.Size==1 && !istype(src, /skill/akimichi/size_multiplication))
@@ -48,7 +79,7 @@ skill
 
 
 		Cooldown(mob/user)
-			if(user.skillspassive[6])
+			if(user.skillspassive[SEAL_KNOWLEDGE])
 				return round(default_cooldown * (1 - user.skillspassive[SEAL_KNOWLEDGE] * 0.03))
 			else
 				return default_cooldown
@@ -57,13 +88,19 @@ skill
 		ChakraCost(mob/user)
 			if(base_charge)
 				return base_charge
-			else if(user.skillspassive[5])
-				return round(default_chakra_cost * (1 - user.skillspassive[CHAKRA_EFFICIENCY] * 0.04))
+			else if(user.skillspassive[CHAKRA_EFFICIENCY])
+				. = round(default_chakra_cost * (1 - user.skillspassive[CHAKRA_EFFICIENCY] * 0.04))
+				//return round(default_chakra_cost * (1 - user.skillspassive[CHAKRA_EFFICIENCY] * 0.04))
 			else
-				return default_chakra_cost
+				. = default_chakra_cost
+				//return default_chakra_cost
+			if(user.clan == "Youth")
+				. *= 1.4
 
 
 		StaminaCost(mob/user)
+			if(user.clan == "Youth")
+				return default_stamina_cost * 0.4
 			return default_stamina_cost
 
 
@@ -81,6 +118,7 @@ skill
 
 
 		Activate(mob/human/user)
+			//set waitfor = 0
 			if(user.leading)
 				user.leading=0
 				return
@@ -110,16 +148,14 @@ skill
 				charging = 0
 				return
 
-			if(user.skillusecool || !user.CanUseSkills() || !IsUsable(user) || (user.mane && !istype(src,/skill/nara)))
+			if(user.skillusecool > world.time || user.skillcooldown || (user.handseal_stun && !istype(src, /skill/body_flicker)) || !user.CanUseSkills(id) || !IsUsable(user) || (user.mane && !istype(src,/skill/nara)))
 				return
-
-
-
-			user.skillusecool = 1
+			user.skillcooldown=1
 
 			user.curchakra -= ChakraCost(user)
 			user.curstamina -= StaminaCost(user)
 			user.supplies -= SupplyCost(user)
+			user.combat_flag()
 
 			if(base_charge)
 				user.combat("[src]: Use this skill again to stop charging.")
@@ -139,7 +175,7 @@ skill
 				if(!user)
 					return
 				else if(!user.CanUseSkills())
-					user.skillusecool = 0
+					user.skillusecool = world.time
 					return
 
 			if(face_nearest)
@@ -147,32 +183,30 @@ skill
 			else
 				if(user.MainTarget()) user.FaceTowards(user.MainTarget())
 
+			var/witnessing_time = world.time + 50
 			for(var/mob/human/player/XE in oview(8))
 				var/can_copy = 0
 				if(copyable && XE.HasSkill(SHARINGAN_COPY) && !XE.HasSkill(id))
 					can_copy = 1
 					XE.lastwitnessing=id
-					spawn(50)
-						if(XE) XE.lastwitnessing=0
+					XE.lastwitnessing_time = witnessing_time
+
 				if(XE.sharingan)
 					XE.combat("<font color=#faa21b>{Sharingan} [user] used [src].[can_copy?" Press <b>Space</b> within 5 Seconds to copy this skill.":""]</font>")
 
 			user.lastskill = id
+			user.lastskilltime = world.time
 
 			++uses
 
 			DoSeals(user)
 
-			if(user && user.CanUseSkills())
+			if(user && user.CanUseSkills(id))
 				Use(user)
 
 			if(!user) return
-
-			/*if(user.lastskill == SHUNSHIN)
-				spawn(3) if(user) user.skillusecool = 0
-			else
-				spawn(1) if(user) user.skillusecool = 0*/
-			spawn(3) if(user) user.skillusecool = 0
+			user.skillusecool = (id == LEAF_WHIRLWIND) ? world.time + 10 : world.time + 5
+			user.skillcooldown=0
 
 			DoCooldown(user)
 
@@ -191,9 +225,12 @@ skill
 					user.handseal_stun = 0
 
 
-		DoCooldown(mob/user, resume = 0)
+		DoCooldown(mob/user, resume = 0,presettime=0)
 			set waitfor = 0
-			if(!resume) cooldown = Cooldown(user)
+			if(presettime)
+				cooldown = presettime
+			else
+				if(!resume) cooldown = Cooldown(user)
 
 			for(var/skillcard/card in skillcards)
 				card.overlays -= 'icons/dull.dmi'
@@ -255,6 +292,7 @@ skillcard
 
 	var
 		skill/skill
+		noskillbar
 
 
 
@@ -268,6 +306,7 @@ skillcard
 		mouse_drag_pointer = icon('icons/guidrag.dmi', sk.icon_state)
 		if(sk.cooldown || (istype(sk, /skill/uchiha/sharingan_copy) && sk:copied_skill && sk:copied_skill:cooldown)) overlays += 'icons/dull.dmi'
 		sk.skillcards += src
+		if(sk.noskillbar) noskillbar = 1
 
 
 	Click()
@@ -277,6 +316,125 @@ skillcard
 	MouseDrop(obj/over_object, src_location, over_location, src_control, over_control, params_text)
 		if(src == over_object)
 			return
+
+		if(noskillbar)
+			var/skill/skill = src.skill
+			if(skill.id >= 1300 && skill.id <= 1360)
+				usr << "[src] does not need to go on your skill bar. The Opening Gate skill card will automatically update as needed."
+			return
+
+	/*	var
+			spot
+			obj/new_obj
+			obj/slot_1 = locate(/obj/gui/placeholder/placeholder1) in usr.player_gui
+			obj/slot_2 = locate(/obj/gui/placeholder/placeholder2) in usr.player_gui
+			obj/slot_3 = locate(/obj/gui/placeholder/placeholder3) in usr.player_gui
+			obj/slot_4 = locate(/obj/gui/placeholder/placeholder4) in usr.player_gui
+			obj/slot_5 = locate(/obj/gui/placeholder/placeholder5) in usr.player_gui
+			obj/slot_6 = locate(/obj/gui/placeholder/placeholder6) in usr.player_gui
+			obj/slot_7 = locate(/obj/gui/placeholder/placeholder7) in usr.player_gui
+			obj/slot_8 = locate(/obj/gui/placeholder/placeholder8) in usr.player_gui
+			obj/slot_9 = locate(/obj/gui/placeholder/placeholder9) in usr.player_gui
+			obj/slot_10 = locate(/obj/gui/placeholder/placeholder0) in usr.player_gui
+
+
+		/*if(istype(over_object, /obj/gui/placeholder) || istype(over_object, /skillcard))
+			if(over_object == slot_1)
+				spot = 1
+				new_obj = slot_1
+			else if(over_object == slot_2)
+				spot = 2
+				new_obj = slot_2
+			else if(over_object == slot_3)
+				spot = 3
+				new_obj = slot_3
+			else if(over_object == slot_4)
+				spot = 4
+				new_obj = slot_4
+			else if(over_object == slot_5)
+				spot = 5
+				new_obj = slot_5
+			else if(over_object == slot_6)
+				spot = 6
+				new_obj = slot_6
+			else if(over_object == slot_7)
+				spot = 7
+				new_obj = slot_7
+			else if(over_object == slot_8)
+				spot = 8
+				new_obj = slot_8
+			else if(over_object == slot_9)
+				spot = 9
+				new_obj = slot_9
+			else if(over_object == slot_10)
+				spot = 10
+				new_obj = slot_10*/
+
+		if( (istype(over_object,slot_1)) || (istype(over_object, /skillcard) && over_object in slot_1.contents))
+			new_obj = slot_1
+			spot=1
+
+		if( istype(over_object, slot_2) || (istype(over_object, /skillcard) && over_object in slot_2.contents ))
+			new_obj = slot_2
+			spot=2
+
+		if( istype(over_object, slot_3) || (istype(over_object, /skillcard) && over_object in slot_3.contents ))
+			new_obj = slot_3
+			spot=3
+
+		if( istype(over_object,slot_4) || (istype(over_object, /skillcard) && over_object in slot_4.contents ))
+			new_obj = slot_4
+			spot=4
+
+		if( istype(over_object, slot_5) || (istype(over_object, /skillcard) && over_object in slot_5.contents ))
+			new_obj = slot_5
+			spot=5
+
+		if( istype(over_object, slot_6) || (istype(over_object, /skillcard) && over_object in slot_6.contents ))
+			new_obj = slot_6
+			spot=6
+
+		if( istype(over_object, slot_7) || (istype(over_object, /skillcard) && over_object in slot_7.contents ))
+			new_obj = slot_7
+			spot=7
+
+		if( istype(over_object, slot_8) || (istype(over_object, /skillcard) && over_object in slot_8.contents ))
+			new_obj = slot_8
+			spot=8
+
+		if( istype(over_object, slot_9) || (istype(over_object, /skillcard) && over_object in slot_9.contents ))
+			new_obj = slot_9
+			spot=9
+
+		if( istype(over_object, slot_10) || (istype(over_object, /skillcard) && over_object in slot_10.contents ))
+			new_obj = slot_10
+			spot=10
+
+		if(spot)
+			if(usr.vars["macro[spot]"])
+				if(istype(usr.vars["macro[spot]"], /skill))
+					var/skill/s = usr.vars["macro[spot]"]
+					for(var/skillcard/c in s.skillcards)
+						if(c.screen_loc == new_obj.screen_loc)
+							usr.client.screen -= c
+							usr.player_gui -= c
+							//new_obj.contents -= src
+
+			for(var/i in 1 to 10)
+				var/skill/slot = usr.vars["macro[i]"]
+				if(!slot)
+					continue
+				if(slot.id == skill.id)
+					for(var/skillcard/sc in slot.skillcards)
+						usr.client.screen -= sc
+						usr.player_gui -= sc
+					usr.vars["macro[i]"] = null
+
+			//new_obj.contents += src
+			usr.player_gui += src
+			src.screen_loc = new_obj.screen_loc
+			usr.client.screen += src
+			usr.vars["macro[spot]"] = skill*/
 
 		var/params = params2list(params_text)
 
@@ -291,62 +449,82 @@ skillcard
 		screen_loc = dd_list2text(screen_loc_non_pixel_lst, ",")
 
 		if(istype(over_object, /obj/gui/placeholder) || istype(over_object, /skillcard))
-			var/spot
-			switch(screen_loc)
-				if("2,1")
-					spot=1
-				if("3,1")
-					spot=2
-				if("4,1")
-					spot=3
-				if("5,1")
-					spot=4
+			var/obj/ob = over_object
+			//world.log << "MY SCREEN LOC: [screen_loc]"
+			var/spot = screen_loc2spot[ob.screen_loc]
+			/*switch(screen_loc)
 				if("6,1")
-					spot=5
+					spot=1
 				if("7,1")
-					spot=6
+					spot=2
 				if("8,1")
-					spot=7
+					spot=3
 				if("9,1")
-					spot=8
+					spot=4
 				if("10,1")
-					spot=9
+					spot=5
 				if("11,1")
-					spot=10
+					spot=6
+				if("12,1")
+					spot=7
+				if("13,1")
+					spot=8
+				if("14,1")
+					spot=9
+				if("15,1")
+					spot=10*/
 
 			if(spot)
 				if(usr.vars["macro[spot]"])
 					var/skill/s = usr.vars["macro[spot]"]
 					for(var/skillcard/c in s.skillcards)
-						if(c.screen_loc == screen_loc)
+						if(c.screen_loc == ob.screen_loc)
 							usr.client.screen -= c
 							usr.player_gui -= c
+				for(var/i in 1 to 10)
+					var/skill/slot = usr.vars["macro[i]"]
+					if(!slot)
+						continue
+					if(slot.id == skill.id)
+						for(var/skillcard/sc in slot.skillcards)
+							usr.client.screen -= sc
+							usr.player_gui -= sc
+						usr.vars["macro[i]"] = null
 				usr.player_gui += src
-				src.screen_loc = screen_loc
+				src.screen_loc = ob.screen_loc//screen_loc
 				usr.client.screen += src
 				usr.vars["macro[spot]"] = skill
 
 
-
+var/list/screen_loc2spot = list(
+	"5:16,1" = 1,
+	"6:16,1" = 2,
+	"7:16,1" = 3,
+	"8:16,1" = 4,
+	"9:16,1" = 5,
+	"10:16,1" = 6,
+	"11:16,1" = 7,
+	"12:16,1" = 8,
+	"13:16,1" = 9,
+	"14:16,1" = 10,
+)
 
 mob
 
 	proc
 
 		AddSkill(id, skillcard=1, add_unknown=1)
+			if(!id) return
 			var/skill_type = SkillType(id)
 			var/skill/skill
 			if(!skill_type)
-				if(add_unknown)
-					skill = new /skill()
-					skill.id = id
-					skill.name = "Unknown Skill ([id])"
-			else
-				skill = new skill_type()
+				return
+			skill = new skill_type()
 			if(skill)
 				skills += skill
 			if(skillcard)
 				new /skillcard(src, skill)
+				RefreshSkillList()
 			return skill
 
 		AddItem(code)
@@ -376,12 +554,16 @@ mob
 			//if(skillspassive[24]) conmult *= 1 + 0.04 * skillspassive[24]
 			//return conmult
 			. = (con + conbuff - conneg)
+			if(clan == "Capacity")
+				. += round(curchakra * 0.04)
 			if(skillspassive[PURE_POWER])
 				. += 10 * skillspassive[PURE_POWER]
 			. = round((. / 150)) * 1.5
 
 
 		CanUseSkills(inskill = 0)
+			if(inskill && (inskill in bypass_stuns))
+				return !cantreact && !spectate && !larch && !frozen && !sleeping && !ko && canattack && !kstun && !Tank && pk
 			return !cantreact && !spectate && !larch && !frozen && !sleeping && !ko && canattack && !stunned && !kstun && !Tank && pk
 
 
@@ -394,7 +576,9 @@ mob
 
 
 		AppearBefore(mob/human/x,effect=/obj/overfx2, nofollow=0)
+			set waitfor = 0
 			if(!x) return
+			if(!src.loc)return
 
 			var/turf/t = get_step(x, x.dir)
 			var/list/dirs = list(NORTH, SOUTH, EAST, WEST)
@@ -406,19 +590,22 @@ mob
 				new effect(t)
 				src.FaceTowards(x)
 				//src.Move(t)
+				src.loc.Exited(src)
 				src.loc=t
-				src.Move() //t.Entered(src)
+				src.loc.Entered(src)
 
 				if(!nofollow)
 					for(var/mob/human/player/npc/N in ohearers(10))
 						N.FilterTargets()
 						if(src in N.targets)
-							spawn()N.AppearBehind(src, nofollow=1)
+							N.AppearBehind(src, nofollow=1)
 			return 1
 
 
 		AppearBehind(mob/human/x, effect=/obj/overfx, nofollow=0)
+			set waitfor = 0
 			if(!x) return
+			if(!src.loc)return
 
 			var/turf/t = get_step(x, turn(x.dir, 180))
 			var/list/dirs = list(NORTH, SOUTH, EAST, WEST)
@@ -430,18 +617,22 @@ mob
 				new effect(t)
 				src.FaceTowards(x)
 				//src.Move(t)
+				src.loc.Exited(src)
 				src.loc=t
-				src.Move() //t.Entered(src)
+				if(!src.loc)return
+				src.loc.Entered(src) //t.Entered(src)
 
 				if(!nofollow)
 					for(var/mob/human/player/npc/N in ohearers(10))
 						N.FilterTargets()
 						if(src in N.targets)
-							spawn()N.AppearBehind(src, nofollow=1)
+							N.AppearBehind(src, nofollow=1)
 
 
 		AppearMyDir(mob/human/x, effect=/obj/overfx, nofollow=0)
+			set waitfor = 0
 			if(!x) return 0
+			if(!src.loc)return
 
 			var/turf/t = get_step(x, dir)
 			var/list/dirs = list(turn(dir, 45), turn(dir, -45))
@@ -453,21 +644,31 @@ mob
 				new effect(t)
 				src.FaceTowards(x)
 				//src.Move(t)
+				src.loc.Exited(src)
 				src.loc=t
-				src.Move() //t.Entered(src)
-
+				src.loc.Entered(src) //t.Entered(src)
+				if(!src.loc)return
+				//src.Move(t, src.dir)
 				if(!nofollow)
 					for(var/mob/human/player/npc/N in ohearers(10))
 						N.FilterTargets()
 						if(src in N.targets)
-							spawn()N.AppearBehind(src, nofollow=1)
+							N.AppearBehind(src, nofollow=1)
 				return 1
 			return 0
 
 
 		AppearAt(ax,ay,az, effect=/obj/overfx, nofollow=0)
-			src.loc=locate(ax,ay,az)
-			src.Move() //t.Entered(src)
+			set waitfor = 0
+			if(!src.loc)return
+			var/turf/target_location = locate(ax, ay, az)
+			if(!target_location)
+				return 0
+			src.loc.Exited(src)
+			src.loc = target_location
+			src.loc.Entered(src)//t.Entered(src)
+			if(!src.loc)return
+			//src.Move(locate(ax,ay,az), src.dir)
 			//if(!src.Move(locate(ax,ay,az)))
 			//	return 0
 			if(effect) new effect(locate(ax,ay,az))
@@ -475,7 +676,7 @@ mob
 				for(var/mob/human/player/npc/N in ohearers(10))
 					N.FilterTargets()
 					if(src in N.targets)
-						spawn()N.AppearBehind(src, nofollow=1)
+						N.AppearBehind(src, nofollow=1)
 			return 1
 
 

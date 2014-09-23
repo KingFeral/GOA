@@ -21,6 +21,10 @@ obj/Water_sides
 	w0u
 		icon_state="up"
 
+	Del()
+		if(loc == null) return ..()
+		loc = null
+
 obj/Water
 
 	icon='icons/water.dmi'

@@ -83,7 +83,15 @@ mob
 					// If you're not actively targeting them, drop the effect of analyze passive one level.
 					analyze_level = max(0, analyze_level - 1)
 
-				var/target_msg = "Targeting [M.name]"
+				var/targicon
+				if(!istype(M, /mob/human/npc) && M.faction && M.faction.chat_icon)
+					targicon = "<span class='villageicon'>\icon[faction_chat[M.faction.chat_icon]]</span> "
+					if(M.henged||M.phenged)
+						if(M.transform_chat_icon)
+							targicon = "<span class='villageicon'>\icon[faction_chat[M.transform_chat_icon]]</span> "
+						else targicon = null
+
+				var/target_msg = "[targicon] Targeting [M.name]"
 				var/analytical = skillspassive[ANALYTICAL]
 				if(analytical >= 3 && (M.stunned || M.Poison || M.asleep))
 					target_msg += " (Status: [M.stunned ? "<strong>Stunned</strong> | " : ""][M.Poison ? "<strong>Poisoned</strong> | " : ""][M.asleep ? "<strong>Asleep</strong>" : ""])"

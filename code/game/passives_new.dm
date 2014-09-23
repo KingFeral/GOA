@@ -30,6 +30,7 @@ client/proc/Passive_Refresh(var/obj/gui/passives/Of)
 		src << I2
 		_passive_cache[Of.pindex] = lvln
 
+var/global/passives[] = list()
 
 obj/gui/passives
 	var/list/digit1=new/list()
@@ -39,7 +40,7 @@ obj/gui/passives
 	var/max=0
 	New()
 		..()
-
+		global.passives += src
 		digit1["1"]=new/image('fonts/Cambria8ptblk.dmi',loc=src.loc,icon_state="1",pixel_x=16,pixel_y=-20,layer=MOB_LAYER+10)
 		digit1["2"]=new/image('fonts/Cambria8ptblk.dmi',loc=src.loc,icon_state="2",pixel_x=16,pixel_y=-20,layer=MOB_LAYER+10)
 		digit1["3"]=new/image('fonts/Cambria8ptblk.dmi',loc=src.loc,icon_state="3",pixel_x=16,pixel_y=-20,layer=MOB_LAYER+10)
@@ -93,7 +94,7 @@ obj/gui/passives
 				if(user.client)
 					user.client.Passive_Refresh(src)
 
-					for(var/obj/gui/passives/gauge/gauge in world)
+					for(var/obj/gui/passives/gauge/gauge in passives)
 						user.client.Passive_Refresh(gauge)
 
 	gauge
@@ -129,7 +130,7 @@ obj/gui/passives
 		Flurry
 			max=10
 			pindex=FLURRY
-			disc="For each level of this passive, your successive taijutsu attacks deal 10% more damage than the last until you are hit, stacking up to the number of points in this passive. Additionally for every point of this passive, the duration of your daze effects is increased by 20%."
+			disc="For each level of this passive, your successive taijutsu attacks deal 20% more damage than the last until you are hit, stacking up to the number of points in this passive. Additionally for every point of this passive, the duration of your daze effects is increased by 20%."
 	rfx
 		Bombardment
 			max=5
@@ -150,8 +151,8 @@ obj/gui/passives
 			Level 1: Allows you to use Shunshin without performing handseals. \n\
 			Level 2: Allows you to move directly behind a targeted enemy with Shunshin and removes its stun. \n\
 			Level 3: Allows you to perform an action immediately after finishing Shunshin. \n\
-			Level 4: Reduces the cooldown of Shunshin by 5 seconds. \n\
-			Level 5: Reduces the cooldown of Shunshin by 10 seconds."
+			Level 4: Reduces the cooldown of Shunshin by 10 seconds. \n\
+			Level 5: Reduces the cooldown of Shunshin by 15 seconds."
 		Open_Wounds
 			max=10
 			pindex=OPEN_WOUNDS

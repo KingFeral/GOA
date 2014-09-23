@@ -30,14 +30,15 @@ skill
 			default_chakra_cost = 450
 			default_cooldown = 200
 
-			Activate(mob/user)
+			/*Activate(mob/user)
 				user.bloodrem = list()
 				for(var/obj/undereffect/b in user.loc)
 					if(b.icon == 'icons/blood.dmi' && b.uowner && b.uowner != user)
 						user.bloodrem += b.uowner
-				..()
+				..()*/
 
 			Use(mob/user)
+				set waitfor = 0
 				var/list/Choose=user.bloodrem.Copy()
 				for(var/mob/human/F in Choose)
 					if(F.protected||F.ko||F.z!=user.z)
@@ -53,13 +54,13 @@ skill
 					user.Contract=J
 					user.Contract2=C
 					user.icon='icons/jashin_base.dmi'
-					spawn(1800)
-						if(J)
-							J.loc = null
-							if(user)
-								user.Contract = null
-								user.Contract2=0
-								user.Affirm_Icon()
+					sleep(1800)
+					if(J)
+						J.loc = null
+						if(user)
+							user.Contract = null
+							user.Contract2=0
+							user.Affirm_Icon()
 
 
 

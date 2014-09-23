@@ -7,47 +7,70 @@ mob/human/Puppet/proc
 	Melee(mob/u)
 		var/nopk
 		for(var/area/O in oview(0,src))
-			if(istype(O,/area/nopkzone))
+			if(O.safe)
 				nopk=1
 			else
 				nopk=0
 		if(nopk)
 			return
-		if(!src.stunned)
+		if(!src.stunned && !u.ko && !u.stunned)
 			if(!src.coold)
 				flick("Melee",src)
 				src.coold+=src.meleecost
-				for(var/mob/human/X in oview(1,src))
-					if(X==u.MainTarget()&& !X.ko && !X.protected)
-						if(!X.icon_state)
-							flick("hurt",X)
-						X.Dec_Stam(((rand(50,200)*src.meleedamage)/100))
-						X.Wound(((rand(50,200)*src.wounddamage)/100))
-						X.Hostile(u)
+				var/mob/human/ptarget = u.MainTarget()
+				if(ptarget && !ptarget.ko && !ptarget.IsProtected())
+					if(ptarget in ohearers(1,src))
+						src.FaceTowards(ptarget)
+						//ptarget = ptarget.Replacement_Start(u)
+						/*if(!ptarget.icon_state) flick("hurt",ptarget)
+						//ptarget.Damage(((rand(50,100)*src.meleedamage)/100),rand(0,src.wounddamage), u, "Puppet Melee", "Normal")
+						ptarget.Dec_Stam((rand(50,100)*src.meleedamage)/100, 0, u)
+						ptarget.Wound(rand(0,src.wounddamage), 0, u)
+						ptarget.Hostile(u)
 						var/b=pick(1,2,3)
 						if(b==3)
-							Blood2(X)
-						return
+							Blood2(ptarget)
+						//spawn(5) if(ptarget) ptarget.Replacement_End()
+						return*/
 				for(var/mob/human/X in get_step(src,src.dir))
-					if(!X.ko && !X.protected)
+					if(!X.ko && !X.IsProtected())
+						//X = X.Replacement_Start(u)
 						if(!X.icon_state)
 							flick("hurt",X)
-						X.Dec_Stam(((rand(50,200)*src.meleedamage)/100))
-						X.Wound(((rand(50,200)*src.wounddamage)/100))
-						X.Poison+=src.Pmod
+						//X.Damage(((rand(50,100)*src.meleedamage)/100),rand(0,src.wounddamage), u, "Puppet Melee", "Normal")
+						X.Dec_Stam((rand(50,100)*src.meleedamage)/100, 0, u)
+						X.Wound(rand(0,src.wounddamage), 0, u)
+						if(Pmod)
+							var/poison = rand(1, 4)
+							if(X && X.bleeding && u.skillspassive[OPEN_WOUNDS])
+								poison *= 1 + 0.1 * u.skillspassive[OPEN_WOUNDS]
+						if(u && prob(3*u.skillspassive[OPEN_WOUNDS]))
+							//wound2=pick(1,2,3,4)
+							var/bleed=pick(2,4,6)
+							X.bleed(bleed, u)
+						//X.Poison+=src.Pmod
 						X.Hostile(u)
 						var/b=pick(1,2,3)
 						if(b==3)
 							Blood2(X)
+						//spawn(5) if(X) X.Replacement_End()
 						return
 	Def(mob/u)
 		if(!src.stunned)
-			walk_towards(src,u)
-			sleep(5)
-			walk(src,0)
-			src.AppearAt(u.x,u.y,u.z)
-
+			walk(src, 0)
+			stopwalking = 1
+			pwalk_towards(src,u,2,20)
+			//var/mob/human/etarget = u.MainTarget()
+			//if(etarget && !etarget.ko && !etarget.mole)
+			//	var/edir = get_dir(u,etarget)
+			//	src.loc = u.loc
+			//	step(src,edir)
+			//	src.dir = edir
+			//sleep(5)
+			//walk(src,0)
+			if(get_dist(src,u) >= 1) src.AppearAt(u.x,u.y,u.z)
 	pwalk_towards(mob/human/Puppet/a,atom/b,lag=0,dur=60)
+		set waitfor = 0
 		if(a.walking) return
 		else a.walking = 1
 
@@ -82,10 +105,12 @@ mob/human/Puppet/proc
 		if(a)
 			a.walking = 0
 			a.stopwalking = 0
+			//if(b && b == owner && get_dist(a, b)<=1)
 
 mob
 	human
 		Puppet
+			pk=1
 			var
 				saveindex=0
 				coold=0
@@ -94,9 +119,9 @@ mob
 				wounddamage=0
 				meleecost=1
 				Pmod=0
+				mob/human/owner
 				walking
 				stopwalking
-
 			Karasu
 				icon='icons/puppet1.dmi'
 				initialized=1
@@ -140,7 +165,7 @@ mob
 			usr=src
 			var/nopk
 			for(var/area/O in oview(0,src))
-				if(istype(O,/area/nopkzone))
+				if(O.safe)
 					nopk=1
 				else
 					nopk=0
@@ -163,42 +188,20 @@ mob
 
 					var/damage = 900
 
-					spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle, distance=10, damage=damage, wounds="passive", ignore_list = list(u))
-		/*			if(etarget)
-						var/angle = get_real_angle(src, etarget)
-						var/speed = 32
-						var/momx=speed*cos(angle)
-						var/momy=speed*sin(angle)
-
-						spawn()advancedprojectile(eicon,estate,src,momx,momy,10,900,r,100,1)
-
-					else
-						if(src.dir==NORTH)
-							spawn()advancedprojectile(eicon,estate,src,0,32,10,900,r,100,1)
-
-						if(src.dir==SOUTH)
-							spawn()advancedprojectile(eicon,estate,src,0,-32,10,900,r,100,1)
-
-						if(src.dir==EAST)
-							spawn()advancedprojectile(eicon,estate,src,32,0,10,900,r,100,1)
-
-						if(src.dir==WEST)
-							spawn()advancedprojectile(eicon,estate,src,-32,0,10,900,r,100,1)
-
-						return*/
+					advancedprojectile_angle(eicon, estate, usr, speed, angle, distance=10, damage=damage, wounds="passive", ignore_list = list(u))
 
 				if(2)//poison bomb
 					flick("hand",src)
 					var/eicon='icons/poison.dmi'
 					var/estate="ball"
 					if(!etarget)
-						etarget=straight_proj2(eicon,estate,8,src)
+						etarget=straight_proj(eicon,estate,8,src)
 						if(etarget)
 							var/ex=etarget.x
 							var/ey=etarget.y
 							var/ez=etarget.z
-							spawn()AOEPoison(ex,ey,ez,1,100,50,u,6,1)
-							spawn()PoisonCloud(ex,ey,ez,1,50)
+							AOEPoison(ex,ey,ez,1,100,50,u,6,1)
+							PoisonCloud(ex,ey,ez,1,50)
 					else
 						var/ex=etarget.x
 						var/ey=etarget.y
@@ -206,83 +209,95 @@ mob
 						var/mob/x=new/mob(locate(ex,ey,ez))
 
 						projectile_to(eicon,estate,src,x)
-						del(x)
-						spawn()AOEPoison(ex,ey,ez,1,100,50,u,6,1)
-						spawn()PoisonCloud(ex,ey,ez,1,50)
+						x.loc = null
+						AOEPoison(ex,ey,ez,1,100,50,u,6,1)
+						PoisonCloud(ex,ey,ez,1,50)
 					usr.icon_state=""
 
 				if(3)//Body crush
 					if(!etarget)
 						for(var/mob/human/X in get_step(src,src.dir))
 							etarget=X
+					else
+						var/mob/human/Puppet/p = src
+						p.pwalk_towards(src,etarget,2,10)
 					if(get_dist(src, etarget) <= 1)
-						var/orig_loc = etarget.loc
-
-						//src.stunned=10
-						Timed_Stun(100)
-						sleep(15)
-						if(etarget && etarget.loc == orig_loc)
-							//etarget.stunned=10
-							etarget.Timed_Stun(30)
+						src.icon_state = "hid_setup"
+						src.Timed_Stun(5)
+						sleep(5)
+						if(etarget && get_dist(src,etarget) <= 1)
+							etarget.Timed_Stun(20)
+							src.Timed_Stun(90)
 							src.layer++
 							src.icon_state="hid"
-							src.loc=orig_loc
+							src.loc=etarget.loc
 							var/image/e=image(icon='icons/puppet1.dmi',icon_state="bindunder")
 							etarget.underlays+=e
 							etarget.icon_state="hurt"
 							flick("bindover",src)
-							sleep(30)
+							sleep(20)
 							src.icon_state=""
 							if(etarget)
 								etarget.icon_state=""
 								etarget.underlays-=e
-								//etarget.stunned=2
-								etarget.Dec_Stam(rand(2000,3500))
-								etarget.Wound(rand(4,9))
+								//etarget.Damage(rand(2000,3500), rand(4,9), u, "Body Crush", "Normal")
+								etarget.Dec_Stam(rand(2000,3500), 0, u)
+								etarget.Wound(rand(4,9), 0, u)
 								etarget.Hostile(u)
 							src.layer=MOB_LAYER
-							del(e)
+							e.loc = null
 
 				if(4)//Poison tipped blade
 					u<<"[src] releases poison onto its blades."
-					src:Pmod=4
+					src:Pmod=1
 
 				if(5)//Needle Gun
+					//if(src.dir == NORTHEAST || src.dir == SOUTHEAST) dir = EAST
+					//if(src.dir == NORTHWEST || src.dir == SOUTHWEST) dir = WEST
 					src.icon_state="gun"
 					src:coold+=3000
 					var/c=20
 					var/ewoundmod=100
 					var/eicon='icons/projectiles.dmi'
 					var/estate="needle-m"
-					var/evel=150
+					//var/evel=150
 
+					var/angle=0
+					var/spread = 8
+					var/list/ignorethem = list(src, u)
 					while(c>0)
-						spawn()
-							if(src.dir==NORTH)
-								spawn()advancedprojectile(eicon,estate,src,rand(-10,10),32,10,ewoundmod,0,evel,0,src)
+						etarget = u.MainTarget()
+						if(etarget) angle = get_real_angle(src, etarget)
+						else angle = dir2angle(src.dir)
+						//advancedprojectile_angle(eicon, estate, usr, speed, angle+spread, distance=10, damage=ewoundmod, wounds="passive")
+						advancedprojectile_angle(eicon, estate, u, rand(24,32), pick(angle+spread*2,angle+spread,angle,angle-spread,angle-spread*2), distance=10, damage=ewoundmod, wounds="passive", daze=0, radius=8, from=src, ignore_list = ignorethem)
+						advancedprojectile_angle(eicon, estate, u, rand(24,32), pick(angle+spread*2,angle+spread,angle,angle-spread,angle-spread*2), distance=10, damage=ewoundmod, wounds="passive", daze=0, radius=8, from=src, ignore_list = ignorethem)
+							/*if(src.dir==NORTH)
+								spawn()advancedprojectile(eicon,estate,src,rand(-10,10),32,10,ewoundmod,0,evel,0,u)
+							else if(src.dir==NORTHEAST)
+								spawn()advancedprojectile(eicon,estate,src,rand(-10,10),32,10,ewoundmod,0,evel,0,u)
 
 							if(src.dir==SOUTH)
-								spawn()advancedprojectile(eicon,estate,src,rand(-10,10),-32,10,ewoundmod,0,evel,0,src)
+								spawn()advancedprojectile(eicon,estate,src,rand(-10,10),-32,10,ewoundmod,0,evel,0,u)
 
 							if(src.dir==EAST)
-								spawn()advancedprojectile(eicon,estate,src,32,rand(-10,10),10,ewoundmod,0,evel,0,src)
+								spawn()advancedprojectile(eicon,estate,src,32,rand(-10,10),10,ewoundmod,0,evel,0,u)
 
 							if(src.dir==WEST)
-								spawn()advancedprojectile(eicon,estate,src,-32,rand(-10,10),10,ewoundmod,0,evel,0,src)
+								spawn()advancedprojectile(eicon,estate,src,-32,rand(-10,10),10,ewoundmod,0,evel,0,u)
+
 						spawn()
-
-
 							if(src.dir==NORTH)
-								spawn()advancedprojectile(eicon,estate,src,rand(-10,10),32,10,ewoundmod,0,evel,0,src)
+								spawn()advancedprojectile(eicon,estate,src,rand(-10,10),32,10,ewoundmod,0,evel,0,u)
 
 							if(src.dir==SOUTH)
-								spawn()advancedprojectile(eicon,estate,src,rand(-10,10),-32,10,ewoundmod,0,evel,0,src)
+								spawn()advancedprojectile(eicon,estate,src,rand(-10,10),-32,10,ewoundmod,0,evel,0,u)
 
 							if(src.dir==EAST)
-								spawn()advancedprojectile(eicon,estate,src,32,rand(-10,10),10,ewoundmod,0,evel,0,src)
+								spawn()advancedprojectile(eicon,estate,src,32,rand(-10,10),10,ewoundmod,0,evel,0,u)
 
 							if(src.dir==WEST)
-								spawn()advancedprojectile(eicon,estate,src,-32,rand(-10,10),10,ewoundmod,0,evel,0,src)
+								spawn()advancedprojectile(eicon,estate,src,-32,rand(-10,10),10,ewoundmod,0,evel,0,u)*/
 						c--
 						sleep(2)
 					src:coold-=3000
@@ -291,44 +306,92 @@ mob
 					src.icon_state=""
 
 				if(6)//shield
-					//src.stunned=100
-					Begin_Stun()
-					noknock++
+					src:shield_active = 1
+					density = 0
+					src.Begin_Stun()
 					src.icon_state="shield"
+					var/old_layer = layer
+					layer = MOB_LAYER + 1
 					sleep(5)
-					var/obj/S=new/obj/Shield(locate(src.x,src.y,src.z))
-					sleep(50)
-					//src.stunned=0
-					End_Stun()
-					noknock--
+					new/obj/Shield(locate(src.x,src.y,src.z))
+					sleep(5)
+					src:shield_active = 0
+					layer = old_layer
+					density = 1
+					src.End_Stun()
 					src.icon_state=""
-					del(S)
+					//S.loc = null
 
 obj
 	Shield
 		layer=MOB_LAYER+3
-		density=0
+		density = 0
+		var/list/owners[] = list()
 		New()
 			..()
+			src.owner = usr
 			src.overlays+=image('icons/shield.dmi',icon_state="tl",pixel_x=-16,pixel_y=16)
 			src.overlays+=image('icons/shield.dmi',icon_state="tr",pixel_x=16,pixel_y=16)
 			src.overlays+=image('icons/shield.dmi',icon_state="bl",pixel_x=-16,pixel_y=-16)
 			src.overlays+=image('icons/shield.dmi',icon_state="br",pixel_x=16,pixel_y=-16)
 			sleep(70)
-			del(src)
+			owner = null
+			owners = null
+			loc = null
 
 mob/human/Puppet
+	var
+		shield_active
+
+	dispose()
+		if(owner)
+			var/mob/human/user = owner
+			if(user.Puppet1 == src)
+				var/skill/puppet_skill = owner.GetSkill(PUPPET_SUMMON1)
+				user.Puppet1 = null
+				user.puppetsout--
+				puppet_skill.DoCooldown(user)
+			else if(user.Puppet2 == src)
+				var/skill/puppet_skill = user.GetSkill(PUPPET_SUMMON2)
+				user.Puppet2 = null
+				user.puppetsout--
+				puppet_skill.DoCooldown(user)
+
+			for(var/obj/items/Puppet/p in owner.contents)
+				if(p.incarnation && p.incarnation == src)
+					p.incarnation = null
+					break
+
+		owner = null
+		loc = null
+
+	Cross(mob/moving)
+		if(!istype(moving))
+			return ..()
+		if(shield_active && moving == owner)
+			return 1
+
+	KO()
+		Poof(src.x,src.y,src.z)
+		if(owner.Puppet1==src)
+			var/skill/puppet_skill = owner.GetSkill(PUPPET_SUMMON1)
+			owner.Puppet1 = null
+			owner.puppetsout--
+			puppet_skill.DoCooldown(owner)
+		else if(owner.Puppet2==src)
+			var/skill/puppet_skill = owner.GetSkill(PUPPET_SUMMON2)
+			owner.Puppet2 = null
+			owner.puppetsout--
+			puppet_skill.DoCooldown(owner)
+		//sleep(3)
+		del(src)
+
 	proc
 		PuppetRegen(mob/u)
-			while(u)
+			set waitfor = 0
+			while(u && u.loc)
 				if(src.icon_state=="hurt")
 					src.icon_state=0
-				//if(src.stunned)
-				//	src.stunned--
-				//	if(src.stunned<0)
-				//		src.stunned=0
-				//if(move_stun)
-				//	move_stun = max(0, move_stun-10)
 				if(src.coold)
 					src.coold--
 				var/i=1
@@ -336,24 +399,11 @@ mob/human/Puppet
 					if(src.coold2[i])
 						src.coold2[i]--
 					i++
-				if(src.curstamina<0 || src.curwound>50)
-					Poof(src.x,src.y,src.z)
-					/*if(u.Puppet1==src)
-						//u.cooldown[73]=300
-						//spawn()u.CoolD(73)
-						/*for(var/obj/gui/M in u.contents)
-							if(M.sindex==73)
-								M.overlays+='icons/dull.dmi'*/
-					if(u.Puppet2==src)
-						//u.cooldown[74]=300
-						//spawn()u.CoolD(74)
-						/*for(var/obj/gui/M in u.contents)
-							if(M.sindex==74)
-								M.overlays+='icons/dull.dmi'*/*/
-					sleep(3)
-					del(src)
+				if(src.curstamina <= 0 || src.curwound > 50)
+					KO()
 				sleep(5)
 			del(src)
+			//dispose()
 
 obj/items
 	Puppet
@@ -370,7 +420,7 @@ obj/items
 				src.name=newname
 				usr<<"[oldname]'s name has been changed to [src.name]"
 			else
-				usr<<"Thats a bad name!"
+				usr<<"That is a bad name!"
 		verb/Destroy()
 			switch(input2(usr,"Really Destroy [src]?!", list("No","Yes")))
 				if("Yes")
@@ -431,62 +481,66 @@ obj/items
 							if(x==src)
 								usr.Puppets.Remove(x)
 
-	Puppet_Stuff
-		var/oindex=0
-		var/costz=5
-		Hidden_Knife_Shot
-			icon='icons/gui.dmi'
-			icon_state="mouthknife"
-			oindex=1
-			costz=2
-			code=106
-		Poison_Bomb
-			icon='icons/gui.dmi'
-			icon_state="poisonbomb"
-			oindex=2
-			costz=5
-			code=107
-		Body_Crush
-			icon='icons/gui.dmi'
-			icon_state="armbind"
-			oindex=3
-			costz=5
-			code=108
-		Poison_Tipped_Blade
-			icon='icons/gui.dmi'
-			icon_state="mild-poison"
-			oindex=4
-			costz=3
-			code=109
-		Needle_Gun
-			icon='icons/gui.dmi'
-			icon_state="needlegun"
-			oindex=5
-			code=110
-			costz=5
-		Chakra_Shield
-			icon='icons/gui.dmi'
-			icon_state="chakrashield"
-			oindex=6
-			costz=3
-			code=111
+		weapon
+			var/oindex=0
+			var/costz=5
+			Hidden_Knife_Shot
+				icon='icons/gui.dmi'
+				icon_state="mouthknife"
+				oindex=1
+				costz=2
+				code=106
+			Poison_Bomb
+				icon='icons/gui.dmi'
+				icon_state="poisonbomb"
+				oindex=2
+				costz=5
+				code=107
+			Body_Crush
+				icon='icons/gui.dmi'
+				icon_state="armbind"
+				oindex=3
+				costz=5
+				code=108
+			Poison_Tipped_Blade
+				icon='icons/gui.dmi'
+				icon_state="mild-poison"
+				oindex=4
+				costz=3
+				code=109
+			Needle_Gun
+				icon='icons/gui.dmi'
+				icon_state="needlegun"
+				oindex=5
+				code=110
+				costz=5
+			Chakra_Shield
+				icon='icons/gui.dmi'
+				icon_state="chakrashield"
+				oindex=6
+				costz=5
+				code=111
 
-		Click()
-			Use(usr)
+			Click()
+				Activate(usr)
 
-		proc/Use(var/mob/u)
-			set hidden=1
-			set category=null
-			usr=u
-			if(usr.ko|| usr.stunned||usr.handseal_stun)
-				return
-			if(usr.busy==0&&usr.pk==1&&src.equipped)
-				var/obj/items/Puppet/host=usr.Puppets[src.equipped]
-				if(host)
-					var/mob/human/Puppet/T=host.incarnation
-					if(T && (T in oview(20,usr))&& !T.coold &&!T.coold2[oindex])
-						T.coold2[oindex]=costz*10
-						T.PuppetSkill(oindex,u)
+
+
+			proc/Activate(var/mob/u)
+				set hidden=1
+				set category=null
+				usr=u
+				if(usr.ko|| usr.stunned||usr.handseal_stun)
+					return
+				if(usr.busy==0&&usr.pk==1&&src.equipped)
+					var/obj/items/Puppet/host=usr.Puppets[src.equipped]
+					if(host)
+						var/mob/human/Puppet/T=host.incarnation
+						if(T && (T in ohearers(20,usr))&& !T.coold &&!T.coold2[oindex])
+							T.coold2[oindex]=costz*10
+							src.overlays += 'icons/dull.dmi'
+							spawn(costz*50) src.overlays -= 'icons/dull.dmi'
+							T.PuppetSkill(oindex,u)
 
 		verb
 			Install()
@@ -509,7 +563,7 @@ obj/items
 					ind=1
 				if(usr.Puppets[2]==P)
 					ind=2
-				for(var/obj/items/Puppet_Stuff/W in usr.contents)
+				for(var/obj/items/Puppet/weapon/W in usr.contents)
 					if(W.equipped==ind)
 						count++
 				if(count>2)
@@ -525,6 +579,7 @@ obj/items
 			UnInstall()
 				src.equipped=0
 				src.overlays=0
+
 obj
 	var
 		install=0

@@ -30,6 +30,7 @@ obj
 
 mob
 	var/triggers[0]
+	var/tmp/turf/replacement_loc
 
 
 	proc
@@ -56,7 +57,7 @@ mob
 					var/obj/trigger/T = triggers[i]
 					client.screen -= T
 					var/rev_index = triggers.len - i
-					T.screen_loc = "1:8,[round(rev_index/2) + 2]:[rev_index%2*16]"
+					T.screen_loc = "WEST:2,[round(rev_index/2) + 1]:[rev_index%2*16]"
 					client.screen += T
 
 
@@ -83,8 +84,26 @@ obj
 
 
 			Use()
-				if(!user.incombo)
-					var/mob/human/body_replacement/b = new/mob/human/body_replacement(user.loc, user)
+				Poof(user.loc)
+				new/obj/log(locate(user.x,user.y,user.z))
+				var/dist = 50//8 + user.skillspassive[20]
+				while(dist>0 && user && user.replacement_loc && user.z == user.replacement_loc.z)
+					var/turf/T = get_step_towards(user, user.replacement_loc)
+					if(T && !T.opacity && !T.density)
+						user.loc=T//locate(T.x,T.y,T.z)
+					dist--
+
+				user.genjutsu = null
+				user.Reset_Stun()
+				user.asleep = 0
+				user.paralysed = 0
+				sleep(1)
+				user.Timed_Stun(20)
+
+				user.RemoveTrigger(src)
+
+	/*			if(!user.incombo)
+					var/mob/human/player/body_replacement/b = new/mob/human/player/body_replacement(user.loc, user)
 					user.body_replacement = list()
 					user.body_replacement["steps"] = 10
 					user.body_replacement["ref"] = b
@@ -121,7 +140,7 @@ obj
 
 						//var/skill/body_replacement/r = user.GetSkill(KAWARIMI)
 						//r.DoCooldown(user)
-					user.RemoveTrigger(src)
+					user.RemoveTrigger(src)*/
 
 
 		/*		if(!user.incombo)
@@ -153,33 +172,28 @@ obj
 
 
 			Use()
+				set waitfor = 0
 				if(!C3)
 					user.RemoveTrigger(src)
 				else
 					C3.overlays=0
 
-					var/P=C3.power
+					var/P = C3.power
 
-					spawn()
-						if(user && C3) explosion(P, C3.x, C3.y, C3.z, user, 0, 6)
-					spawn(pick(1,2,3))
-						if(user && C3) explosion(P, C3.x+1, C3.y+1, C3.z, user, 0, 6)
-					spawn(pick(1,2,3))
-						if(user && C3) explosion(P, C3.x-1, C3.y+1, C3.z, user, 0, 6)
-					spawn(pick(1,2,3))
-						if(user && C3) explosion(P, C3.x-1, C3.y-1, C3.z, user, 0, 6)
-					spawn(pick(1,2,3))
-						if(user && C3) explosion(P, C3.x-1, C3.y-1, C3.z, user, 0, 6)
-					spawn(pick(3,4,5))
-						if(user && C3) explosion(P, C3.x-2, C3.y+2, C3.z, user, 0, 6)
-					spawn(pick(3,4,5))
-						if(user && C3) explosion(P, C3.x+2, C3.y-2, C3.z, user, 0, 6)
-					spawn(pick(3,4,5))
-						if(user && C3) explosion(P, C3.x+2, C3.y+2, C3.z, user, 0, 6)
-					spawn(pick(3,4,5))
-						if(user && C3) explosion(P, C3.x-2, C3.y-2, C3.z, user, 0, 6)
+					explosion(P, C3.x, C3.y, C3.z, user, 0, 6)
+					new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x+1,C3.y+1,C3.z,user,0,6))
+					new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x-1,C3.y+1,C3.z,user,0,6))
+					new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x-1,C3.y-1,C3.z,user,0,6))
+					new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x-1,C3.y-1,C3.z,user,0,6))
+					new/Event(pick(3, 4, 5), "delayed_explosion", list(P,C3.x-2,C3.y+2,C3.z,user,0,6))
+					new/Event(pick(3, 4, 5), "delayed_explosion", list(P,C3.x+2,C3.y-2,C3.z,user,0,6))
+					new/Event(pick(3, 4, 5), "delayed_explosion", list(P,C3.x+2,C3.y+2,C3.z,user,0,6))
+					new/Event(pick(3, 4, 5), "delayed_explosion", list(P,C3.x-2,C3.y-2,C3.z,user,0,6))
+					sleep(5)
 
-					spawn(6) del(C3)
+					if(C3)
+						C3.loc = null
+						C3 = null
 
 					user.RemoveTrigger(src)
 
@@ -208,7 +222,8 @@ obj
 					var/xx = ex_tag.x
 					var/xy = ex_tag.y
 					var/xz = ex_tag.z
-					del(ex_tag)
+					//del(ex_tag)
+					ex_tag.loc = null
 
 					explosion(2000, xx, xy, xz, user)
 					user.RemoveTrigger(src)
@@ -255,8 +270,9 @@ obj/explosive_log
 		sleep(3)
 		explosion(2000, x, y, z, owner)
 
-mob/human/body_replacement
+mob/human/player/body_replacement
 	//targetable = null
+	initialized = 1
 	var/tmp/mob/owner = null
 	var/tmp/replacement_type
 
@@ -287,7 +303,7 @@ mob/human/body_replacement
 				else if(introll >= 3)
 					m.AddTarget(owner, active = 0, silent = 1)
 
-		Poof(x, y, z)
+		Poof(loc)//(x, y, z)
 		if(replacement_type == "explosive")
 			new/obj/explosive_log(loc, owner)
 		else
@@ -306,28 +322,27 @@ mob/human/body_replacement
 		owner = null
 		loc = null
 
+	proc/start_walking()
+		set waitfor = 0
+		while(loc)
+			step(src, dir)
+			sleep(pick(1, 2))
+
 	New(loc, mob/summoner)
 		..()
 		if(!summoner)
 			loc = null
 			return
+		name = summoner.name
+		realname = summoner.realname
+		CreateName()
 		owner = summoner
 		icon = summoner.icon
 		icon_state = summoner.icon_state
 		overlays += summoner.overlays
 		underlays += summoner.underlays
 		dir = summoner.dir
-		//start_walking()
-		spawn()
-			//var/direction = summoner.dir
-			while(loc != null)
-				var/turf/t = get_step(src, dir)
-				if(t && t.Enter(src))
-					loc = t
-				else
-					icon_state = "Seal"
-					sleep(3)
-				sleep(pick(1, 2))
+		start_walking()
 
 	Del()
 		if(loc == null)

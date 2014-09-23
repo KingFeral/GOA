@@ -18,6 +18,9 @@ obj
 	var
 
 		nottossable=0
+
+
+
 obj/items
 	Click()
 		if(src.deletable)
@@ -32,6 +35,7 @@ obj/items
 		Toss()
 			set category=null
 			if(!src.nottossable)
+				//saves.DeleteItem(code, usr.ckey)
 				for(var/obj/items/X in src.loc)
 					if(istype(X,src.type))
 						if(X.deletable)
@@ -433,7 +437,15 @@ obj/items/usable
 		src.oname=src.name
 		src.equipped+=1
 		src.name="[src.oname]([equipped])" //equipped is used for the quantity variable
+	Del()
+		if(loc)
+			var/mob/holder = loc
+			if(istype(holder))
+				saves.DeleteItem(code, holder.ckey)
+		..()
+
 	proc/Refreshcount(mob/human/player/O)
+		set waitfor = 0
 		O.busy=0
 		for(var/obj/items/usable/x in O.contents)
 			if(istype(x,src.type))
@@ -444,7 +456,9 @@ obj/items/usable
 						del(x)
 		if(src.equipped<=0)
 			del(src)
+
 	proc/Refreshcountdd(mob/human/player/O)
+		set waitfor = 0
 		for(var/obj/items/x in O.contents)
 			if(istype(x,src.type))
 				if(istext(equipped)) equipped = text2num(equipped)
@@ -460,6 +474,7 @@ obj/items/usable
 		icon_state="caltrop"
 		code=213
 		proc/Use(var/mob/u)
+			set waitfor = 0
 			set hidden=1
 			set category=null
 			usr=u
@@ -477,11 +492,10 @@ obj/items/usable
 					o.owner = usr
 
 				src.Refreshcount(usr)
-				sleep(5)
 
-				spawn(6000)
-					if(o)
-						del(o)
+				sleep(6000)
+				o.owner = null
+				o.loc = null
 
 		Click()
 			Use(usr)
@@ -491,6 +505,7 @@ obj/items/usable
 		icon_state="tripwire"
 		code=214
 		proc/Use(var/mob/u)
+			set waitfor = 0
 			set hidden=1
 			set category=null
 			usr=u
@@ -508,9 +523,8 @@ obj/items/usable
 				//usr.stunned=0
 
 				src.Refreshcount(usr)
-				spawn(6000)
-					if(o)
-						del(o)
+				sleep(6000)
+				o.loc = null
 
 		Click()
 			Use(usr)
@@ -523,6 +537,21 @@ obj/items/usable
 			set hidden=1
 			set category=null
 			usr=u
+			if(usr.ko|| usr.stunned||usr.handseal_stun)
+				return
+			if(usr.busy==0&&usr.stunned==0&&usr.bandaged==0)
+				usr << "Using Antidote..."
+				usr.busy = TRUE
+				usr.Timed_Stun(40)
+				sleep(40)
+				usr << "Recovered from poison!"
+				usr.Poison = 0
+				sleep(1200)
+				usr.busy = 0
+				usr.bandaged = 0
+			else if(usr.bandaged)
+				usr << "You cannot do this so soon."
+				usr.busy = 0
 
 		Click()
 			Use(usr)
@@ -541,19 +570,29 @@ obj/items/usable
 				usr.bandaged=1
 				usr.busy=1
 				//usr.stunned=4
-				usr.Timed_Stun(40)
+				//usr.Timed_Stun(40)
+				//usr.Begin_Stun()
+				usr.canmove = 0
 				usr<<"Using Bandages..."
-				sleep(40)
-				usr<<"20 wounds recovered"
-				usr.curwound-=20
-				if(usr.curwound<0)
-					usr.curwound=0
-				spawn(1200)
-					usr.bandaged=0
+				//sleep(30)
+				var/woundshealed = 0
+				var/turf/currenttile = usr.loc
+				while(usr && usr.curwound > 0 && usr.loc == currenttile && !usr.stunned && !usr.ko && woundshealed < 20)
+					usr.curwound--
+					woundshealed++
+					sleep(5)
+				usr<<"[woundshealed] wounds recovered"
+				usr.canmove=1
 				src.Refreshcount(usr)
+				//usr.End_Stun()
+				//usr.curwound = max(0, usr.curwound - 20)
+				//if(usr.curwound<0)
+				//	usr.curwound=0
+				sleep(1200)
+				usr.bandaged=0
 				usr.busy=0
 			else if(usr.bandaged==1)
-				usr<<"Using Bandages again so soon is pointless"
+				usr << "You cannot do this so soon."
 				usr.busy=0
 
 		Click()
@@ -586,6 +625,7 @@ obj/items/usable
 		code=212
 		icon_state="soldierpill"
 		proc/Use(var/mob/u)
+			set waitfor = 0
 			set hidden=1
 			set category=null
 			usr=u
@@ -594,15 +634,16 @@ obj/items/usable
 			if(usr.busy==0)
 				usr.busy=1
 				if(usr.soldierpill==0)
-					usr.curstamina = min(usr.curstamina+3000, usr.stamina*1.5)
+					usr.soldierpillboost=world.time+300
+					//usr.curstamina = min(usr.curstamina+3000, usr.stamina*1.5)
 					usr.soldierpill=1
-					spawn(2400)
-						usr.soldierpill=0
-						if(usr.curstamina>usr.stamina)
-							usr.curstamina=usr.stamina
-					usr<<"You ate a soldier pill"
+					usr<<"You ate a soldier pill!"
 					src.Refreshcount(usr)
 					usr.busy=0
+					sleep(2400)
+					usr.soldierpill=0
+					if(usr.curstamina>usr.stamina)
+						usr.curstamina=usr.stamina
 				else
 					usr<<"Using another Soldier Pill so soon is pointless"
 					usr.busy=0
@@ -610,6 +651,8 @@ obj/items/usable
 
 		Click()
 			Use(usr)
+
+mob/var/tmp/soldierpillboost=0
 
 obj/items/equipable
 	Kunai_Holster
@@ -2654,10 +2697,10 @@ obj/items/equipable
 				switch(input2(usr,"How would you like to wear your headband?","Headband", list("Above my Hair","Under my Hair","Nevermind")))
 					if("Above my Hair")
 						usr.overband=0
-						spawn()usr.Load_Overlays()
+						usr.Load_Overlays()
 					if("Under my Hair")
 						usr.overband=1
-						spawn()usr.Load_Overlays()
+						usr.Load_Overlays()
 		Blue
 			icon='icons/gui.dmi'
 			icon_state="konoha_headband"
@@ -2811,7 +2854,7 @@ obj/items/weapons
 		get_stamina_damage(mob/user)
 			if(!user)
 				return
-			. = round((stamina_damage_static + (user.rfx + user.rfxbuff - user.rfxneg)*rfx_stamina_damage_mod)*pick(0.6,0.7,0.8,0.9,1))
+			. = round((stamina_damage_static + (user.rfx)*rfx_stamina_damage_mod)*pick(0.6,0.7,0.8,0.9,1))
 			if(user.skillspassive[WEAPON_MASTERY])
 				. *= 1 + 0.06 * user.skillspassive[WEAPON_MASTERY]
 		knife
@@ -2905,9 +2948,9 @@ obj/items/weapons
 				name = "ZSword"
 				icon='icons/projectiles.dmi'
 				icon_state="zsword"
-				accuracymod=55
+				accuracymod=55 // TODO, finish.
 				woundmod=25
-				stamina_damage_static = 600
+				stamina_damage_static =200
 				rfx_stamina_damage_mod=2.5
 				str_stamina_damage_mod=0
 				weapon=1
@@ -2936,18 +2979,17 @@ obj/items/weapons
 		aspecial=""
 mob
 	proc
-		ShadowShuriken(dx,dy,dz)
+		ShadowShuriken(dx,dy,dz,user)
 			usr=src
 			var/mob/dork=new/mob(locate(dx,dy,dz))
 			dork.density=0
 			dork.icon=null
 			dork.overlays=null
-			spawn(30)
-				if(dork)
-					del(dork)
+			new/Event(30, "delayed_delete", list(dork))
+
 			var/pass=1
 			if(pass)
-				var/ewoundmod=200
+				var/ewoundmod=300
 				var/eicon='icons/projectiles.dmi'
 				var/estate="shuriken-m"
 
@@ -2965,21 +3007,22 @@ mob
 
 				var/r=round((ewoundmod-100)/75)
 
-				spawn() advancedprojectile_angle(eicon, estate, dork, speed, angle-spread*4, distance=10, damage=ewoundmod, wounds=rand(0,1)+r)
-				spawn() advancedprojectile_angle(eicon, estate, dork, speed, angle-spread*3, distance=10, damage=ewoundmod, wounds=rand(0,1)+r)
-				spawn() advancedprojectile_angle(eicon, estate, dork, speed, angle-spread*2, distance=10, damage=ewoundmod, wounds=rand(0,1)+r)
-				spawn() advancedprojectile_angle(eicon, estate, dork, speed, angle-spread, distance=10, damage=ewoundmod, wounds=rand(0,1)+r)
-				spawn() advancedprojectile_angle(eicon, estate, dork, speed, angle, distance=10, damage=ewoundmod, wounds=rand(0,1)+r)
-				spawn() advancedprojectile_angle(eicon, estate, dork, speed, angle+spread, distance=10, damage=ewoundmod, wounds=rand(0,1)+r)
-				spawn() advancedprojectile_angle(eicon, estate, dork, speed, angle+spread*2, distance=10, damage=ewoundmod, wounds=rand(0,1)+r)
-				spawn() advancedprojectile_angle(eicon, estate, dork, speed, angle+spread*3, distance=10, damage=ewoundmod, wounds=rand(0,1)+r)
-				spawn() advancedprojectile_angle(eicon, estate, dork, speed, angle+spread*4, distance=10, damage=ewoundmod, wounds=rand(0,1)+r)
+				advancedprojectile_angle(eicon, estate, user, speed, angle-spread*4, distance=10, damage=ewoundmod, wounds=rand(0,1)+r,from = dork)
+				advancedprojectile_angle(eicon, estate, user, speed, angle-spread*3, distance=10, damage=ewoundmod, wounds=rand(0,1)+r,from = dork)
+				advancedprojectile_angle(eicon, estate, user, speed, angle-spread*2, distance=10, damage=ewoundmod, wounds=rand(0,1)+r,from = dork)
+				advancedprojectile_angle(eicon, estate, user, speed, angle-spread, distance=10, damage=ewoundmod, wounds=rand(0,1)+r,from = dork)
+				advancedprojectile_angle(eicon, estate, user, speed, angle, distance=10, damage=ewoundmod, wounds=rand(0,1)+r,from = dork)
+				advancedprojectile_angle(eicon, estate, user, speed, angle+spread, distance=10, damage=ewoundmod, wounds=rand(0,1)+r,from = dork)
+				advancedprojectile_angle(eicon, estate, user, speed, angle+spread*2, distance=10, damage=ewoundmod, wounds=rand(0,1)+r,from = dork)
+				advancedprojectile_angle(eicon, estate, user, speed, angle+spread*3, distance=10, damage=ewoundmod, wounds=rand(0,1)+r,from = dork)
+				advancedprojectile_angle(eicon, estate, user, speed, angle+spread*4, distance=10, damage=ewoundmod, wounds=rand(0,1)+r,from = dork)
 
-		Deque2(pass)
+		Deque2(pass,mob/user)
+			set waitfor = 0
 			src.overlays-=image('icons/sandshuriken.dmi',icon_state="sand")
 			src.qued2=0
 			if(pass)
-				var/ewoundmod=400
+				var/ewoundmod = 110 * user.ControlDamageMultiplier()//(user.con-50)+200//400
 				var/eicon='icons/sandshuriken.dmi'
 				var/estate="shuriken"
 
@@ -2997,13 +3040,14 @@ mob
 
 				var/r=round((ewoundmod-100)/100)
 
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle-spread*2, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle-spread, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle+spread, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle+spread*2, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
+				advancedprojectile_angle(eicon, estate, src, speed, angle-spread*2, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
+				advancedprojectile_angle(eicon, estate, src, speed, angle-spread, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
+				advancedprojectile_angle(eicon, estate, src, speed, angle, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
+				advancedprojectile_angle(eicon, estate, src, speed, angle+spread, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
+				advancedprojectile_angle(eicon, estate, src, speed, angle+spread*2, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
 
 		Deque(pass)
+			set waitfor = 0
 			src.overlays-=image('icons/advancing.dmi',icon_state="over")
 			src.underlays-=image('icons/advancing.dmi',icon_state="under")
 			src.qued=0
@@ -3018,23 +3062,23 @@ mob
 
 				var/angle
 				var/speed = 32
-				var/spread = 6
+				var/spread = 12//6
 				if(etarget)
 					angle = get_real_angle(src, etarget)
 				else
 					angle = dir2angle(dir)
 
-				var/r=round((ewoundmod-100)/100)
+				//var/r = round((ewoundmod-100)/100)
 
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle-spread*4, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle-spread*3, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle-spread*2, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle-spread, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle+spread, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle+spread*2, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle+spread*3, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
-				spawn() advancedprojectile_angle(eicon, estate, src, speed, angle+spread*4, distance=10, damage=ewoundmod, wounds=prob(50)?(r):(0))
+				advancedprojectile_angle(eicon, estate, src, speed, angle-spread*4, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, src, speed, angle-spread*3, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, src, speed, angle-spread*2, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, src, speed, angle-spread, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, src, speed, angle, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, src, speed, angle+spread, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, src, speed, angle+spread*2, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, src, speed, angle+spread*3, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, src, speed, angle+spread*4, distance=10, damage=ewoundmod, wounds="passive")
 
 mob/verb
 	usev()
@@ -3048,23 +3092,35 @@ mob/verb
 			return
 		if(usr.stunned||usr.handseal_stun||usr.kstun)
 			return
+		if(usr.qued)
+			usr.Deque(1)
+			return
+		if(usr.qued2)
+			usr.Deque2(1,usr)
+			return
 		if(puppetsout)
 			if(!Primary)
 				if(puppetsout == 1) //usev for Puppet1
 					if(Puppet1 in oview(5))
 						var/mob/human/ptarget = usr.MainTarget()
-						if(ptarget && !ptarget.ko) Puppet1.pwalk_towards(Puppet1,ptarget,2,20)
+						if(ptarget && !ptarget.ko)
+							Puppet1.pwalk_towards(Puppet1,ptarget,2,20)
+						walk(Puppet1, 0)
 						Puppet1.Melee(usr)
 						return
 					else if(Puppet2 in oview(5))
 						var/mob/human/ptarget = usr.MainTarget()
-						if(ptarget && !ptarget.ko) Puppet2.pwalk_towards(Puppet2,ptarget,2,20)
+						if(ptarget && !ptarget.ko)
+							Puppet2.pwalk_towards(Puppet2,ptarget,2,20)
+						walk(Puppet2, 0)
 						Puppet2.Melee(usr)
 						return
 				else if(puppetsout == 2)
 					if(Puppet1 in oview(5))
 						var/mob/human/ptarget = usr.MainTarget()
-						if(ptarget && !ptarget.ko) Puppet1.pwalk_towards(Puppet1,ptarget,2,20)
+						if(ptarget && !ptarget.ko)
+							Puppet1.pwalk_towards(Puppet1,ptarget,2,20)
+						walk(Puppet1, 0)
 						Puppet1.Melee(usr)
 						return
 			else
@@ -3081,12 +3137,6 @@ mob/verb
 							if(ptarget && !ptarget.ko) Puppet1.pwalk_towards(Puppet1,ptarget,2,20)
 							Puppet1.Melee(usr)
 							return
-		if(usr.qued)
-			usr.Deque(1)
-			return
-		if(usr.qued2)
-			usr.Deque2(1)
-			return
 		if(usr.zetsu)
 			usr.invisibility=0
 			usr.density=1
@@ -3123,22 +3173,10 @@ mob/verb
 					for(var/mob/human/player/npc/kage_bunshin/X in orange(10,usr))
 						if(X.owner==usr)
 							if(etarget)
-								if(!X.attack_cd)
+								if(X.attack_cd<=world.time)
 									dunsomething=1
-									X.attack_cd = 1
-									spawn(50) X.attack_cd = 0
-									spawn(rand(1,15))
-										X.AI_Target(etarget)
-										if(prob(50) && !(X.skillusecool || X.rasengan || X.sakpunch2))
-											if(!(X.AppearBehind(etarget)))
-												X.AI_Attack(etarget)
-										else
-											X.AI_Attack(etarget)
-										/*if(!X.skillusecool)
-											if(X.rasengan || X.sakpunch2)
-												X.Approach2(etarget)
-											else
-												pick(X.AppearBehind(etarget),X.Approach2(etarget))*/
+									X.attack_cd = world.time + 50
+									new/Event(rand(1, 15), "trigger_AI_Attack", list(X, etarget))
 
 				if(!dunsomething)
 					goto cont
@@ -3206,17 +3244,17 @@ mob/verb
 			if(etarget) angle = get_real_angle(usr, etarget)
 			else angle = dir2angle(usr.dir)
 
-			spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle, distance=10, damage=ewoundmod, wounds="passive")
+			advancedprojectile_angle(eicon, estate, usr, speed, angle, distance=10, damage=ewoundmod, wounds="passive")
 			if(eburst>=3)
-				spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle+spread*2, distance=10, damage=ewoundmod, wounds="passive")
-				spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle-spread*2, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, usr, speed, angle+spread*2, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, usr, speed, angle-spread*2, distance=10, damage=ewoundmod, wounds="passive")
 			if(eburst>=5)
-				spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle+spread, distance=10, damage=ewoundmod, wounds="passive")
-				spawn() advancedprojectile_angle(eicon, estate, usr, speed, angle-spread, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, usr, speed, angle+spread, distance=10, damage=ewoundmod, wounds="passive")
+				advancedprojectile_angle(eicon, estate, usr, speed, angle-spread, distance=10, damage=ewoundmod, wounds="passive")
 
 			return
 
-		if(etype=="projectile")
+		/*if(etype=="projectile")
 			flick("Throw1",usr)
 			etarget = usr.MainTarget()
 			if(!(etarget in oview(10)))
@@ -3250,17 +3288,20 @@ mob/verb
 					etarget.Dec_Stam(ewoundmod/2,0,usr)
 					etarget.Hostile(usr)
 			else
-				spawn()straight_proj(eicon,estate,usr,7,1,65,"a projectile",10,0)
-				return
+				straight_proj(eicon,estate,usr,7,1,65,"a projectile",10,0)
+				return*/
 		if(etype=="melee2")//knife
 
 			flick("w-attack",usr)
 			var/mob/human/T = usr.NearestTarget()
-			if(T)usr.FaceTowards(T)
+			if(T)
+				if(get_dist(T, usr) <= 2 && (lastskill != SHUNSHIN || lastskilltime + 20 < world.time)) // If the user did use shunshin, check that they only used it over a second ago.
+					usr.dash(T, 1)
+				usr.FaceTowards(T)
 			if(!(T in oview(1)))
 				T = null
 			if(!T)
-				T=locate() in get_step(usr,usr.dir)
+				T = locate() in get_step(usr,usr.dir)
 			if(T&&T.ko==0&&T.paralysed==0)
 				flick("w-attack",usr)
 				if(T.blocked==0)
@@ -3272,7 +3313,7 @@ mob/verb
 					var/woundz=0
 					if(!T.icon_state)
 						flick("hurt",T)
-					damz=round((estam_static + (usr.rfx + usr.rfxbuff - usr.rfxneg)*erfxstam_mod)*pick(0.7,0.8,0.9,1))
+					damz=round((estam_static + (usr.rfx)*erfxstam_mod)*pick(0.7,0.8,0.9,1))
 					if(usr.skillspassive[WEAPON_MASTERY])
 						damz *= 1 + 0.06 * usr.skillspassive[WEAPON_MASTERY]
 					T.Dec_Stam(damz,0,usr)
@@ -3281,13 +3322,6 @@ mob/verb
 						wound2=pick(1,2,3,4)
 						var/bleed=pick(2,4,6)
 						T.bleed(bleed, usr)
-						/*spawn(10)
-							while(bleed>0)
-								bleed--
-								sleep(15)
-								if(T)
-									T.Dec_Stam(100,0,usr)
-									Blood2(T,usr)*/
 
 					if(X>x)
 						woundz=round(rand(ewoundmod/3,round(ewoundmod/1.5)))
@@ -3298,7 +3332,7 @@ mob/verb
 
 					usr.combat("[usr] hit [T] with a weapon for [damz] stamina damage and inflicting [woundz] wounds!")
 
-					spawn() if(T) T.Hostile(usr)
+					if(T) T.Hostile(usr)
 				else
 					var/outcome3=Roll_Against(T.rfx+T.rfxbuff-T.rfxneg,usr.rfx+usr.rfxbuff-usr.rfxneg,100)
 					if(outcome3>3)
@@ -3335,7 +3369,7 @@ mob/verb
 						flick("hurt",T)
 
 					if(erfxstam_mod)
-						damz+=estam_static + (usr.rfx + usr.rfxbuff - usr.rfxneg)*erfxstam_mod
+						damz+=estam_static + (usr.rfx)*erfxstam_mod
 					else if(estrstam_mod)
 						damz+=estam_static + (usr.str + usr.strbuff - usr.strneg)*estrstam_mod
 					damz = round(damz * pick(0.6,0.7,0.8,0.9,1))
@@ -3347,13 +3381,6 @@ mob/verb
 						wound2=pick(1,2,3,4)
 						var/bleed=pick(2,4,6)
 						T.bleed(bleed, usr)
-						/*spawn(10)
-							while(bleed>0)
-								bleed--
-								sleep(15)
-								if(T)
-									T.Dec_Stam(100,0,usr)
-									Blood2(T,usr)*/
 					if(X>x)//hit
 						woundz=round(0.5*(rand(ewoundmod/3,round(ewoundmod/1.5))))
 
@@ -3362,7 +3389,7 @@ mob/verb
 					if(woundz)T.Wound(woundz,0,usr)
 					usr.combat("[usr] hit [T] with a weapon for [damz] stamina damage and inflicting [woundz] wounds!")
 
-					spawn() if(T && usr) T.Hostile(usr)
+					if(T && usr) T.Hostile(usr)
 				else
 					var/outcome3=Roll_Against(T.rfx+T.rfxbuff-T.rfxneg,usr.rfx+usr.rfxbuff-usr.rfxneg,100)
 					if(outcome3>3)
@@ -3392,23 +3419,26 @@ obj/projc
 	density=0
 	layer=MOB_LAYER+1
 	New()
-		spawn(100)
-			del(src)
+		set waitfor = 0
+		sleep(100)
+		loc = null
 obj/needle
 	icon='icons/projectiles.dmi'
 	icon_state="needle-m"
 	density=0
 	layer=MOB_LAYER+1
 	New()
-		spawn(100)
-			del(src)
+		set waitfor = 0
+		sleep(100)
+		loc = null
 obj/fireball
 	icon='icons/fireball.dmi'
 	density=0
 	layer=MOB_LAYER+1
 	New()
-		spawn(100)
-			del(src)
+		set waitfor = 0
+		sleep(100)
+		loc = null
 obj
 	var
 		xvel=0
@@ -3470,11 +3500,12 @@ obj/projectile
 				//Oc.stunned=round(dazed,0.1)
 				Oc.Timed_Stun(dazed * 10)
 
-				spawn() Oc.Graphiked('icons/dazed.dmi')
+				Oc.Graphiked('icons/dazed.dmi')
 
 			Oc.Dec_Stam(pow,0,src.powner)  //hurt the player it hits = the power variable
 			if(wnd)
-				Blood(O.x,O.y,O.z)  //ew blood
+				//Blood(O.x,O.y,O.z)  //ew blood
+				Blood2(O)
 				Oc.Wound(wnd,0,src.powner)
 
 
@@ -3488,6 +3519,7 @@ obj/projectile
 				Clash(O,src) //clash O and src together
 proc
 	advancedprojectile_angle(icon, icon_state, mob/user, speed, angle, distance, damage, wounds=0, daze=0, radius=8, atom/from=user, ignore_list[])
+		set waitfor = 0
 		if(!from || !speed)
 			return
 
@@ -3506,6 +3538,9 @@ proc
 
 		p.owner = user
 		p.radius = radius
+		var/xignorelist[] = list(user)
+		if(user != from)
+			xignorelist += from
 
 		var/extra_list = list()
 		if(wounds)
@@ -3513,7 +3548,9 @@ proc
 		if(daze)
 			extra_list["Daze"] = daze
 		if(ignore_list)
-			extra_list["ignore"] = ignore_list
+			xignorelist = ignore_list.Copy()
+			extra_list["ignore"] = xignorelist
+			ignore_list = null
 
 		M_Projectile_Degree(p, user, damage, (distance*32)/speed, speed, angle, extra_list)
 
@@ -3539,9 +3576,10 @@ proc
 			del(p)
 			return
 		M_Projectile(p,efrom,damage,xvel,yvel,(distance*32) / speed,list("Wound"=wnd))
-		return
+
 
 	advancedprojectile(i,estate,mob/efrom,xvel,yvel,distance,damage,wnd,vel,pwn,mob/trueowner,radius)
+		set waitfor = 0
 		var/obj/projectile/p = new/obj/projectile(locate(efrom.x,efrom.y,efrom.z))
 		p.icon=i
 		p.powner=efrom
@@ -3549,7 +3587,7 @@ proc
 		if(radius)p.radius=radius
 		else p.radius=8
 		M_Projectile(p,efrom,damage,xvel,yvel,(distance * 32)/sqrt(xvel*xvel+yvel*yvel),list("Wound"=wnd))
-		return
+
 
 proc
 	advancedprojectile_ramped(i,estate,mob/efrom,xvel,yvel,distance,damage,wnd,vel,pwn,daze,radius)//daze as percent/100
@@ -3631,7 +3669,6 @@ proc
 					pass=0
 				if(pass)
 					p.loc=locate(p.x+1,p.y,p.z)
-				//	spawn()if(p)p.pixel_x-=32
 				else
 					p.mot=0
 					var/ploc=p.loc
@@ -3646,7 +3683,6 @@ proc
 					pass=0
 				if(pass)
 					p.loc=locate(p.x-1,p.y,p.z)
-				//	spawn()if(p)p.pixel_x+=32
 				else
 					p.mot=0
 					var/ploc=p.loc
@@ -3660,7 +3696,6 @@ proc
 					pass=0
 				if(pass)
 					p.loc=locate(p.x,p.y+1,p.z)
-				//	spawn()if(p)p.pixel_y-=32
 				else
 					p.mot=0
 					var/ploc=p.loc
@@ -3673,7 +3708,6 @@ proc
 					pass=0
 				if(pass)
 					p.loc=locate(p.x,p.y-1,p.z)
-				//	spawn()if(p)p.pixel_y+=32
 				else
 					p.mot=0
 					var/ploc=p.loc
@@ -3714,6 +3748,7 @@ proc
 
 proc
 	projectile_to(i,estate,mob/efrom,atom/eto)
+		//set waitfor = 0
 		if(!(efrom&&eto))return
 		var/obj/p
 		if(efrom)p = new/obj/proj(locate(efrom.x,efrom.y,efrom.z))
@@ -3747,8 +3782,9 @@ obj/proj
 	density=0
 	layer=MOB_LAYER+1
 	New()
-		spawn(100)
-			del(src)
+		set waitfor = 0
+		sleep(100)
+		loc = null
 
 
 proc
@@ -3789,9 +3825,7 @@ proc
 	straight_proj3(type,dist,mob/human/u)
 
 		var/obj/M = new type(locate(u.x,u.y,u.z))
-		spawn(20)
-			if(M)
-				del(M)
+		new/Event(20, "delayed_delete", list(M))
 		sleep(1)
 		if(u.dir==NORTH||u.dir==SOUTH||u.dir==EAST||u.dir==WEST)
 			M.dir=u.dir
@@ -3856,6 +3890,7 @@ proc
 		sleep(2)
 		del(M)
 	straight_proj(eicon,estate,mob/human/u,dist,espeed,epower,ename,maxwound,minwound)
+		ASSERT(istype(u, /atom))
 		var/obj/proj/M = new/obj/proj(locate(u.x,u.y,u.z))
 		M.icon=eicon
 		M.icon_state=estate
@@ -3902,7 +3937,7 @@ proc
 					if(result>=3)
 						hit.Dec_Stam(epower,0,u)
 						if(u)
-							spawn()hit.Hostile(u)
+							hit.Hostile(u)
 					sleep(1)
 					del(M)
 			else if(!u)
@@ -3949,6 +3984,7 @@ mob/proc
 
 	Load_Overlays()
 		set background = 1
+		set waitfor = 0
 		if(src.Size||src.Tank)
 			return
 		sleep(-1)
@@ -4042,6 +4078,7 @@ mob/proc
 
 	completeLoad_Overlays(alph,scale)
 		set background = 1
+		set waitfor = 0
 		sleep(-1)
 		if(!EN[15])
 			return

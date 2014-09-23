@@ -895,6 +895,8 @@ turf
 		icon='icons/black.dmi'
 		density=1
 		opacity=1
+		Enter()
+		Exit()
 
 	Terrain
 		Pave
@@ -966,14 +968,43 @@ turf
 				exit_tracks=image('icons/sandtracks.dmi',icon_state="exit",layer=OBJ_LAYER)
 				exit_runtracks=image('icons/sandtracksrun.dmi',icon_state="exit",layer=OBJ_LAYER)
 
-			Entered(atom/movable/O)
-				new/Event(3, "entered_sand_turf", list(O, src))
-				return ..()
+			Entered(atom/movable/who)
+				set waitfor = 0
+				if(istype(who,/mob/human) && who:client && !src.show_enter_track)
+					src.show_enter_track = 1
+					if(who:runlevel<4)
+						src.enter_tracks.dir = who.dir
+						src.overlays+=src.enter_tracks
+						sleep(200)
+						src.overlays-=src.enter_tracks
+						src.show_enter_track = 0
+					else
+						src.enter_runtracks.dir = who.dir
+						src.overlays+=src.enter_runtracks
+						sleep(200)
+						src.overlays-=src.enter_runtracks
+						src.show_enter_track = 0
 
 
-			Exited(atom/movable/O)
-				new/Event(3, "exited_sand_turf", list(O, src))
-				return ..()
+			Exited(atom/movable/who)
+				set waitfor = 0
+				if(istype(who,/mob/human) && who:client && !src.show_exit_track)
+					src.show_exit_track = 1
+					if(who:runlevel<4)
+						src.exit_tracks.dir = who.dir
+						src.overlays+=src.exit_tracks
+						//spawn(200)
+						sleep(200)
+						src.overlays-=src.exit_tracks
+						src.show_exit_track = 0
+					else
+						src.exit_runtracks.dir = who.dir
+						src.overlays+=src.exit_runtracks
+						//spawn(200)
+						sleep(200)
+						src.overlays-=src.exit_runtracks
+						src.show_exit_track = 0
+
 
 		cliff
 			icon = 'icons/mountain.dmi'

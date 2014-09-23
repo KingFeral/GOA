@@ -14,6 +14,9 @@ turf
 	Tree_Clan
 		icon='pngs/Skill-Menu-Clan.png'
 		mouse_opacity = 0
+	Tree_Elemental
+		icon='pngs/Skill-Menu-Elemental.png'
+		mouse_opacity = 0
 	Tree_Non_Clan
 		icon='pngs/Skill-Menu-Non.png'
 		mouse_opacity = 0

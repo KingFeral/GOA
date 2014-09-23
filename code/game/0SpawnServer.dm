@@ -29,10 +29,12 @@ proc
 		return L
 
 	All_Clients()
+		return global.players
+		/*
 		var/list/L=new
 		for(var/mob/human/player/Lp in world)
 			if(Lp.client)L+=Lp
-		return L
+		return L*/
 
 mob/Admin/verb
 	Teleport(mob/M in All_Clients())
@@ -133,7 +135,6 @@ world/Topic(T, addr)
 		if("update_helpers")
 			var/village = topic["village"]
 			helpers[village] = dd_text2list(topic["names"],";")
-			//spawn()
 			for(var/client/C)
 				if(C.mob)
 					if(C.mob.name in helpers[village] && !newbies.Find(C.mob))
@@ -238,11 +239,14 @@ proc
 		return SendInterserverMessage("announce", list("msg" = message))
 
 	SendInterserverMessage(action, params)
+		set waitfor = 0
 		if(!world.port)
 			world << "A port must be open to communicate to the savefile server."
 			world.log << "A port must be open to communicate to the savefile server."
 			return null
-		return SendInterserverMessageTopic(address_of_other_server, action, params)
+		params["action"] = action
+		params["Password"] = server_password
+		return world.Export("[address_of_other_server]?[list2params(params)]")//SendInterserverMessageTopic(address_of_other_server, action, params)
 
 var
 	address_of_other_server = ""
@@ -323,6 +327,7 @@ world/New()
 //		spawn()RPMode()
 
 	initialize_basic_factions()
+	//hud_manager.initiate()
 
 world/Del()
 	if(port)
@@ -385,17 +390,19 @@ mob
 
 		var/client/C = src.client
 
-		if(C && (C.ckey in admins))
-			return 1
+		//if(C && (C.ckey in admins))
+		//	loc = locate_tag("maptag_select")
+		//	return 1
 
 		if(C && !checking)
 			checking = 1
-			var/r = SendInterserverMessage("is-logged-in", list("key" = ckey, "computer-id" = C.computer_id))
+			var/r = 0
+			//var/r = SendInterserverMessage("is-logged-in", list("key" = ckey, "computer-id" = C.computer_id))
 
-			if(r)
-				src << "You are already logged in on a different server!"
-				del(src)
-				return
+			//if(r)
+			//	src << "You are already logged in on a different server!"
+			//	del(src)
+			//	return
 
 			if(!r)
 				if(client)
@@ -416,6 +423,7 @@ mob
 						return 0
 
 				checking = 0
+				loc = locate_tag("maptag_select")
 				return 1
 
 			checking = 0

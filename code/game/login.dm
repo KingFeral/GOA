@@ -1,14 +1,15 @@
 client/New()
 	..()
-	if(RP&&DeathList.Find(src.computer_id))
+	/*if(RP&&DeathList.Find(src.computer_id))
 		src.mob=new/mob/spectator(null)
 		return
 	if(IsByondMember())
 		src<<"Thank you for supporting BYOND by purchasing a membership. For being a member you will have exclusive access to the member only store which is shown on the Map as a gold BYOND logo.\n"
 	else
 		src<<"Please consider buying a BYOND membership, BYOND members have exclusive access to the BYOND MEMBER store which is denoted as a gold BYOND logo on the map. <b><u>Sign up <a href=\"https://secure.byond.com/members/?command=member_payment&hub_refer=14c825468d74de50\">here </a></b></u>\n"
+	*/
 	src << "Welcome to the Official GOA server!"
-	src << "Join our community <a href='http://w11.zetaboards.com/NarutoGOA/index/'>forums</a>."
+	src << "Join our community <a href='http://w11.zetaboards.com/NarutoGOA/index/'>forum</a>."
 	src << "<big>Report bugs <a href = 'http://w11.zetaboards.com/NarutoGOA/forum/4128329/'>here</a>"
 	Refresh_Bounties()
 	CountPlayers()
@@ -17,10 +18,12 @@ world/IsBanned(key, addr, computer_id)
 	if(ckey(key) in admins)
 		return ..()
 
-	if(copytext(key, 1, 6) == "Guest")
+	/*if(copytext(key, 1, 6) == "Guest")
 		return list("desc" = "Guest keys are disabled. Please create a key at https://secure.byond.com/?page=Join", "address" = addr)
-	if(SendInterserverMessage("is_banned", list("key" = ckey(key), "computer_id" = computer_id)))
-		return list("desc" = "Game-wide banned.", "address" = addr)
+
+		*/
+	//if(SendInterserverMessage("is_banned", list("key" = ckey(key), "computer_id" = computer_id)))
+	//	return list("desc" = "Game-wide banned.", "address" = addr)
 	var/count=0
 	for(var/client/C)
 		if(block_alts && C.computer_id == computer_id && C.key != key)
@@ -94,9 +97,9 @@ mob/human/player
 			online_admins -= src
 
 		if(!RP)
-			tolog+=src.key
+			/*tolog+=src.key
 			if(tolog.len>5)
-				tolog-=tolog[1]
+				tolog-=tolog[1]*/
 			src.key=0
 
 			src.MissionFail()
@@ -114,9 +117,13 @@ mob/human/player
 			src.icon=null
 			src.overlays=null
 			src.loc=null
-			del map_pin
+			if(map_pin)map_pin.loc = null
+			if(map_pin_target)map_pin_target = null
+			if(map_pin_self)map_pin_self = null
+			if(map_pin_squad)map_pin_squad = null
+			/*del map_pin
 			del map_pin_target
 			del map_pin_self
-			del map_pin_squad
+			del map_pin_squad*/
 			sleep(50)
 			del(src)

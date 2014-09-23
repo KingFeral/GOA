@@ -1,4 +1,75 @@
+
+
+// combat flag
+
+#define OFFENSE_FLAG 1
+#define DEFENSE_FLAG 2
+
+mob
+	var
+		tmp/combat_flag_offense = 0
+		tmp/combat_flag_defense = 0
+		tmp/combat_protection = 1
+
+	new_player/verb/togglecombat()
+		combat_protection = !combat_protection
+		if(combat_protection)
+			usr << "Combat protection flag toggled on!"
+		else
+			usr << "Combat protection flag toggled off!"
+
+	proc/combat_flagged(flag)
+		if(dojo || !pk)
+			return 0
+		if(flag)
+			if(flag & OFFENSE_FLAG) return combat_flag_offense > world.time
+			if(flag & DEFENSE_FLAG) return combat_flag_defense > world.time
+		else
+			return combat_flag_offense > world.time || combat_flag_defense > world.time
+
+	proc/combat_flag(flag, time = 300)
+		if(!flag)
+			combat_flag_offense = world.time + time
+			combat_flag_defense = world.time + time
+		else
+			if(flag & OFFENSE_FLAG) combat_flag_offense = world.time + time
+			if(flag & DEFENSE_FLAG) combat_flag_defense = world.time + time
+
+proc/opposite_dir(d)
+	switch(d)
+		if(NORTH) return SOUTH
+		if(SOUTH) return NORTH
+		if(EAST) return WEST
+		if(WEST) return EAST
+		if(NORTHEAST) return SOUTHWEST
+		if(NORTHWEST) return SOUTHEAST
+		if(SOUTHEAST) return NORTHEAST
+		if(SOUTHWEST) return NORTHEAST
+
+mob/proc/canmove()
+	if(stunned || ko || maned || kaiten || incombo || paralysed) return FALSE
+	return TRUE
+
+mob
+	var/tmp/dashtime = 0
+
+mob/proc/dash(var/mob/Mob, var/distance)
+	if(!Mob || !distance)
+		return 0
+
+	dashtime = world.time + 30
+
+	while(distance > 0 && get_dist(src, Mob) > 1)
+		if(!(distance % 2))
+			sleep(1)
+		var/turf/t = get_step_towards(src, Mob)
+		var/mob/locate_mob = locate() in t
+		if(!canmove() || !t || t.density || locate_mob) break
+		step_towards(src, t)
+		distance--
+
 mob/var/afteryou=0
+mob/var/tmp/lastdash=0
 
 obj/interactable
 	paper
@@ -8,6 +79,12 @@ obj/interactable
 				set src in oview(1)
 
 mob/human/npc/shopnpc
+	Dec_Stam()
+		return
+	Wound()
+		return
+	Hostile()
+		return
 	interact="Shop"
 	verb
 		Shop()
@@ -39,7 +116,6 @@ obj
 		New()
 			set waitfor = 0
 			. = ..()
-			//spawn()
 			flick("create", src)
 			while(src)
 				sleep(1)
@@ -49,6 +125,28 @@ obj
 						dissipate_count = 0
 						break
 				if(dissipate_count > 50) del src
+
+/*obj/water
+	Crossed(mob/m)
+		if(!istype(m))
+			return ..()
+
+		if(m.clan == "Haku" && !m.body_replacement)
+			new/obj/haku_ice(loc)
+		else
+			m.waterlogged = 1
+			if(m.curchakra>5)
+				m.curchakra-=5
+			else if(m.curstamina>25)
+				m.curstamina-=25
+
+	Uncrossed(mob/m)
+		if(!istype(m))
+			return ..()
+
+		m.waterlogged = 0*/
+
+
 
 mob
 	var/tmp/stunendall = 0
@@ -62,7 +160,6 @@ mob
 			if(isguard)
 				isguard = 0
 			Begin_Stun()
-			//spawn()
 			while(time)
 				if(stunendall) break
 				time = max(time - 1, 0)
@@ -75,7 +172,6 @@ mob
 			if(stunned < 0) stunned = 0
 		Reset_Stun()
 			set waitfor = 0
-			//spawn()
 			stunned = 0
 			stunendall = 1
 			sleep(1)
@@ -93,7 +189,6 @@ mob
 			runlevel = 0
 			move_stun++
 			slows.Add(severity)
-			//spawn()
 			while(time > 0)
 				if(movestunendall) break
 				--time
@@ -102,38 +197,38 @@ mob
 			slows.Remove(severity)
 			//End_Move_Stun()
 		Get_Move_Stun()
-			var/highestslow
+			. = 0
 			if(slows.len)
 				for(var/i in slows)
-					if(!highestslow)
-						highestslow = i
-					else if(i > highestslow)
-						highestslow = i
-				return highestslow
-			else
-				return 0
+					if(!.)
+						. = i
+					else if(i > .)
+						. = i
+			if(Size)
+				. += Size
+
 		Reset_Move_Stun()
-			spawn()
-				move_stun = 0
-				movestunendall = 1
-				sleep(1)
-				movestunendall = 0
+			set waitfor = 0
+			move_stun = 0
+			movestunendall = 1
+			sleep(1)
+			movestunendall = 0
 
 mob/var/tmp/protectendall = 0
 mob/proc
 	Protect(protect_time as num)
+		set waitfor = 0
 		protected++
-		spawn()
-			while(protect_time > 0)
-				if(protectendall)
-					--protectendall
-					if(protectendall < 0) protectendall = 0
-					break
+		while(protect_time > 0)
+			if(protectendall)
+				--protectendall
+				if(protectendall < 0) protectendall = 0
+				break
 
-				protect_time--
-				sleep(1)
-			protected--
-			if(protected < 0) protected = 0
+			protect_time--
+			sleep(1)
+		protected--
+		if(protected < 0) protected = 0
 
 	End_Protect()
 		if(protected > 0)
@@ -158,6 +253,15 @@ mob/proc
 
 mob/var/movin=0
 mob/var/afteryou_cool=0
+
+mob
+	proc/move_delay_me()
+		// Used for sandmonsters and npcs.
+		set waitfor = 0
+		canmove = 0
+		sleep(1)
+		canmove = 1
+
 mob/human
 	Move(turf/loc,dirr)
 		if(!src.loc)
@@ -206,7 +310,7 @@ mob/human
 			src.icon=null
 			goto fin
 
-		var/i=0
+		/*var/i=0
 		i=Iswater(loc.x,loc.y,loc.z)
 		if(i)
 			var/obj/haku_ice/ice = locate(/obj/haku_ice) in loc
@@ -223,28 +327,25 @@ mob/human
 						waterlogged=1
 						watercount++
 					else
-						return 0
+						return 0*/
 
 		if(src.Tank)
 			for(var/mob/human/Xe in get_step(src,src.dir))
-				if(Xe!=src && !Xe.ko && !Xe.protected && (Xe.client/*||istype(Xe,/mob/human/player/npc/kage_bunshin)*/))
+				if(Xe!=src && !Xe.ko && !Xe.IsProtected()/*||istype(Xe,/mob/human/player/npc/kage_bunshin)*/)
 					var/obj/t = new/obj(Xe.loc)
 					t.icon='icons/gatesmack.dmi'
 					flick("smack",t)
 					del(t)
-					spawn()Xe.Dec_Stam((src.str+src.strbuff-strneg)*pick(1,3)+400,1,src)
-					spawn()Xe.Hostile(src)
+					Xe.Dec_Stam((src.str+src.strbuff-strneg)*pick(1,3)+400,1,src)
+					Xe.Hostile(src)
 					if(!Xe.Tank)
 						Xe.loc=locate(src.x,src.y,src.z)
 						Xe.icon_state="Hurt"
 
-
-					spawn()
-						if(!Xe.Tank)
-							Xe.Knockback(5,turn(src.dir, 180))
-						else
-							Xe.Knockback(5,src.dir)
-						Xe.icon_state=""
+						Xe.Knockback(5,turn(src.dir, 180))
+					else
+						Xe.Knockback(5,src.dir)
+					Xe.icon_state=""
 				else
 					src.loc=locate(Xe.x,Xe.y,Xe.z)
 
@@ -260,8 +361,8 @@ mob/human
 				return 1
 			else
 				return ..()
-		if(!EN[14])
-			return ..()
+		//if(!EN[14])
+		//	return ..()
 		if(src.zetsu)
 			return ..()
 		if(!src.movedrecently)
@@ -272,12 +373,7 @@ mob/human
 		if(src.isguard)
 			src.icon_state=""
 			src.isguard=0
-		for(var/obj/Bonespire/P in get_step(src,src.dir))
-			if(P.causer==src)
-				P.density=0
-				spawn(2)
-					if(P)
-						P.density=1
+
 		for(var/turf/P in get_step(src,src.dir))
 			if(!P.icon || P.type==/turf)
 				return 0
@@ -289,16 +385,20 @@ mob/human
 				X.loc=src.loc
 		fin
 
-		. = ..()
-		if(body_replacement)
-			body_replacement["steps"]--
-			if(body_replacement["steps"] <= 0)
-				var/mob/human/body_replacement/b = body_replacement["ref"]
-				b.activate()
+		var/mob/human/player/npc/escort
+		for(var/mob/human/player/npc/Q in oview(5))
+			if(Q.following == src)
+				Q.nextstep = dirr
+				escort = Q
+				//call(escort, "escort_step")()
+				break
 
-		if(src.HasSkill(BLOOD_BIND))
-			for(var/obj/undereffect/B in src.loc)
-				if(B.uowner)src.Blood_Add(B.uowner)
+		. = ..()
+
+		// TODO, move this to effect/crossed()
+		if(clan == "Jashin" && src.HasSkill(BLOOD_BIND))
+			for(var/effect/B in src.loc)
+				if(B.icon == 'icons/blood.dmi' && B.owner)src.Blood_Add(B.owner)
 
 		src.Get_Global_Coords()
 
@@ -320,6 +420,7 @@ mob/human
 					Minfo.PlayerLeft(src)
 					NM.PlayerEntered(src)
 					src.loc=locate(1,y,NM.z)
+					//if(leading) leading.loc = loc
 					wa=1
 					src.Get_Global_Coords()
 
@@ -339,6 +440,7 @@ mob/human
 					Minfo.PlayerLeft(src)
 					NM.PlayerEntered(src)
 					src.loc=locate(100,y,NM.z)
+					//if(leading) leading.loc = loc
 					wa=1
 					src.Get_Global_Coords()
 
@@ -353,10 +455,11 @@ mob/human
 					if(OP.oX==eX && OP.oY==eY-1)
 						NM=OP
 						break
-				if(NM && NM.CanEnter(src))
+ 			if(NM && NM.CanEnter(src))
 					Minfo.PlayerLeft(src)
 					NM.PlayerEntered(src)
 					src.loc=locate(x,1,NM.z)
+					//if(leading) leading.loc = loc
 					wa=1
 					src.Get_Global_Coords()
 
@@ -375,47 +478,35 @@ mob/human
 					Minfo.PlayerLeft(src)
 					NM.PlayerEntered(src)
 					src.loc=locate(x,100,NM.z)
+					//if(leading) leading.loc = loc
 					wa=1
 					src.Get_Global_Coords()
 		//~~~~
-		if(!afteryou_cool && wa && rockshinobis < 50)
-			if(pick(0,1))
-				var/squadsize=pick(1,2,3,4)
-				squadsize=min(squadsize,afteryou)
-				afteryou_cool=1
-				rockshinobis += squadsize
-				//afteryou-=squadsize
-				spawn(30)
-					var/lvl=1
-					if(MissionClass=="D")
-						lvl=limit(1,round(src.blevel * rand(0.4,1)),30)
-					if(MissionClass=="C")
-						lvl=limit(1,round(src.blevel * rand(0.7,1.1)),60)
-					if(MissionClass=="B")
-						lvl=limit(1,round(src.blevel * rand(0.8,1.2)),80)
-					if(MissionClass=="A")
-						lvl=limit(1,round(src.blevel * rand(0.9,1.3)),100)
-					if(MissionClass=="S")
-						lvl=limit(1,round(src.blevel * rand(1,1.3)),100)
 
-					Ambush(src,lvl,squadsize)
+		if(wa && afteryou_cool < world.time && rockshinobis < 50)
+			if(pick(0, 1))
+				new/Event(50, "rock_shinobi_ambush", list(src))
 
-		else
+		if(escort && wa)
+			//escort.loc = loc
+			call(escort, "escort_teleport")()
+			/*step(escort, escort.nextstep)
 			if(wa)
-				spawn(600)
-					afteryou_cool=0
-		if(wa && leading && leading:z != z)
-			leading:loc = loc
-		//for(var/mob/human/player/npc/Q in oview(5))
-		//	if(Q.following==src)
-		//		Q.nextstep=src.dir
+				step(escort, escort.nextstep)*/
+
+		//else if(wa)
+		//		new/Event(600, "reset_ambush_time", list(src))
+
+		//if(wa && leading && leading:z != z)
+		//	leading:loc = loc
+
+			// F: Not sure what this is for.
 			//for(var/area/XE in oview(src,0))
 			//	if(istype(XE,/area/nopkzone))
 			//		src.Hostile()
 		if(istype(src,/mob/human/sandmonster)||istype(src,/mob/human/player/npc))
-			canmove=0
-			spawn(1)
-				canmove=1
+			//new/Event(1, "move_delay", list(src))
+			call(src, "move_delay_me")()
 			return
 		for(var/obj/x in oview(0))
 			if(istype(x,/obj/caltrops))
@@ -426,8 +517,11 @@ mob/human
 		src.runlevel++
 		if(src.runlevel>8)
 			src.runlevel=8
+		//decrease_running_speed()
 
-		spawn(10)
+		//(10)
+		new/Event(10, "decrease_running_speed", list(src))
+		/*
 			src.runlevel--
 			if(src.icon_state=="Run" &&src.runlevel<3)
 				src.icon_state=""
@@ -436,7 +530,7 @@ mob/human
 				src.icon_state="Run"
 		else
 			if(src.icon_state=="Run")
-				src.icon_state=""
+				src.icon_state=""*/
 
 		canmove=0
 		sleep(1)
@@ -458,6 +552,41 @@ mob/human
 			sleep(1)
 		canmove=1
 
+mob/proc/decrease_running_speed()
+	set waitfor = 0
+	sleep(10)
+	src.runlevel--
+	if(src.icon_state=="Run" &&src.runlevel<3)
+		src.icon_state=""
+	if(src.runlevel>=4 &&!src.Size && !src.Get_Move_Stun())
+		if(!src.rasengan &&!src.larch)
+			src.icon_state="Run"
+	else
+		if(src.icon_state=="Run")
+			src.icon_state=""
+
+mob/Bump(obstacle)
+	//bumped(obstacle)
+	if(hascall(obstacle, "on_bump"))
+		call(obstacle, "on_bump")(src)
+	else
+		..()
+
+atom
+	proc/bumped(atom/movable/am)
+
+
+obj/Bonespire
+	proc/on_bump(mob/crossing)
+		set waitfor = 0
+		if(!istype(crossing))
+			return ..()
+		if(causer == crossing)
+			density = 0
+			sleep(2)
+			density = 1
+			return 1
+		return 0
 
 mob/var/movement_map
 client
@@ -637,7 +766,7 @@ mob
 				usr.Affirm_Icon()
 				usr.Load_Overlays()
 				usr.camo=0
-			if(usr.lastwitnessing && usr.sharingan && usr:HasSkill(SHARINGAN_COPY))
+			if(usr.lastwitnessing && usr.lastwitnessing_time >= world.time && usr.sharingan && usr:HasSkill(SHARINGAN_COPY))
 				var/skill/uchiha/sharingan_copy/copy = usr:GetSkill(SHARINGAN_COPY)
 				var/skill/copied = copy.CopySkill(usr.lastwitnessing)
 				usr.combat("<b><font color=#faa21b>Copied [copied]!</b></font>")
@@ -646,14 +775,16 @@ mob
 			if(usr.incombo)
 				return
 
-			if(((usr.usedelay>0&&usr.pk)||usr.stunned||handseal_stun||usr.paralysed)&&!usr.ko)
-				return
-			usr.usedelay++
+			//if(((usr.usedelay>0&&usr.pk)||usr.stunned||handseal_stun||usr.paralysed)&&!usr.ko)
+			//	return
+			//usr.usedelay++
 
 			var/o=0
 			var/inttype=0
-			if(usr.leading)usr.leading=0
-
+			if(usr.leading)
+				//usr.leading=0
+				call(usr.leading, "stop_following")()
+				return
 			if(usr.spectate && usr.client)
 				usr.spectate=0
 				usr.client.eye=usr.client.mob
@@ -667,10 +798,10 @@ mob
 						var/dz=X.z
 						if(dx&&dy&&dz)
 							if(!X:exploading)
-								spawn()Poof(dx,dy,dz)
+								Poof(X.loc)//(dx,dy,dz)
 							else
 								X:exploading=0
-								spawn()explosion(rand(1000,2500),dx,dy,dz,usr)
+								explosion(rand(1000,2500),dx,dy,dz,usr)
 								X.icon=0
 								X.targetable=0
 								X.invisibility=100
@@ -680,19 +811,41 @@ mob
 							usr.client.eye = usr.client.mob
 							usr.controlmob = 0
 						if(X)
-							if(locate(X) in usr.pet)
-								usr.pet-=X
-							X.loc=null
+							//if(locate(X) in usr.pet)
+							//	usr.pet-=X
+							X.dispose()
+							//X.loc=null
+							//X.owner = null
 				usr.tajuu=0
 				//usr.RecalculateStats()
 				usr.controlmob=0
 				if(usr.client && usr.client.mob)
 					usr.client.eye=usr.client.mob
 					src.hidestat=0
-			spawn(30)
+
+			if(usr.curwound >= usr.maxwound && usr.ko)
 				usr.Respawn()
+				return
+
 			for(var/obj/interactable/oxe in oview(1))
 				oxe:Interact()
+				return
+
+			for(var/mob/human/Puppet/p in ohearers(1))
+				if(Puppet1 && !Primary)
+					Primary = Puppet1
+					walk(Primary, 0)
+					client.eye = Puppet1
+					return
+				else if(Puppet2 && Puppet2 != Primary)
+					if(!Puppet1 || Puppet1 == Primary)
+						Primary = Puppet2
+						walk(Primary, 0)
+						client.eye = Puppet2
+						return
+			if(Primary && (Puppet1 || Puppet2))
+				Primary = 0
+				client.eye =  client.mob
 				return
 
 			for(var/mob/human/npc/x in oview(1))
@@ -722,7 +875,7 @@ mob
 					usr.Tag_Interact(U)
 					return
 				var/new_target
-				for(var/mob/human/M in oview(2, usr))
+				for(var/mob/human/M in oview(4, usr))
 					if(!new_target)
 						new_target = M
 					if(get_dist(M, usr) < get_dist(usr, new_target))
@@ -733,34 +886,40 @@ mob
 				usr.name=usr.realname
 				usr.henged=0
 				usr.mouse_over_pointer=faction_mouse[usr.faction.mouse_icon]
-				Poof(usr.x,usr.y,usr.z)
+				Poof(usr.loc)//(usr.x,usr.y,usr.z)
 				usr:CreateName(255, 255, 255)
 				usr.Affirm_Icon()
 				usr.Load_Overlays()
+
 mob/proc/Blood_Add(mob/V)
+	set waitfor = 0
 	if(V)
 		if(!bloodrem.Find(V))
 			bloodrem+=V
-
-		spawn(600)
-			bloodrem-=V
+		sleep(600)
+		bloodrem-=V
 
 mob/var/pill=0
 mob/var/combo=0
 mob
 	proc
 		Dec_Stam(x,xpierce,mob/attacker, hurtall,taijutsu, internal)
-			//set waitfor =0
+			if(combat_protection && attacker && attacker != src && attacker.blevel >= 20)
+				if(attacker.client) attacker << "A force stops you from harming [realname]!"
+				return
 			if(istype(attacker, /mob/human/player/npc/kage_bunshin))
 				x /= 4
+
+			if(leading)
+				call(leading, "stop_following")()
 
 			if(skillspassive[KEEN_EYE] && HasSkill(lastskill) || (clan == "Uchiha" && HasSkill(SHARINGAN_COPY)))
 				if(clan == "Uchiha")
 					var/skill/uchiha/sharingan_copy/s = GetSkill(SHARINGAN_COPY)
 					if(s && s.copied_skill && s.copied_skill.id == lastskill)
-						x *= 1 - 0.01 * skillspassive[KEEN_EYE]
+						x *= 1 - 0.02 * skillspassive[KEEN_EYE]
 				else if(HasSkill(lastskill))
-					x *= 1 - 0.01 * skillspassive[KEEN_EYE]
+					x *= 1 - 0.02 * skillspassive[KEEN_EYE]
 
 			if(!internal && attacker && attacker.skillspassive[BLINDSIDE] && attacker != src && !byakugan)
 				FilterTargets()
@@ -785,7 +944,7 @@ mob
 						return
 
 			if(src.AIKawa && !internal)
-				Poof(src.x,src.y,src.z)
+				Poof(loc)//(src.x,src.y,src.z)
 				new/obj/log(locate(src.x,src.y,src.z))
 				var/turf/T=locate(src.AIKawa)
 				if(T)
@@ -793,9 +952,9 @@ mob
 				src.AIKawa=null
 				return
 
-			if((src.pill==2 || src.Size) && !internal)
-				if(x>2)
-					x=round(x*0.70)
+			//if((src.pill==2 || src.Size) && !internal)
+			//	if(x>2)
+			//		x=round(x*0.70)
 			var/fu=0
 			for(var/area/nopkzone/oox in oview(0,src))
 				fu=1
@@ -835,25 +994,34 @@ mob
 			if(src.kaiten && !internal)
 				return
 
+			x=round(x)
 			if(x<=0)
 				return
+			if(client && x >= 2500 && attacker && attacker != src)
+				ez_count = max(0, ez_count - 3)
 
 			if(src.ironskin==1&&!xpierce && !internal)
 				src.curstamina-=round(x/2)
 				return
 			src.combat("<font color=#eca940>You took [x] Stamina damage from [attacker]!")
-			if(attacker && x && attacker.client&&istype(src,/mob/human/player/npc/creep))
-				var/mob/human/player/npc/creep/C=src
+			if(!client && attacker && x && attacker.client && istype(src, /mob/human/player/npc))
+				var/mob/human/player/npc/C=src
 				C.lasthurtme=attacker
 			src.curstamina-=x
-			if(attacker&&attacker.clan == "Ruthless")
-				attacker.adren+=round(x/200)
+
+			if(((!client &&  istype(src, /mob/human/player/npc) && src:nisguard) || client) &&attacker&&attacker.clan == "Ruthless")
+				attacker.adren+=round(x/150)
+
 			if(src.asleep)
 				src.asleep=0
 				//src.stunned=0
 				src.End_Stun()
+
 		Wound(x,xpierce, mob/attacker, reflected)
 			//set waitfor = 0
+			if(combat_protection && attacker && attacker != src && attacker.blevel >= 20)
+				if(attacker.client) attacker << "A force stops you from harming [realname]!"
+				return
 			if(istype(attacker, /mob/human/player/npc/kage_bunshin))
 				x /= 4
 
@@ -874,7 +1042,8 @@ mob
 				x=10
 
 			if(pill == 2 && xpierce < 3)
-				x = round(x*0.80)
+				x = round(x*0.70)
+
 			if(Size && xpierce < 3)
 				if(x>2)
 					x=round(x*0.70)
@@ -884,7 +1053,7 @@ mob
 				if(x>100)
 					x=100
 			if(clan == "Battle Conditioned" && !xpierce)
-				x *= 0.85
+				x *= 0.7
 			if(src.skillspassive[BUILT_SOLID] && xpierce < 3)
 				var/y=0
 				var/stamhurt=0
@@ -895,7 +1064,7 @@ mob
 						stamhurt+=120
 				if(stamhurt > 0 && src.clan == "Battle Conditioned")
 					stamhurt *= 0.8
-				spawn()src.Dec_Stam(stamhurt,attacker=attacker,internal=1)
+				src.Dec_Stam(stamhurt,attacker=attacker,internal=1)
 
 			if(attacker!=src)
 				var/fu=0
@@ -952,39 +1121,13 @@ mob
 
 			x *= 1 - round((((Ax) / (Ax * 1.2 + 180))))
 
-	/*		var/p1= x* (100-Ax)/100
-			var/p2= x* (Ax)/100 *(100/(src.str+src.strbuff-src.strneg))
-			if(x>=1 && (p1+p2)<=1)
-				if(Ax<100)
-					p1=1
-					p2=0*/
-
 			usr=src
-			if(istype(src, /mob/human) && src:HasSkill(MASOCHISM))
-				var/Rlim=round(src.rfx/2.5)-src.rfxbuff
-				var/Slim=round(src.str/2.5)-src.strbuff
-				if(Rlim<0)
-					Rlim=0
-				if(Slim<0)
-					Slim=0
-				var/R=round(src.rfx/10)
-				var/S=round(src.str/10)
-				if(R>Rlim)
-					R=Rlim
-				if(S>Slim)
-					S=Slim
-				src.rfxbuff+=R
-				src.strbuff+=S
-				spawn(200)
-					src.rfxbuff-=R
-					src.strbuff-=S
-					if(src.rfxbuff<=0)
-						src.rfxbuff=0
-					if(src.strbuff<=0)
-						src.strbuff=0
+			if(clan == "Jashin")//if(istype(src, /mob/human) && src:HasSkill(MASOCHISM))
+				jashin_boost()
 
 			//if(xpierce<2)
 			//	x=round(p1 + p2, 1)
+			x = round(x)
 			if(x<=0)
 				return
 			src.curwound+=x
@@ -1000,7 +1143,7 @@ mob
 						if(F)	// Runtime error here: bunshins? getting deleted by hostile. Added a couple checks to prevent it.
 							F.combat("You've taken Wound damage from the Blood Contract with [usr]!!")
 							combat("Your blood contract with [F] has given them [x] wound damage!!")
-			if(client&&attacker&&attacker.clan == "Ruthless")
+			if(((!client && istype(src, /mob/human/player/npc) && src:nisguard) || client) &&attacker&&attacker.clan == "Ruthless")
 				attacker.adren+=x
 
 			if(src.asleep)
@@ -1008,24 +1151,47 @@ mob
 				//src.stunned=0
 				src.End_Stun()
 
-
+mob
+	proc/jashin_boost()
+		set waitfor = 0
+		var/Rlim=round(src.rfx/2.5)-src.rfxbuff
+		var/Slim=round(src.str/2.5)-src.strbuff
+		if(Rlim<0)
+			Rlim=0
+		if(Slim<0)
+			Slim=0
+		var/R=round(src.rfx/10)
+		var/S=round(src.str/10)
+		if(R>Rlim)
+			R=Rlim
+		if(S>Slim)
+			S=Slim
+		src.rfxbuff+=R
+		src.strbuff+=S
+		sleep(200)
+		src.rfxbuff-=R
+		src.strbuff-=S
+		if(src.rfxbuff<=0)
+			src.rfxbuff=0
+		if(src.strbuff<=0)
+			src.strbuff=0
 
 mob
 	proc
 		Hostile(mob/human/player/attacker)
 			set waitfor = 0
 			if(attacker && src.faction && attacker.faction && (src.faction.village!=attacker.faction.village ||src.faction.village=="Missing"))
-				spawn() src.register_opponent(attacker)
-				spawn() attacker.register_opponent(src)
+				src.register_opponent(attacker)
+				attacker.register_opponent(src)
 			if(istype(src,/mob/human/clay))
-				spawn() src:Explode()
+				src:Explode()
 				return
 
 			if(phenged)
 				if(faction)mouse_over_pointer=faction_mouse[faction.mouse_icon]
 				src.name=src.realname
 				src.phenged=0
-				spawn() Poof(src.x,src.y,src.z)
+				Poof(loc)//(src.x,src.y,src.z)
 				src.overlays=0
 				src:CreateName(255, 255, 255)
 				var/mob/example=new src.type()
@@ -1035,23 +1201,28 @@ mob
 			if(src.medicing)
 				src.medicing=0
 			if(src.qued)
-				spawn() src.Deque(0)
+				src.Deque(0)
 			if(src.qued2)
-				spawn() src.Deque2(0)
-			src.mane=0
-			src.usemove=0
-			src.combo=0
+				src.Deque2(0)
+			src.mane = 0
+			src.usemove = 0
+			src.combo = 0
+
+			if(src && attacker && attacker != src)
+				combat_flag(DEFENSE_FLAG, 90)
+				attacker.combat_flag(OFFENSE_FLAG, 120)
+
 			if(src.leading)
 				src.leading=0
 			if(istype(src,/mob/human/player/npc))
 				if(attacker && attacker!=src && attacker.faction && src.faction && attacker.faction.village != src.faction.village && !(attacker.MissionTarget==src && (attacker.MissionType=="Escort"||attacker.MissionType=="Escort PvP")))
 					if(!istype(attacker,/mob/human/player/npc/creep) && !(istype(attacker, /mob/human/player/npc) && src:nisguard))
-						spawn() src:AI_Target(attacker)
+						src:AI_Target(attacker)
 			if(src.henged)
 				src.henged=0
 				src.mouse_over_pointer=faction_mouse[faction.mouse_icon]
 				src.name=src.realname
-				spawn() Poof(src.x,src.y,src.z)
+				Poof(loc)//(src.x,src.y,src.z)
 				src:CreateName(255, 255, 255)
 				src.Affirm_Icon()
 				src.Load_Overlays()
@@ -1061,12 +1232,13 @@ mob
 				combat("You were startled awake!")
 			src.sleeping=0
 			src.combo=0
-			if(attacker!=src && !ko)
-				if(!client)
-					if(attacker.client)
+			if(attacker)
+				if(attacker!=src && !ko)
+					if(!client)
+						if(attacker.client)
+							lasthostile = attacker.key
+					else
 						lasthostile = attacker.key
-				else
-					lasthostile = attacker.key
 			if(istype(src,/mob/human/npc))
 				return
 			if(istype(src,/mob/human/sandmonster))
@@ -1080,8 +1252,9 @@ mob
 			if(src.rasengan==2)
 				src.ORasengan_Fail()
 			if(istype(src,/mob/human/player/npc/bunshin))
-				if(src:bunshintype==0)
-					spawn() Poof(src.x,src.y,src.z)
+				call(src, "destroy")()
+				/*if(src:bunshintype==0)
+					Poof(loc)//(src.x,src.y,src.z)
 					src.invisibility=100
 					src.target=-15
 					src.loc=locate(0,0,0)
@@ -1089,39 +1262,10 @@ mob
 					src.density=0
 					src.targetable=0
 					src.loc=locate(0,0,0)
-					spawn(500)
-						del(src)
+					loc = null*/
 			if(istype(src,/mob/human/player/npc/kage_bunshin))
-				spawn()
-					var/dx=src.x
-					var/dy=src.y
-					var/dz=src.z
-					if(!src:exploading)
-						spawn()Poof(dx,dy,dz)
-					else
-						src:exploading=0
-						spawn()explosion(rand(1000,2500),dx,dy,dz,src)
-						src.icon=0
-						src.targetable=0
-						src.invisibility=100
-						src.density=0
-						sleep(5)
-					src:dead=1
-					//src.stunned=100
-					src.Begin_Stun()
-
-					src.loc=locate(0,0,0)
-					for(var/mob/human/player/p in world)
-						if(p.key==src:ownerkey)
-							p.controlmob=0
-							p.client.eye=p.client.mob
-					src.invisibility=100
-					src.target=-15
-					src.targetable=0
-					src.density=0
-					src.targetable=0
-					spawn(100)
-						del(src)
+				var/mob/human/player/npc/kage_bunshin/k = src
+				k.destroyed()
 
 			if(attacker && attacker != src && !ko && curstamina > 0)
 				if(istype(attacker, /mob/human/player/npc/kage_bunshin))
@@ -1138,40 +1282,9 @@ mob
 
 			if(attacker&&attacker.client&&src.faction&&attacker.faction&&src.faction.village!=attacker.faction.village && !src.alertcool)
 				src.alertcool=180
-				var/onit=0
-				var/list/options=new/list()
-				for(var/turf/x in oview(8,src))
-					if(!x.density)
-						options+=x
-
-				if(length(options))
-					spawn() for(var/mob/human/player/npc/OMG in world)
-						if(!OMG.client && OMG.z==z && onit < 2)
-							// TODO: I think this sleep should be a spawn or something. This loop must be really slow otherwise.
-							// ...In fact, that slowness is probably the cause a bunch of the guard issues.
-							sleep(200)
-							if(OMG && attacker && OMG.z == attacker.z)
-								var/turf/nextt = pick(options)
-								options -= nextt
-								if(OMG.nisguard && OMG.faction.village == faction.village && attacker && !(istype(attacker, /mob/human/player/npc) && attacker:nisguard))
-									onit++
-									OMG.AppearAt(nextt.x, nextt.y, nextt.z)
-									spawn() OMG.AI_Target(attacker)
-									if(get_dist(attacker, OMG) > 10)
-										walk_to(OMG, attacker, 4, 1)
-
-									spawn()
-										var/eie = 0
-										while(attacker && OMG && get_dist(attacker, OMG) > 20 && eie < 10)
-											eie++
-											step_to(OMG, src, 4)
-											sleep(5)
-										if(OMG)
-											walk(OMG, 0)
-										spawn() if(OMG && attacker) OMG.AI_Target(attacker)
-										if(OMG && attacker && get_dist(attacker, OMG) > 10)
-											if(OMG.z == attacker.z)
-												OMG.AppearAt(attacker.x, attacker.y, attacker.z)
+				for(var/mob/human/player/npc/OMG in ohearers(src))
+					if(OMG.nisguard && OMG.faction.village == faction.village && !OMG.doesnotattack && !OMG.targets.len && !OMG.ko)
+						OMG.AI_Target(attacker)
 
 
 obj
@@ -1216,9 +1329,12 @@ mob
 		cc=0
 		isguard=0
 		dzed=0
+		criticaltime=0
+		brutalitytime=0
 
 mob
 	proc/Graphiked2()
+		set waitfor = 0
 		var/image/O = image('icons/critical.dmi',src,icon_state="1",pixel_x=-6)
 		var/image/O2 = image('icons/critical.dmi',src,icon_state="2",pixel_x=26)
 		world<<O
@@ -1243,6 +1359,7 @@ mob
 		del(O2)
 
 	proc/Graphiked(icon/I)
+		set waitfor = 0
 		var/image/O = image(I,src)
 		world<<O
 		sleep(1)
@@ -1258,13 +1375,23 @@ mob
 		sleep(1)
 		del(O)
 
+	proc/increase_combo()
+		set waitfor = 0
+		combo++
+		var/recorded_combo = combo
+		sleep(50)
+		if(combo == recorded_combo)
+			combo = 0
+
+	proc/timed_reaction_stun(time)
+		set waitfor = 0
+		cantreact++
+		sleep(time)
+		cantreact--
+
 	proc/Combo(mob/M,r)
 		if(src.skillspassive[FLURRY]&& src.combo<(1+src.skillspassive[FLURRY]))
-			src.combo++
-			var/C=src.combo
-			spawn(50)
-				if(src.combo==C)
-					src.combo=0
+			increase_combo()
 		if(M && src)
 			var/boom=0
 			if(src.sakpunch2||usr.Size)
@@ -1272,7 +1399,7 @@ mob
 				boom=1
 			var/blk=0
 
-			spawn()if(M) M.Hostile(src)
+			if(M) M.Hostile(src)
 
 			if(src.scalpol)
 				//src.scalpoltime
@@ -1283,23 +1410,31 @@ mob
 				//var/critchan2=//src.scalpoltime/10 * rand(2,5)
 				//critchan2 = min(critchan2, 33)
 				//src.scalpoltime=0
-				if(prob((scalpoltime*2)))
+				if(prob((scalpoltime*2) + usr.skillspassive[MEDICAL_TRAINING]) && M.criticaltime < world.time)
+					M.criticaltime = world.time + 100
 				//Critical..
-					var/critdamx=round((usr.con+usr.conbuff)*rand(20,40)/10)
-					var/wounddam=round(((rand(1,4)/2)*(usr.con+usr.conbuff-usr.conneg))/150)
+					var/critdamx=round((usr.con-usr.conneg)*rand(20,40)/10)
+					var/wounddam=round(((rand(1,4)/2)*(usr.con-usr.conneg))/150)
+					if(lastdash)
+						lastdash = 0
+						critdamx *= 0.6
 					M.Dec_Stam(critdamx, 0, usr)
 					M.movepenalty += round(10 * 1 + 0.05 * usr.skillspassive[MEDICAL_TRAINING])
 					src.combat("Critical hit [M] for [critdamx] Stamina damage and [wounddam] Wounds!")
-					spawn() if(M) M.Graphiked2()
+					if(M) M.Graphiked2()
 					M.Wound(wounddam, 0, usr)
 				else
 					var/critdamx=(usr.con + usr.conbuff - usr.conneg) * pick(0.6, 0.7, 0.8, 0.9, 1)//round((usr.con+usr.conbuff)*rand(50,100)/100)
 					if(usr.skillspassive[MEDICAL_TRAINING])
 						critdamx *= 1 + 0.04 * usr.skillspassive[MEDICAL_TRAINING]
+					if(lastdash)
+						lastdash = 0
+						critdamx *= 0.6
 					var/wounddam=pick(0,1)
 					M.Dec_Stam(critdamx, 0, usr)
 					//M.movepenalty+=10
-					M.movepenalty += round(5 * 1 + 0.05 * usr.skillspassive[MEDICAL_TRAINING])
+					//M.movepenalty += 0 + 0.5 * usr.skillspassive[MEDICAL_TRAINING]
+					//M.movepenalty = min(30, M.movepenalty)
 					src.combat("Hit [M] for [critdamx] Stamina damage and [wounddam] Wounds!")
 
 					M.Wound(wounddam, 0, usr)
@@ -1310,6 +1445,9 @@ mob
 					M.bleed(bleed, src)
 
 				src.scalpoltime=0
+				return
+
+			if(!M)
 				return
 
 			for(var/mob/human/P in get_step(M,M.dir))
@@ -1324,23 +1462,26 @@ mob
 
 				M.icon_state=""
 				M.isguard=0
-				M.cantreact = 1
-				spawn(10)
-					M.cantreact = 0
+				M.timed_reaction_stun(5 - round(((rfx - 50) / 100)))//(10)
 				return
 
 			if(M.skillspassive[BRUTALITY] && M.weapon_ref && istype(M.weapon_ref, /obj/items/weapons/melee))
-				if(prob(5 * M.skillspassive[BRUTALITY]))
+				if(prob(5 * M.skillspassive[BRUTALITY]) && M.brutalitytime < world.time)
+					M.brutalitytime = world.time + 50
 					flick("w-attack", M)
 					M.FaceTowards(src)
-					M.Timed_Stun(5)
+					M.Timed_Stun(3)
 					M.combat("You counter attack [src] with your [M.weapon_ref.name]!")
 					combat("[M] countered your attack!")
-					var/stamina_dmg = M.weapon_ref.get_stamina_damage() * 0.2
-					spawn Dec_Stam(stamina_dmg, 0, M)
-					flick("hurt", src)
-					spawn Knockback(2, M.dir)
+					var/stamina_dmg = M.weapon_ref.get_stamina_damage(M) * 0.2
+					Dec_Stam(stamina_dmg, 0, M)
+					set_icon_state("hurt", 30)
+					Knockback(2, M.dir)
+					if(istype(src, /mob/human/player/npc/kage_bunshin))
+						call(src, "destroyed")()
+						return
 					Timed_Move_Stun(30, 2)
+					timed_reaction_stun(10)
 					return
 
 			usr=src
@@ -1362,40 +1503,36 @@ mob
 			src.pixel_y=4*yp
 
 
-		//	var/deltamove=0
-
 			if(src.gentlefist)
-				spawn() if(M) M.Chakrahit3()
+				if(M) M.Chakrahit3()
 				gentle_fist_hit(M)
-				/*
-				if(prob(60)) M.Wound(pick(1,2),0,src)
-				++M.gentle_fist_block
-				spawn(100)
-					if(M) --M.gentle_fist_block*/
+
 			else
-				spawn()smack(M,rand(-10,10),rand(-5,15))
+				smack(M,rand(-10,10),rand(-5,15))
 			var/critdam=0
 			var/critchan=5
 
 			if(boom)
 				M.Earthquake(5)
-				//critdam=round((usr.con+usr.conbuff+usr.str+usr.strbuff)*rand(1,2)) +800
-				critdam = ((str + strbuff - strneg) * 2 + (con + conbuff - conneg)) / 2
+				critdam = round((((usr.con - usr.conneg) * 2) + (usr.str - usr.strneg)) * 0.5)
 				if(skillspassive[MEDICAL_TRAINING])
-					critdam *= 1 + 0.2 * skillspassive[MEDICAL_TRAINING]
+					critdam *= min(3, 1 + 0.2 * skillspassive[MEDICAL_TRAINING])
 				if(usr.Size==1)
 					critdam=round((usr.str+usr.strbuff)*rand(2,4)) +800
 				if(usr.Size==2)
 					critdam=round((usr.str+usr.strbuff)*rand(3,5.5)) +800
 				M.Dec_Stam(critdam,0,usr)
-				M.movepenalty+=usr.skillspassive[MEDICAL_TRAINING]//20
+				if(!usr.Size)
+					M.movepenalty+=usr.skillspassive[MEDICAL_TRAINING] +rand(0,5)
+				else
+					M.movepenalty+=20
 				if(!usr.Size)
 					src.combat("Hit [M] for [critdam] damage with a chakra infused critical hit!!")
 				else
 					src.combat("Hit [M] for [critdam] with your massive fist!!")
-				spawn() if(M) M.Graphiked2()
+				if(M) M.Graphiked2()
 
-				if(!usr.Size)spawn()explosion(50,M.x,M.y,M.z,usr,1)
+				if(!usr.Size)explosion(50,M.x,M.y,M.z,usr,1)
 				if(src)
 					src.pixel_x=0
 					src.pixel_y=0
@@ -1404,7 +1541,8 @@ mob
 					M.pixel_x=0
 				M.Knockback(rand(5,10),src.dir)
 				return
-			if(prob(critchan) && !prob(M.skillspassive[EVASIVENESS] * 3))
+			if(prob(critchan) && !prob(M.skillspassive[EVASIVENESS] * 3) && M.criticaltime < world.time)
+				M.criticaltime = world.time + 100
 				//Critical..
 
 				if(!usr.gentlefist)
@@ -1413,7 +1551,7 @@ mob
 					critdam=round((usr.con+usr.conbuff)*rand(15,40)/10)*(1+0.10*src.skillspassive[FORCE])
 				M.movepenalty+=10
 				src.combat("Critical hit!")
-				spawn()if(M) M.Graphiked2()
+				if(M) M.Graphiked2()
 
 
 
@@ -1430,43 +1568,15 @@ mob
 
 			var/dam = damage_stat
 
-			/*switch(outcome)
-				if(6)
-					deltamove+=3
-					M.c+=4
-					dam=round(150*m)
-				if(5)
-					deltamove+=2
-					M.c+=3.5
-					dam=round(115*m)
-				if(4)
-					deltamove+=1
-					M.c+=3
-					dam=round(100*m)
-				if(3)
-					deltamove+=1
-					M.c+=2.5
-					dam=round(70*m)
-				if(2)
-					//deltamove+=3
-					M.c+=2
-					dam=round(40*m)
-				if(1)
-					//deltamove+=3
-					M.c+=2
-					dam=round(30*m)
-				if(0)
-					//deltamove+=2
-					M.c+=2
-					dam=round(20*m)*/
-
+			//M.c += 4
+			M.increase_comboed(4)
 			if(M.c>13)
 				if(prob(60))
-					spawn()if(M) M.Knockback(1,src.dir)
-					spawn(1)
-						step(src,src.dir)
+					combo_advance(M)
+
 			if(combo)
-				dam*=1+0.10*combo
+				dam += dam * (0.2 * combo)
+				//dam*=1+0.20*combo
 			var/DD=dam+critdam
 
 			M.Dec_Stam(DD, 0, usr,0,1)
@@ -1476,29 +1586,12 @@ mob
 					v.combat("[M] was hit for [DD] damage by [src]!")
 
 			//M.movepenalty += deltamove
-			M.movepenalty = min(15, M.movepenalty + 3)
+			M.movepenalty = min(30, M.movepenalty + 3)
 			var/dazeresist=4*M.skillspassive[BUILT_SOLID]
 			var/evaderesist=3*M.skillspassive[EVASIVENESS]
 
 			if(M.c > 20 && !M.cc &&!prob(dazeresist) && !prob(evaderesist))//combo pwned!!
-				M.dzed=1
-				M.cc=150
-				M.icon_state="hurt"
-				var/dazed=30
-				dazed*= 1 + 0.1*src.skillspassive[FLURRY]
-				//M.move_stun=round(dazed,0.1)
-				M.Timed_Stun(dazed)
-
-				spawn() if(M) M.Graphiked('icons/dazed.dmi')
-				spawn() if(M) smack(M,0,0)
-				src.combat("[M] is dazed!")
-				spawn()
-					while(M&&M.stunned)
-						sleep(1)
-					if(M)
-						M.icon_state=""
-						M.dzed=0
-						M.c=0
+				combo_daze(M)
 
 			sleep(3)
 			if(src)
@@ -1508,11 +1601,52 @@ mob
 				M.pixel_y=0
 				M.pixel_x=0
 
+mob
+	proc/increase_comboed(amount)
+		set waitfor = 0
+		if(!src)
+			return
+		c += amount
+		var/old_c = c
+		sleep(50)
+		if(c == old_c)
+			c = 0
+
+	proc/combo_advance(mob/comboed)
+		set waitfor = 0
+		if(!comboed)
+			return
+		comboed.Knockback(1, dir)
+		sleep(1)
+		step(src, get_dir(src, comboed))
+
+	proc/combo_daze(mob/comboed)
+		set waitfor = 0
+		if(!comboed)
+			return
+		comboed.dzed=1
+		comboed.cc=150
+		comboed.icon_state="hurt"
+		var/dazed=10
+		dazed*= 1 + 0.1*src.skillspassive[FLURRY]
+		//M.move_stun=round(dazed,0.1)
+		comboed.Timed_Stun(dazed)
+
+		comboed.Graphiked('icons/dazed.dmi')
+		smack(comboed,0,0)
+		src.combat("[comboed] is dazed!")
+		while(comboed&&comboed.stunned)
+			sleep(1)
+		if(comboed)
+			comboed.icon_state=""
+			comboed.dzed=0
+			comboed.c=0
 
 mob/var/camo=0
 
 
 mob
+
 	proc
 		attackv(mob/M)
 			set name = "Attack"
@@ -1536,9 +1670,9 @@ mob
 			if(usr.sakpunch)
 				usr.sakpunch=0
 				usr.sakpunch2=1
+			else if(usr.sakpunch2)
+				usr.sakpunch2 = 0
 
-			spawn(10)
-				usr.sakpunch2=0
 
 			if(usr.leading)
 				usr.leading=0
@@ -1577,38 +1711,29 @@ mob
 					if(usr.Size)ans=5
 					r=ans
 					if(ans==1)
-						spawn()flick("PunchA-1",usr)
+						flick("PunchA-1",usr)
 
 					if(ans==2)
-						spawn()flick("PunchA-2",usr)
+						flick("PunchA-2",usr)
 					if(ans==3)
-						spawn()flick("KickA-1",usr)
+						flick("KickA-1",usr)
 					if(ans==4)
-						spawn()flick("KickA-2",usr)
+						flick("KickA-2",usr)
 					if(ans==5)
-						usr.icon_state="PunchA-1"
-						spawn(6)
-							usr.icon_state=""
+						usr.set_icon_state("PunchA-1", 6)
 
-				if(usr.sleeping || usr.mane || !usr.canattack)
+				if(usr.sleeping || usr.mane || usr.canattack>world.time)
 					return
 
 				if(usr.NearestTarget()) usr.FaceTowards(usr.NearestTarget())
 
 				if(!usr.pk)
-					if(!usr.nudge)
+					if(usr.nudge <= world.time)
 						usr.combat("Nudge")
-						usr.nudge=1
-
-						spawn(10)
-							usr.nudge=0
+						usr.nudge=world.time+10
 						for(var/mob/human/player/o in get_step(usr,usr.dir))
 							if(o.density==1 && !o.sleeping)
 								o.Knockback(1,usr.dir)
-								//o.move_stun=5
-								//o.density=0
-								//spawn(5)
-								//	o.density=1
 
 						for(var/mob/human/clay/o in get_step(usr,usr.dir))
 							o.Explode()
@@ -1674,7 +1799,7 @@ mob
 			if(usr.stunned||usr.kstun||usr.handseal_stun)
 				return
 
-			if(usr.attackbreak)
+			if(usr.client && usr.attackbreak)
 				return
 
 			var/trfx=usr.rfx+usr.rfxbuff-usr.rfxneg
@@ -1698,58 +1823,45 @@ mob
 			if(usr.gentlefist)
 				rx=rand(1,6)
 			if(usr.scalpol)
-				spawn() flick("w-attack",usr)
+				flick("w-attack",usr)
 			else
 				if(usr.larch)
 					rx = 1
 				if(!istype(usr,/mob/human/player/npc))
 					if(usr.Size)
-						usr.icon_state="PunchA-1"
-						spawn(6)
-							usr.icon_state=""
+						usr.set_icon_state("PunchA-1", 6)
 
 					else if(!weirdflick)
 						if(rx>=1 && rx<=3)
-							spawn()flick("PunchA-1",usr)
+							flick("PunchA-1",usr)
 							r=1
 
 						if(rx>=4 && rx<=6)
-							spawn()flick("PunchA-2",usr)
+							flick("PunchA-2",usr)
 							r=2
 						if(rx==7)
-							spawn()flick("KickA-1",usr)
+							flick("KickA-1",usr)
 							r=3
 						if(rx==8)
-							spawn()flick("KickA-2",usr)
+							flick("KickA-2",usr)
 							r=4
 
 					else
 						if(rx>=1 && rx<=3)
-							spawn()
-								r=1
-								usr.icon_state="PunchA-1"
-								sleep(5)
-								usr.icon_state=""
+							r=1
+							usr.set_icon_state("PunchA-1", 5)
 
 						if(rx>=4 && rx<=6)
-							spawn()
-								r=2
-								usr.icon_state="PunchA-2"
-								sleep(5)
-								usr.icon_state=""
+							r=2
+							usr.set_icon_state("PunchA-2", 5)
 
 						if(rx==7)
-							spawn()
-								r=3
-								usr.icon_state="KickA-1"
-								sleep(5)
-								usr.icon_state=""
+							r=3
+							usr.set_icon_state("KickA-1", 5)
 						if(rx==8)
-							spawn()
-								r=4
-								usr.icon_state="KickA-2"
-								sleep(5)
-								usr.icon_state=""
+							r=4
+							usr.set_icon_state("KickA-2", 5)
+
 
 			var/deg=0
 			var/hassword=usr.hassword
@@ -1765,9 +1877,7 @@ mob
 			if(usr.move_stun)
 				deg = (deg * 1.5) + 5
 
-			usr.canattack = 0
-			spawn(4+deg)
-				usr.canattack = 1
+			usr.canattack = world.time+(4+deg)
 
 			var/mob/target
 			if(M)
@@ -1779,10 +1889,17 @@ mob
 
 			if(target)
 				if(usr.gate >= 4 && !usr.gatepwn)
-					if(get_dist(target, usr) < 5)
-						usr:AppearBefore(target)
-						usr.dir = get_dir(src, target)
-						sleep(1)
+					if(get_dist(target, usr) <= gate + 1)
+						//usr:AppearBefore(target)
+						//usr.dir = get_dir(src, target)
+						var/turf/appear
+						var/direction = get_dir(usr, target)
+						if(direction)
+							appear = get_step(target, turn(target.dir,180))//opposite_dir(direction))
+							if(appear)
+								usr.loc = appear
+								usr.FaceTowards(target)
+								sleep(1)
 				else
 					if(target in oview(attack_range))
 						T = target
@@ -1790,18 +1907,29 @@ mob
 				if(M)
 					T = M
 
+				var/mob/nearesttarget = usr.NearestTarget()
+				//world.log << "DEBUG: 1"
+				if(usr.client && (dashtime < world.time || (gate && gate < 4)) && nearesttarget)
+					var/distance = get_dist(usr, nearesttarget)
+					//world.log << "DEBUG: 2"
+					if(!rasengan && (lastskill != SHUNSHIN || lastskilltime + 20 < world.time))
+						if(gate)
+							if((gate && (gate in 1 to 3)) && distance <= gate)
+								dash(nearesttarget, gate + 1)
+								FaceTowards(nearesttarget)
+						else
+							//world.log << "DEBUG: 3"
+							if(get_dist(nearesttarget, usr) <= 2) // If the user did use shunshin, check that they only used it over a second ago.
+								dash(nearesttarget, 1)
+								FaceTowards(nearesttarget)
+
 				if(T && !T.ko && !T.paralysed)
 					if(usr.gate >= 5)
-						var/obj/smack=new/obj(locate(T.x,T.y,T.z))
-						smack.icon='icons/gatesmack.dmi'
-						smack.layer=MOB_LAYER+1
-						flick("smack",smack)
-						spawn(4)
-							del(smack)
+						gate_smack_effect(T.loc,4)
 
 					usr.Combo(T,r)
 
-					spawn()usr.Taijutsu(T)
+					usr.Taijutsu(T)
 					return
 
 			var/last_turf = usr.loc
@@ -1814,29 +1942,34 @@ mob
 
 			if(T&&T.ko==0&&T.paralysed==0)
 				if(usr.gate >= 5)
-					var/obj/smack=new/obj(locate(T.x,T.y,T.z))
-					smack.icon='icons/gatesmack.dmi'
-					smack.layer=MOB_LAYER+1
-					flick("smack",smack)
-					spawn(4)
-						del(smack)
+					gate_smack_effect(T.loc, 4)
 
 				usr.Combo(T,r)
 
-				spawn()usr.Taijutsu(T)
+				usr.Taijutsu(T)
 
 		defendv()
 			set name= "Defend"
 			set hidden=1
 
+			if(usr.Puppet1)
+				var/mob/human/Puppet/P =usr.Puppet1
+				if(P) P.Def(usr)
+			if(usr.Puppet2)
+				var/mob/human/Puppet/P =usr.Puppet2
+				if(P) P.Def(usr)
+			usr.Primary = 0
+			if(usr.client)
+				usr.client.eye = usr.client.mob
+
 			for(var/mob/human/sandmonster/M in usr.pet)
-				spawn() if(M) M.Return_Sand_Pet(usr)
+				if(M) M.Return_Sand_Pet(usr)
 
 			if(usr.Size||usr.Tank)
 				return
 
-			if(!EN[16])
-				return
+		//	if(!EN[16])
+		//		return
 
 			//usr.usedelay++
 
@@ -1844,18 +1977,11 @@ mob
 				usr.leading=0
 				return
 
-			if(usr.cantreact || usr.spectate || usr.larch || usr.sleeping || usr.mane || usr.ko || !usr.canattack)
+			if(usr.cantreact || usr.asleep||usr.spectate || usr.larch || usr.sleeping || usr.mane || usr.ko || !usr.canattack)
 				return
 
-			if(usr.skillspassive[21] && usr.gen_effective_int && !usr.gen_cancel_cooldown)
-				var/cancel_roll = Roll_Against(usr.gen_effective_int,(usr.con+usr.conbuff-usr.conneg)*(1 + 0.05*(usr.skillspassive[21]-1)),100)
-				if(cancel_roll < 3)
-					if(usr.sight == (BLIND|SEE_SELF|SEE_OBJS)) // darkness gen
-						usr.sight = 0
-
-				usr.gen_cancel_cooldown = 1
-				spawn(100)
-					usr.gen_cancel_cooldown = 0
+			if(!usr.gen_cancel_cooldown && usr.genjutsu && usr.genjutsu["effectiveness"])
+				usr.break_genjutsu()
 
 			if(usr.MainTarget()) usr.FaceTowards(usr.MainTarget())
 
@@ -1873,8 +1999,71 @@ mob
 			if(usr.isguard==0)
 				usr.icon_state="Seal"
 				usr.isguard=1
+/*
+// genjutsu.dm
+#define DARKNESS_GENJUTSU "darkness genjutsu"
+#define FEAR_GENJUTSU "fear genjutsu"
+#define SLEEP_GENJUTSU "sleep genjutsu"
 
+genjutsu
+	darkness
+		id = DARKNESS_GENJUTSU
 
+		activate(mob/user)
+
+		cancel(mob/user)
+			sight = 0
+
+	fear
+		id = FEAR_GENJUTSU
+
+		activate(mob/user)
+
+	nirvana
+		id = SLEEP_GENJUTSU
+
+		activate(mob/user)
+
+genjutsu
+	var/id
+
+	proc/activate(mob/user)
+	proc/cancel(mob/user)
+
+var/global/genjutsu[] = list(
+	DARKNESS_GENJUTSU = new/genjutsu/darkness,
+	FEAR_GENJUTSU = new/genjutsu/fear,
+	SLEEP_GENJUTSU = new/genjutsu/nirvana,
+	)
+*/
+mob
+	proc/break_genjutsu()
+		set waitfor = 0
+		var/cancel_roll = Roll_Against(usr.genjutsu["effectiveness"],(usr.con+usr.conbuff-usr.conneg),100)
+		if(cancel_roll < 3)
+			if(genjutsu)
+				switch(genjutsu["name"])
+					if("darkness")
+						src.sight = 0
+						if(client)
+							client.images -= genjutsu["image"]
+							if(genjutsu["user"])
+								var/mob/user = genjutsu["user"]
+								if(user.client) user.client.images -= genjutsu["image"]
+					if("fear")
+						Reset_Stun()
+						Reset_Move_Stun()
+						if(client) client.images -= genjutsu["image"]
+						if(genjutsu["user"])
+							var/mob/user = genjutsu["user"]
+							if(user.client) user.client.images -= genjutsu["image"]
+				var/image/g = genjutsu["image"]
+				g.loc = null
+				genjutsu = null
+
+		src.gen_cancel_cooldown = 1
+		sleep(100)
+		src.gen_cancel_cooldown = 0
 
 mob/proc/Get_Hair_RGB()
 	src.hair_color=input(usr, "What color would you like your hair to be?") as color
@@ -1943,8 +2132,9 @@ mob/human/npc/teachernpc2
 
 proc
 	smack(mob/M,dx,dy)
-		if(!M) return
-		if(wregenlag>2)
+		set waitfor = 0
+		punch_effect(M, dx, dy)
+	/*	if(wregenlag>2)
 			return
 		var/Px=dx+M.pixel_x
 		var/Py=dy+M.pixel_y
@@ -1959,7 +2149,7 @@ proc
 		sleep(7)
 		X.loc = null
 		//del(X)
-
+*/
 //teacher!
 mob/human/npc/teachernpc
 	interact="Talk"

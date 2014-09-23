@@ -11,12 +11,13 @@ mob
 
 mob
 	var/tmp/ez_count = 0
+	var/tmp/ez_immune = 0
 
 var/global/obj/ez_flag/ez_flag = new
 
 obj/ez_flag
 	icon = 'icons/ez_flag.dmi'
-	screen_loc = "1, 2"
+	screen_loc = "2, 3"
 	layer = 60
 	mouse_opacity = 2
 
@@ -73,6 +74,10 @@ mob/proc
 				sleep(100)
 				continue
 
+			while(ez_immune > 0)
+				ez_immune--
+				sleep(10)
+
 			if(body != last_body)
 				last_body = body
 
@@ -80,24 +85,12 @@ mob/proc
 					if(m.client && !same_client(m, src))
 						if(!(m.realname in list_of_mobs) || list_of_mobs[m.realname] <= world.time)
 							ez_count = 0
-						list_of_mobs[m.realname] = world.time + 4200
+						list_of_mobs[m.realname] = world.time + 3600
 
 				ez_count++
-				if(ez_count >= 5)
+				if(ez_count >= 7)
 					client << "You have been flagged for repetitive training! Click the flag icon at the bottom-left of your screen to begin gaining experience again."
 					set_ez_flag()
 					break
 			sleep(600)
 
-var
-	EZOFF=0
-mob/Admin/verb
-	EZ_Checker_Toggle()
-		if(EZOFF)
-			EZOFF=0
-			for(var/mob/human/player/X in world)
-				if(X.client)
-					spawn()X.EZ_Loop()
-		else
-			EZOFF=1
-		usr<<"EZOFF=[EZOFF]"
