@@ -1,0 +1,15 @@
+UPDATES
+-Add a tutorial that teaches the basics
+-Add new scroll art. // DONE
+-Add War Guards. Friendly faction members can exchange FP for rewards.  Enemies can kill them for S-rank experience.
+-Add a combat flag for players level 20 and below. // DONE
+-Arrange the skilltrees preparing for the new trees.
+-Remove the guide book (since I'm adding a tutorial). // DONE
+-Make Byakugan toggleable // DONE
+-Make sure purchasing Gates gives the cancel skillcard // DONE
+-New stamina formula: 10 stam per str and 45 per level // DONE
+
+Bugfixes
+-Fix the inventory popup grid. // DONE
+-Puppet items rename each time you login. // DONE
+-Puppets cant move after resummoning them. // DONE

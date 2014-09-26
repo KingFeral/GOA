@@ -29,6 +29,7 @@ mob
 		..()
 
 mob/human/player/npc
+	combat_protection = 0
 
 	Hostile(mob/attacker)
 		..()
@@ -170,12 +171,12 @@ mob/human/player/npc
 					if((usr.MissionType=="Escort"||usr.MissionType=="Escort PvP") && !src.following)
 						usr << "Hello, I need to get to [usr.MissionLocation].  Press Space/Interact and I will stop following you."
 						if(usr.z == src.z)
-							src.following=usr
-							usr.leading=src
-							FilterTargets()
-							for(var/mob/T in targets)
-								RemoveTarget(T)
-
+							src.following = usr
+							usr.leading = src
+							clear_targets()
+							//FilterTargets()
+							//for(var/mob/T in targets)
+							//	RemoveTarget(T)
 						return
 				else
 					var/list/choicelist=new
@@ -214,11 +215,15 @@ mob/human/player/npc
 		mob/human/player/following = null
 	proc
 		stop_following()
+			if(!following)
+				return
 			following.leading = null
 			following = null
-			FilterTargets()
-			for(var/mob/T in targets)
-				RemoveTarget(T)
+			//FilterTargets()
+			//for(var/mob/T in targets)
+			//	RemoveTarget(T)
+			clear_targets()
+
 			walk(src,0)
 		Stun_Drain()
 			set background = 1
@@ -266,8 +271,15 @@ mob/human/player/npc
 
 			//lasthurtme = null
 			FilterTargets()
-			for(var/mob/T in targets)
-				RemoveTarget(T)
+
+			if(following)
+				following.leading = null
+				following = null
+
+			clear_targets()
+			clear_targeted_by()
+			/*for(var/mob/T in targets)
+				RemoveTarget(T)*/
 
 			switch(src.dietype) //0=KO,no death 1=delayed respawn 2=death till repop
 				if(0)
@@ -286,13 +298,12 @@ mob/human/player/npc
 					staminaregen=round(stamina/100)
 					chakraregen=round((chakra*3)/100)
 					src.icon_state=""
-					FilterTargets()
-					for(var/mob/T in targets)
+					/*for(var/mob/T in targets)
 						RemoveTarget(T)
 					for(var/mob/human/player/npc/X in ohearers(5))
 						X.FilterTargets()
 						if(src in X.targets)
-							X.RemoveTarget(src)
+							X.RemoveTarget(src)*/
 
 				if(1)
 					src.density=0
@@ -312,26 +323,18 @@ mob/human/player/npc
 									break
 
 						if(killer && killer.faction != src.faction && killer.faction.village != src.faction.village)
-							//if(prob(5))
-							//	if(pick(0, 0, 1))
-							//		new/obj/items/drops/scrolls/triple_experience(loc)
-							//	else
-							//		new/obj/items/drops/scrolls/double_experience(loc)
-							var/gain = 0
+							if(prob(5))
+								if(pick(0, 0, 1))
+									new/obj/items/drops/scrolls/triple_experience(loc)
+								else
+									new/obj/items/drops/scrolls/double_experience(loc)
+							var/gain = exp_worth()
 							var/mgain = pick(3,4,5,6,7,8,9,10)*src.blevel
-							switch(ninrank)
-								if("D") gain = 1500
-								if("C") gain = 2500
-								if("B") gain = 4000
-								if("A") gain = 6000
-							//killer.body+=gain
-							//killer<<"You have gained [gain] experience points!"
-							//killer.bodycheck()
-							//killer.money+=mgain
+
 							if(killer.squad)
 								var/higher_up_boost = 0
 								for(var/mob/m in killer.squad.online_members)
-									if(get_dist(m, src) <= 25)
+									if(m.z == killer.z && get_dist(m, src) <= 25)
 										switch(m.rank)
 											if("Academy Student", "Genin", "Chuunin")
 												gain *= 1.1
@@ -340,7 +343,7 @@ mob/human/player/npc
 													higher_up_boost = 1
 													gain *= 1.2
 								for(var/mob/m in killer.squad.online_members - killer)
-									if(get_dist(m, src) <= 25)
+									if(get_dist(m, src) <= 25 && m.z == killer.z)
 										m.body += gain
 										m.money += mgain
 										m<<"You have gained [gain] experience points!"
@@ -349,7 +352,7 @@ mob/human/player/npc
 							killer << "You have gained [gain] experience points!"
 							killer.bodycheck()
 							killer.money += mgain
-							killer<<"You have gained [mgain] ryo!"
+							killer << "You have gained [mgain] ryo!"
 
 					sleep(respawndelay)
 					// TODO, pool these.
@@ -382,19 +385,12 @@ mob/human/player/npc
 						var/mob/human/player/npc/creep/C=src
 						var/mob/human/player/X = C.lasthurtme
 						if(X)
-							var/gain=1500//min(1200,round(600 * src.blevel/X.blevel))*lp_mult
+							var/gain = exp_worth()//min(1200,round(600 * src.blevel/X.blevel))*lp_mult
 							var/mgain = 100 + pick(3,4,5,6,7,8,9,10)*src.blevel
-							switch(ninrank)
-								if("D") gain = 1500
-								if("C") gain = 2500
-								if("B") gain = 4000
-								if("A") gain = 6000
 							if(X.squad)
 								var/higher_up_boost = 0
 								for(var/mob/m in X.squad.online_members)
-									//if(!m)
-									//	continue
-									if(get_dist(m, src) <= 25)
+									if(m.z == src.z && get_dist(m, src) <= 25)
 										switch(m.rank)
 											if("Academy Student", "Genin", "Chuunin")
 												gain *= 1.1
@@ -403,7 +399,7 @@ mob/human/player/npc
 													higher_up_boost = 1
 													gain *= 1.2
 								for(var/mob/m in X.squad.online_members - X)
-									if(get_dist(m, src) <= 25)
+									if(get_dist(m, src) <= 25 && m.z == X.z)
 										m.body += gain
 										m.money += mgain
 										m<<"You have gained [gain] experience points!"
@@ -415,7 +411,7 @@ mob/human/player/npc
 							X<<"You have gained [mgain] ryo!"
 						//C.lasthurtme=null
 					sleep(100)
-					atom_pool.pool(src, "[src.type]")
+					del(src)
 
 			sleep(10)
 			npcregeneration()
@@ -490,7 +486,7 @@ mob/human/player/npc
 
 		AI_Target(mob/human/player/M)
 			set waitfor = 0
-			if(!M || M.ko)
+			if(!M || M.ko || (doesnotattack==1 || istype(doesnotattack, /list) && !(M in doesnotattack)) || (M.combat_protection && M.MissionTarget != src))
 				return
 			AddTarget(M, active=1)
 
@@ -615,7 +611,7 @@ mob/human/player/npc
 				return
 
 			if(AI_Canmove())
-				if(!istype(src, /mob/human/player/npc/kage_bunshin) && ((!M.faction || !faction) || M.faction.village == faction.village))
+				if(!istype(src, /mob/human/player/npc/kage_bunshin) && (M.faction && M.faction == faction)) // ((!M.faction || !faction) || M.faction.village == faction.village))
 					RemoveTarget(M)
 					return
 				usr = src
@@ -801,9 +797,9 @@ proc/Ambush(mob/Tgt,lvl,num,notambush)
 		// TODO, these should use the atom pool.. as should most atoms
 		var/mob/human/player/npc/M = /*atom_pool.get_instance("mob/human/player/npc/creep", /mob/human/player/npc/creep)*/new/mob/human/player/npc/creep(La, lvl)
 		Poof(La)//(La.x, La.y, La.z)
-		M.loc = La
-		M.blevel = lvl
-		M.reinitialize(Tgt)
+		//M.loc = La
+		//M.blevel = lvl
+		//M.reinitialize(Tgt)
 		S+=M
 
 	for(var/mob/human/player/npc/creep/M in S)
@@ -846,12 +842,9 @@ mob/human/player/npc/creep
 		lasthurtme = null
 		loc = null
 
-	/*Del()
-		if(loc == null)
-			return ..()
+	Del()
 		rockshinobis--
-		squad = null
-		loc = null*/
+		..()
 
 	reinitialize(mob/enemy)
 		set_difficulty(enemy)
@@ -919,8 +912,8 @@ mob/human/player/npc/creep
 			valid_skills -= newskill
 			skillsx+=newskill
 		sleep(60*10*5)
-		//if(src)del(src)
-		if(loc)atom_pool.pool(src, "[src.type]")
+		del(src)
+		//if(loc)atom_pool.pool(src, "[src.type]")
 
 	nisguard=0
 	hostile=1

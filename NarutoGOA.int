@@ -1,11 +1,11 @@
 // BEGIN_INTERNALS
 /*
 MAP_ICON_TYPE: 0
-WINDOW: code\game\skills\Taijutsu_Strong_Fist_Style.dm;code\game\skills\Taijutsu_Arhat_Style.dm;code\_shared\skill_index.dm;code\game\skilltree.dm;code\_shared\npcs.dm;code\game\AI.dm;code\game\skills\Taijutsu.dm
+WINDOW: code\game\skills\Taijutsu_Strong_Fist_Style.dm;code\game\Combat.dm;code\game\item_drops.dm;code\game\NarutoLOAS.dm;code\game\skills\Weapon.dm;code\game\Skill.dm;code\game\regeneration.dm;old_map\map_suna.dmm
 LAST_COMPILE_VERSION: 506.1247
-DIR: code code\_libs code\_shared code\game code\game\skills icons icons\new icons\new\hud icons\new\minimap old_map 
+DIR: code code\_libs code\_shared code\game code\game\skills icons icons\new icons\new\minimap icons\new\skills icons\new\skills\taijutsu old_map 
 FILE: code\game\skills\Taijutsu_Strong_Fist_Style.dm
-LAST_COMPILE_TIME: 1411428593
+LAST_COMPILE_TIME: 1411699519
 AUTO_FILE_DIR: OFF
 */
 // END_INTERNALS

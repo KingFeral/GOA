@@ -1,0 +1,7 @@
+New LWW formula: ((str * 0.6) + (rfx * 0.4)) * 3 // DONE
+Fix the combat protection flag inside of the dojo // DONE
+Change Leaf Great Whirlwind to a three kick charge skill (you get three kicks to use before it goes on cooldown). // DONE
+Fixed Puppeteer's Needle Gun. // DONE
+Water Dragon is 2,000 Skill Points. // DONE
+Clay Bird stuns before it hits. // DONE (I believe)
+Fixed experience scrolls not stacking. // DONE

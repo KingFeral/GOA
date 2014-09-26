@@ -9,10 +9,11 @@ mob
 	proc
 		relieve_bounty()
 			var/mob/jerk=0
-			for(var/mob/ho in world)
+			for(var/mob/ho in players)
 				if(ho.client)
 					if(ho.key==src.lasthostile)
 						jerk=ho
+						break
 
 			if(jerk && jerk!=src)
 				if(!jerk.faction || !src.faction || (jerk.faction.village!=src.faction.village)||jerk.faction.village=="Missing")
@@ -23,35 +24,21 @@ mob
 							for(var/mob/human/m in jerk.squad.online_members - jerk)
 								if(get_dist(jerk, m) > 25)
 									continue
-								if(m.MissionType == "Maraud" && (faction && faction.village == m.MissionTarget) && RankGrade2() >= 2)
-									var/credits = RankGrade2() - 1
-									m.MissionCredit += credits
-									m << "<strong>+[credits]</strong> Credits"
-									if(m.MissionCredit >= 10)
-										m.MissionComplete()
-
-								if(src==m.MissionTarget && (m.MissionType=="Assasinate Player PvP" || m.MissionType == "Rendezvous (Intercept)" || m.MissionType == "Maraud(Intercept)"))
+								if(src == m.MissionTarget && m.MissionType == "Assasinate Player PvP")
 									m.MissionComplete()
-
-					if(jerk.MissionType == "Maraud" && (faction && faction.village == jerk.MissionTarget) && RankGrade2() >= 2)
-						var/credits = RankGrade2() - 1
-						jerk.MissionCredit += credits
-						jerk << "<strong>+[credits]</strong> Credits"
-						if(jerk.MissionCredit >= 10)
-							jerk.MissionComplete()
 
 					if(src==jerk.MissionTarget && (jerk.MissionType=="Assasinate Player PvP" || jerk.MissionType == "Rendezvous (Intercept)" || jerk.MissionType == "Maraud(Intercept)"))
 						jerk.MissionComplete()
 
-
-					if(jerk.faction/* && jerk.faction.village=="Missing"*/ && !same_client(jerk, src))
+					if(jerk.faction && !same_client(jerk, src) && valid_kill(jerk, src))
 						jerk<<"You gained [src.bounty] dollars for [src.realname]'s bounty!"
 						jerk.money+=src.bounty
 						src.bounty=0
 				else
-					world<<"<span class='death_info'><span class='betrayal'><span class='name'><b><u>[jerk.realname]</span> has killed <span class='name'>[src.realname]</span> and they are in the same village!</span></span>"
+					if(faction)
+						faction.online_members << "<span class='death_info'><span class='betrayal'><span class='name'><b><u>[jerk.realname]</span> has killed <span class='name'>[src.realname]</span> and they are in the same village!</span></span>"
 			else
-				world<<"<span class='death_info'><span class='name'>[src]</span> has died!</span>"
+				world << "<span class='death_info'><span class='name'>[src]</span> has died!</span>"
 
 proc/clear_kill_log()
 	if(fexists("kill_log.sav"))
@@ -80,48 +67,62 @@ var/global/kill_log[] = list()
 
 mob
 	proc
+		exp_worth()
+			. = 0
+			switch(ninrank)
+				if("D") . = 1500
+				if("C") . = 2500
+				if("B") . = 4000
+				if("A") . = 6000
+				if("S") . = 9000
+
 		valid_kill(mob/killed)
+			if(!killed.client)
+				return 1
 			if(!global.kill_log[realname])
 				global.kill_log[src.realname] = list()
-			if(global.kill_log[src.realname][killed.realname] >= 3)
+			if(global.kill_log[src.realname][killed.client.computer_id] >= 3)
+				var/exp_loss = killed.exp_worth() * 2
+				body -= exp_loss
+				src << "You lost [exp_loss] for attemping to cheat kills."
 				return 0
 			if(same_client(src, killed))
+				var/exp_loss = killed.exp_worth() * 2
+				body -= exp_loss
+				src << "You lost [exp_loss] for attemping to cheat kills."
 				return 0
 			global.kill_log[src.realname][killed.realname]++
 			return 1
 
 		Killed(mob/owned)
-			if(!same_client(owned, src) && src.valid_kill(owned) && owned.faction.village != faction.village)
-				var/worth = owned.blevel / (src.blevel * 5)
-				owned.kills -= worth
-				owned.kills = max(0, owned.kills)
-				src.kills += worth
-				if(owned != MissionTarget)
-					var/gain = 0
-					switch(owned.ninrank)
-						if("D") gain = 1500
-						if("C") gain = 2500
-						if("B") gain = 4000
-						if("A") gain = 6000
+			if(client && !same_client(owned, src) && src.valid_kill(owned) && owned.faction.village != faction.village)
+				if(owned.client) // no KD ratio for killing AI.
+					var/worth = owned.blevel / (src.blevel * 10)
+					owned.kills = max(0, owned.kills - worth)
+					src.kills += worth
+				if(owned != MissionTarget) // no stacking with missions.
+					var/gain = owned.exp_worth()
 					if(src.squad)
-						var/higher_up_boost = 0
-						for(var/mob/m in src.squad.online_members)
-							if(get_dist(m, src) <= 25)
-								switch(m.rank)
-									if("Academy Student", "Genin", "Chuunin")
-										gain *= 1.1
-									else
-										if(!higher_up_boost && m.realname == squad.leader)
-											higher_up_boost = 1
-											gain *= 1.2
-						for(var/mob/m in src.squad.online_members - src)
-							if(get_dist(m, src) <= 25)
-								m.body += gain
-								m<<"You have gained [gain] experience points!"
-					src.body += gain
-					src << "You have gained [gain] experience points!"
-					if(hascall(src, "bodycheck"))
-						call(src, "bodycheck")()
+						var/exp_boost = FALSE
+						for(var/mob/squad_member in squad.online_members)
+							if(squad_member.z != z || get_dist(squad_member, src) >= 20)
+								continue
+							switch(squad_member.rank)
+								if("Academy Student", "Genin", "Chuunin")
+									gain *= 1.10
+								else
+									if(!exp_boost && squad_member.realname == squad.leader)
+										exp_boost = TRUE
+										gain *= 1.20
+
+						for(var/mob/squad_member in squad.online_members)
+							if(squad_member.z != z || get_dist(squad_member, src) >= 20)
+								continue
+							squad_member.body += gain
+							squad_member << "You have gained [gain] experience points!"
+							if(hascall(squad_member, "bodycheck"))
+								call(squad_member, "bodycheck")()
+
 
 		Respawn()
 			set waitfor = 0
@@ -290,6 +291,39 @@ mob
 var
 	wregenlag=1
 
+mob
+	var/tmp/wof_adren_loop
+
+
+	proc/wof_adrenaline()
+		set background = 1
+		set waitfor = 0
+		if(wof_adren_loop)
+			return
+
+		wof_adren_loop = 1
+
+		while(((curwound / 100) * 100) >= 25)
+			var/boost_multiplier = 1
+
+			for(var/i = (curwound - 25); i >= 25; i -= 25)
+				boost_multiplier++
+
+			boost_multiplier = min(4, boost_multiplier)
+
+			strbuff = round(str * (0.0625 * boost_multiplier))
+			rfxbuff = round(rfx * (0.0625 * boost_multiplier))
+			conbuff = round(con * (0.0625 * boost_multiplier))
+			intbuff = round(int * (0.0625 * boost_multiplier))
+
+			sleep(20)
+
+		if(src)
+			strbuff = 0
+			rfxbuff = 0
+			conbuff = 0
+			intbuff = 0
+			wof_adren_loop = 0
 
 
 mob/human
@@ -307,8 +341,8 @@ mob/human
 						m.ez_count = 0
 						m.ez_immune = 30
 
-			ez_count = 0
-			ez_immune = 60
+			//ez_count = 0
+			//ez_immune = 60
 			if(!pk)
 				curstamina = stamina
 				curwound = 0
@@ -508,7 +542,7 @@ mob/human
 		regeneration2()
 			set background = 1
 			set waitfor = 0
-			while(src)
+			while(src && !src.loggingout)
 				while(!initialized)
 					sleep(3)
 				if(immortality)
@@ -549,12 +583,11 @@ mob/human
 					attackbreak=0
 				sleep(1)
 
-
 		regeneration()
 			set background = 1
 			set waitfor = 0
 
-			while(src)
+			while(src && !src.loggingout)
 				while(!initialized)
 					sleep(3)
 
@@ -838,7 +871,7 @@ mob/human
 						rfxbuff=src.rfx*0.3
 						strbuff=src.str*0.3*/
 
-					if(clan == "Will of Fire" && ((curwound / 100) * 100) >= 25)
+				/*	if(clan == "Will of Fire" && ((curwound / 100) * 100) >= 25)
 						var/boost_multiplier = 1
 
 						//for(var/i in 1 to curwound step 25)
@@ -851,7 +884,7 @@ mob/human
 						strbuff = round(str * (0.0625 * boost_multiplier))
 						rfxbuff = round(rfx * (0.0625 * boost_multiplier))
 						conbuff = round(con * (0.0625 * boost_multiplier))
-						intbuff = round(int * (0.0625 * boost_multiplier))
+						intbuff = round(int * (0.0625 * boost_multiplier))*/
 
 					/*if(gate)
 						GateStress()
@@ -879,8 +912,11 @@ mob/human
 					if(boneharden)
 						cmul *= 0.65
 
+					//stamina = 2000 + (blevel*25 +(str+strbuff+strneg)*13)*stammultiplier
+
 					if(gate < 3)
-						stamina=2000+(blevel*25 +(str+strbuff+strneg)*13)*stammultiplier
+						//stamina=2000+(blevel*45 +(str+strbuff+strneg)*10)*stammultiplier
+						stamina = 2000 + (blevel*25 +(str+strbuff+strneg)*13)*stammultiplier
 						chakra=(500 + (con+conbuff+conneg)*5)*chakramultiplier
 					else
 						stamina=2000+(blevel*25 +(str+strbuff+strneg)*18)*stammultiplier
@@ -1086,6 +1122,8 @@ mob/human
 				src.blevel++
 
 				if(src.blevel==20)
+					combat_protection = 0
+					winset(src, "togglecombatid", "parent = ;")
 					src<<"<b><font color=#fff>Now that you are past level 20, you will gain lower level points by training in the dojo. To level up the fastest you need to fight enemy ninja!</font></b>"
 
 				if(src.blevel==100)

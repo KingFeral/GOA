@@ -82,23 +82,36 @@ skill
 			icon_state = "explnote"
 			default_supply_cost = 10
 			default_cooldown = 30
+			var/obj/explosive_tag/etag
 
+			SupplyCost(mob/user)
+				if(etag)
+					return 0
+				else
+					return ..(user)
 
+			Cooldown(mob/user)
+				if(etag)
+					return 0
+				else
+					return ..(user)
 
 			Use(mob/user)
-				var/obj/explosive_tag/x=new/obj/explosive_tag(locate(user.x,user.y,user.z))
-				//if(user.skillspassive[20])x.trapskill=user.skillspassive[20]
-				user<<"To detonate the tag, press <b>Z</b> or <b>click</b> the tag icon on the left side of your screen."
-				x.owner=user
-				var/obj/trigger/explosive_tag/T = new(user, x)
-				user.AddTrigger(T)
-				spawn(14000)
-					if(x && user)
-						user.RemoveTrigger(T)
-						del(x)
-
-
-
+				set waitfor = 0
+				if(!etag)
+					AddOverlay('icons/activation.dmi')
+					etag = new/obj/explosive_tag(user.loc)
+					user.combat("To detonate the tag, press this skill again.")
+					etag.owner = user
+					etag.trapskill = user.skillspassive[TRAP_MASTERY]
+					sleep(14000)
+					if(etag)
+						etag.dispose()
+				else if(user)
+					RemoveOverlay('icons/activation.dmi')
+					explosion(2000, etag.x, etag.y, etag.z, user)
+					etag.dispose()
+					etag = null
 
 		manipulate_advancing_blades
 			id = MANIPULATE_ADVANCING_BLADES

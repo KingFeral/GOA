@@ -84,6 +84,8 @@ obj
 
 
 			Use()
+				if(user.incombo)
+					return
 				Poof(user.loc)
 				new/obj/log(locate(user.x,user.y,user.z))
 				var/dist = 50//8 + user.skillspassive[20]

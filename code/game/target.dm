@@ -231,6 +231,8 @@ mob
 			var/list/possible_targets = new()
 			for(var/mob/human/M in oview())
 				possible_targets += M
+			if(squad)
+				possible_targets -= squad.online_members
 
 			if(!possible_targets.len) return
 
@@ -254,6 +256,8 @@ mob
 			var/list/possible_targets = new()
 			for(var/mob/human/M in oview())
 				possible_targets += M
+			if(squad)
+				possible_targets -= squad.online_members
 
 			if(!possible_targets.len) return
 
@@ -367,6 +371,21 @@ atom
 		FaceTowards(atom/A)
 			dir = angle2dir(get_real_angle(src, A))
 
+atom/DblClick(location, control)
+	//world.log << "CONTROL IS: [control]"
+	if(ismob(src) || control != "mappane.map")
+		return ..()
+	else
+		var/turf/relative_location = isobj(src) ? loc : src
+		if(relative_location)
+			for(var/mob/nearest in oview(4, relative_location))
+				if(nearest == usr)
+					continue
+				if(!usr.keys["shift"])
+					for(var/t in usr.targets)
+						usr.RemoveTarget(t)
+				usr.AddTarget(nearest, silent = 0, active = 1)
+				break
 
 
 

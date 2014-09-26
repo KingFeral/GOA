@@ -118,6 +118,7 @@
 #include "code\game\skills\Taijutsu.dm"
 #include "code\game\skills\Taijutsu_Arhat_Style.dm"
 #include "code\game\skills\Taijutsu_Strong_Fist_Style.dm"
+#include "code\game\skills\Taijutsu_Wrestling_Style.dm"
 #include "code\game\skills\Uchiha.dm"
 #include "code\game\skills\Water.dm"
 #include "code\game\skills\Weapon.dm"

@@ -498,7 +498,7 @@ obj
 						cost = 2500
 					Water_Dragon_Projectile
 						sindex = SUITON_DRAGON
-						cost = 1100
+						cost = 2000//1100
 					Collision_Destruction
 						sindex = SUITON_COLLISION_DESTRUCTION
 						cost = 2100
@@ -539,6 +539,42 @@ obj
 						sindex = CROW_BUNSHIN
 						cost = 900
 						skill_reqs = list(BUNSHIN)
+				taijutsu
+					strong_fist
+						Strong_Fist
+							icon_state = "Strong_Fist"
+							sindex = STRONG_FIST
+							cost = 2000
+						Leaf_Whirlwind
+							icon_state = "leaf_whirlwind"
+							sindex = LEAF_WHIRLWIND
+							cost = 1000
+							skill_reqs = list(STRONG_FIST)
+						Leaf_Great_Whirlwind
+							icon_state = "leaf_great_whirlwind"
+							sindex = LEAF_GREAT_WHIRLWIND
+							cost = 1500
+							skill_reqs = list(STRONG_FIST, LEAF_WHIRLWIND)
+						Leaf_Gale
+							icon_state = "gale_wind"
+							sindex = LEAF_GALE
+							cost = 1600
+							skill_reqs = list(STRONG_FIST)
+						Leaf_Rising_Whirlwind
+							icon_state = "rising_wind"
+							sindex = LEAF_RISING_WIND
+							cost = 1400
+							skill_reqs = list(STRONG_FIST, LEAF_WHIRLWIND, LEAF_GREAT_WHIRLWIND)
+						Leaf_Strong_Whirlwind
+							icon_state = "leaf_strong_whirlwind"
+							sindex = LEAF_STRONG_WHIRLWIND
+							cost = 1000
+							skill_reqs = list(STRONG_FIST, LEAF_WHIRLWIND, LEAF_GREAT_WHIRLWIND)
+						Dancing_Leaf_Shadow
+							icon_state = "shadow_dance"
+							sindex = DANCING_LEAF_SHADOW
+							cost = 1500
+							skill_reqs = list(STRONG_FIST, LEAF_WHIRLWIND, LEAF_GREAT_WHIRLWIND, LEAF_GALE, LEAF_RISING_WIND, LEAF_STRONG_WHIRLWIND)
 				gates
 					Opening_Gate
 						sindex = GATE1

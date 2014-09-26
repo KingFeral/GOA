@@ -47,16 +47,26 @@ obj
 						if(m) m.Setoff(o)
 
 				sleep(10)
-				del(src)
-		Del()
+				//del(src)
+				dispose()
+		/*Del()
 			if(loc == null)
 				return ..()
+			owner = null
+			loc = null*/
+
+		dispose()
 			owner = null
 			loc = null
 
 	explosive_tag
 		icon='icons/note.dmi'
 		var/trapskill=0
+
+		dispose()
+			owner = null
+			loc = null
+
 		proc/Setoff(mob/human/o)
 			var/xx=src.x
 			var/xy=src.y
@@ -88,7 +98,8 @@ obj
 			if(r3)explosion(400*(1+0.3*trapskill),xx+1,xy-1,xz,usr,1)
 			if(r4)explosion(400*(1+0.3*trapskill),xx-1,xy+1,xz,usr,1)
 			explosion(600*(1+0.3*trapskill),xx,xy,xz,usr)
-			del(src)
+			//del(src)
+			dispose()
 
 	interactable
 		hospitalbed

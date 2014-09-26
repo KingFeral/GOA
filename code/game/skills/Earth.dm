@@ -105,7 +105,7 @@ skill
 					o.icon='icons/dotoncagecrushed.dmi'
 					for(var/mob/human/m in oview(0,o))
 						m.Crush(user)
-					break
+					//break
 
 
 

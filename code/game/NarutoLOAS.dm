@@ -384,8 +384,11 @@ mob/human/player
 				count++
 				if(count>=30)
 					usr.loc=locate(1,1,1)
-					usr.curwound=300
-					usr.interactv()
+					usr.curstamina = 0
+					usr.curwound = 300
+					usr.lasthostile = null
+					usr.Respawn()
+					//usr.interactv()
 
 					return
 
@@ -495,6 +498,7 @@ mob/human/player
 				alreadyingame = 1
 				src.loggingout = 0
 				src.regeneration()
+				src.regeneration2()
 				src.Refresh_Faction_Verbs()
 				src.Refresh_Squad_Verbs()
 				RefreshSkillList()
@@ -657,7 +661,7 @@ mob/human/player
 					player_gui += card
 					client.screen += card
 
-			var/L[7]
+			var/L[6]
 			for(var/obj/items/O in src.contents)
 				if(istype(O,/obj/items/weapons/projectile/Kunai_p))
 					L[1]=1
@@ -671,8 +675,8 @@ mob/human/player
 					L[5]=1
 				if(istype(O,/obj/items/Map))
 					L[6]=1
-				if(istype(O,/obj/items/Guide))
-					L[7]=1
+				//if(istype(O,/obj/items/Guide))
+				//	L[7]=1
 
 			if(!L[1])
 				new/obj/items/weapons/projectile/Kunai_p(src)
@@ -685,7 +689,7 @@ mob/human/player
 			if(!L[5])
 				new/obj/items/equipable/Kunai_Holster(src)
 			if(!L[6])new/obj/items/Map(src)
-			if(!L[7])new/obj/items/Guide(src)
+			//if(!L[7])new/obj/items/Guide(src)
 			del(L)
 			src.refreshskills()
 
@@ -898,7 +902,7 @@ mob/proc
 			src.icon='icons/base_m3.dmi'
 proc
 	Roll_Against(a,d,m) //attackers stats,defenders stats, Multiplier 1%->500%
-		var/outcome = ((a*rand(5,10))/(d*rand(5,10))) *m
+		var/outcome = (a*10)/(d*10)*m//((a*rand(5,10))/(d*rand(5,10))) *m
 		var/rank=0
 		//critical
 		if(outcome >=200)

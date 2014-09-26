@@ -192,6 +192,10 @@ skill
 				viewers(user) << output("[user]: Demonic Ice Crystal Mirrors!", "combat_output")
 
 				var/mob/human/etarget = user.MainTarget()
+				if(!etarget)
+					set_cooldown = 3
+					return 0
+
 				var/conmult = user.ControlDamageMultiplier()
 				user.Begin_Stun()
 				user.Protect(300)
@@ -266,7 +270,8 @@ skill
 						user.invisibility=0
 
 						for(var/obj/M in mirrorlist)
-							del(M)
+							//del(M)
+							M.loc = null
 
 						spawn(100)
 							for(var/mob/OG in Gotchad)
@@ -276,10 +281,15 @@ skill
 						user.End_Stun()
 						user.End_Protect()
 						user.invisibility=0
-						for(var/M in mirrorlist)
-							del(M)
+						for(var/obj/M in mirrorlist)
+							//del(M)
+							M.loc = null
+
 						return
 
+					ret = null
+					mirrorlist = null
+					cen = null
 					user.End_Stun()
 					user.End_Protect()
 					user.invisibility=0
@@ -446,11 +456,6 @@ obj
 			set waitfor = 0
 			..()
 			sleep(900)
-			del(src)
-
-		Del()
-			if(loc == null)
-				return ..()
 			loc = null
 
 

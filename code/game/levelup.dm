@@ -158,14 +158,14 @@ mob/proc/DisplayNumberO(dx,dy,dz,num,group)
 obj/digit
 	icon='icons/0numbers.dmi'
 
-
+/*
 obj/gui/fakecards/arrow/Click(location, control, params)
 	//var/result[] = params2list(params)
 	if(usr.keys["shift"]) // right-clicked.
 		if(hascall(src, "on_shift_click"))
 			call(src, "on_shift_click")(usr)
 	else
-		..()
+		..()*/
 
 obj/gui/fakecards/arrow
 	proc/get_stat_name()

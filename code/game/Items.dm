@@ -2950,7 +2950,7 @@ obj/items/weapons
 				icon_state="zsword"
 				accuracymod=55 // TODO, finish.
 				woundmod=25
-				stamina_damage_static =200
+				stamina_damage_static =600
 				rfx_stamina_damage_mod=2.5
 				str_stamina_damage_mod=0
 				weapon=1
@@ -3080,6 +3080,9 @@ mob
 				advancedprojectile_angle(eicon, estate, src, speed, angle+spread*3, distance=10, damage=ewoundmod, wounds="passive")
 				advancedprojectile_angle(eicon, estate, src, speed, angle+spread*4, distance=10, damage=ewoundmod, wounds="passive")
 
+mob
+	var/tmp/can_use_F = 0
+
 mob/verb
 	usev()
 		set name= "Use"
@@ -3088,7 +3091,7 @@ mob/verb
 			usr.Affirm_Icon()
 			usr.Load_Overlays()
 			usr.camo=0
-		if(usr.Size||usr.Tank)
+		if(usr.Size||usr.Tank || usr.dancing_shadow || can_use_F > world.time)
 			return
 		if(usr.stunned||usr.handseal_stun||usr.kstun)
 			return
@@ -3104,14 +3107,14 @@ mob/verb
 					if(Puppet1 in oview(5))
 						var/mob/human/ptarget = usr.MainTarget()
 						if(ptarget && !ptarget.ko)
-							Puppet1.pwalk_towards(Puppet1,ptarget,2,20)
+							Puppet1.pwalk_towards(Puppet1,ptarget,1,20)
 						walk(Puppet1, 0)
 						Puppet1.Melee(usr)
 						return
 					else if(Puppet2 in oview(5))
 						var/mob/human/ptarget = usr.MainTarget()
 						if(ptarget && !ptarget.ko)
-							Puppet2.pwalk_towards(Puppet2,ptarget,2,20)
+							Puppet2.pwalk_towards(Puppet2,ptarget,1,20)
 						walk(Puppet2, 0)
 						Puppet2.Melee(usr)
 						return
@@ -3119,7 +3122,7 @@ mob/verb
 					if(Puppet1 in oview(5))
 						var/mob/human/ptarget = usr.MainTarget()
 						if(ptarget && !ptarget.ko)
-							Puppet1.pwalk_towards(Puppet1,ptarget,2,20)
+							Puppet1.pwalk_towards(Puppet1,ptarget,1,20)
 						walk(Puppet1, 0)
 						Puppet1.Melee(usr)
 						return
@@ -3128,13 +3131,13 @@ mob/verb
 					if(Primary == Puppet1 && Puppet2)
 						if(Puppet2 in oview(5))
 							var/mob/human/ptarget = usr.MainTarget()
-							if(ptarget && !ptarget.ko) Puppet2.pwalk_towards(Puppet2,ptarget,2,20)
+							if(ptarget && !ptarget.ko) Puppet2.pwalk_towards(Puppet2,ptarget,1,20)
 							Puppet2.Melee(usr)
 							return
 					if(Primary == Puppet2 && Puppet1)
 						if(Puppet1 in oview(5))
 							var/mob/human/ptarget = usr.MainTarget()
-							if(ptarget && !ptarget.ko) Puppet1.pwalk_towards(Puppet1,ptarget,2,20)
+							if(ptarget && !ptarget.ko) Puppet1.pwalk_towards(Puppet1,ptarget,1,20)
 							Puppet1.Melee(usr)
 							return
 		if(usr.zetsu)

@@ -61,6 +61,7 @@ faction
 		RemoveMember(mob/M)
 			online_members -= M
 			M.mouse_over_pointer = null
+			M.Refresh_Faction_Verbs()
 
 var
 	faction
@@ -336,7 +337,7 @@ mob/faction_verbs
 							else
 								M << "<span class='faction_chat'><span class='[StyleClassFilter(faction.name)]'><span class='faction'>[faction_text]</span> [show_rank?"(<span class='rank'>[rank]</span>) ":""]<span class='name'>[realname]</span>: <span class='message'>[html_encode(msg)]</span></span></span>"
 						ChatLog("faction") << "[time2text(world.timeofday, "hh:mm:ss")]\t[faction]\t[realname]\t[html_encode(msg)]"
-						SendInterserverMessage("chat_mirror", list("mode" = "faction", "ref" = "\ref[src]", "name" = realname, "rank" = rank, "faction" = "[faction]", "msg" = html_encode(msg)))
+						//SendInterserverMessage("chat_mirror", list("mode" = "faction", "ref" = "\ref[src]", "name" = realname, "rank" = rank, "faction" = "[faction]", "msg" = html_encode(msg)))
 						sleep(2)
 						say=1
 					else
@@ -367,12 +368,13 @@ mob/faction_verbs
 					for(var/mob/human/player/P in world)
 						if(P.client && P.faction && (P.faction.village==faction.village || (P in online_admins)))
 							P<<"<span class='village_chat'><span class='[StyleClassFilter(faction.village)]'><span class='faction'><span class='villageicon'>\icon[faction_chat[faction.village]]</span> <b>Announce</b></span> (<span class='rank'>Kage</span>) <span class='name'>[realname]</span>: <span class='message'>[T]</span></span></span>"
-					SendInterserverMessage("chat_mirror", list("mode" = "village_announce", "ref" = "\ref[src]", "name" = realname, "rank" = "<b>Admin</b>", "village" = "[faction.village]", "msg" = T))
+					//SendInterserverMessage("chat_mirror", list("mode" = "village_announce", "ref" = "\ref[src]", "name" = realname, "rank" = "<b>Admin</b>", "village" = "[faction.village]", "msg" = T))
 
 				Create_Faction_KAGE(faction_name as text, mob/leader as mob in world, member_limit as num)
 					set desc = "(faction, leader, limit) Create a new faction"
 					if(!leader.faction || leader.faction.village != faction.village)
 						src << "The leader must be in your village."
+						return 0
 					var/list/faction_info = saves.GetFactionInfo(faction_name)//params2list(SendInterserverMessage("faction_info", list("faction" = faction_name)))
 					if(!faction_info || !faction_info["name"])
 						var/faction/new_faction = new /faction(faction_name, faction.village, leader, faction.mouse_icon, faction.chat_icon, faction.chuunin_item, member_limit, 1)
@@ -387,6 +389,7 @@ mob/faction_verbs
 					set desc = "(faction, leader name) Change the leader of a faction."
 					if(!leader.faction || leader.faction.village != faction.village)
 						src << "The leader must be in your village."
+						return 0
 					var/faction/change_faction = load_faction(faction_name)
 					if(!change_faction)
 						src << "That faction (\"[faction_name]\") does not exist."
@@ -639,3 +642,4 @@ mob/faction_verbs
 							else
 								M.faction = missing_faction
 						M.faction.AddMember(M)
+						//M.Refresh_Faction_Verbs()

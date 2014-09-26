@@ -100,9 +100,6 @@ world
 							if(o.deletable==0)
 								var/id = type2index(o.type)
 								if(id && isnum(id))
-									/*if(istype(o, /obj/items/usable) && o:oname == "Double Experience Scroll")
-										world.log << id
-										world.log << o.equipped*/
 									itemlist+=id
 									itemlist+=o.equipped
 						else
@@ -120,10 +117,15 @@ world
 							else
 								puppetsave1+=type2index(o.type)
 								puppetsave2+=o.name
-								puppetsave3+=0
+								puppetsave3+=(o.equipped) ? (o.equipped) : (0)//0
+								//world.log<<"PUPPET WEAPON INSTALL FOR [o.name] IS [(o.install) ? (1) : (0)]"
 
 				var
 					skill_info[0]
+
+				/*for(var/list/l in list(puppetsave1,puppetsave2,puppetsave3))
+					for(var/z in l)
+						world.log<<"SAVED THIS FOR PUPPETS: [z]"*/
 
 				for(var/skill/skill in x.skills)
 					skill_info += skill.id
@@ -428,6 +430,10 @@ client
 							x.player_gui += card
 							screen += card
 
+			/*for(var/list/l in list(puppetsave1,puppetsave2,puppetsave3))
+				for(var/z in l)
+					world.log<<"LOADED THIS FOR PUPPETS: [z]"*/
+
 			x.elements=params2list(lst[7])
 			for(var/element in x.elements)
 				if(!istext(element) || element == "/list")
@@ -465,20 +471,39 @@ client
 					if(!(puppetsave1.len>=i2) ||!(puppetsave2.len>=i2)||!(puppetsave3.len>=i2))
 						break
 					var/otype = index2type(puppetsave1[i2])
-					var/oname = puppetsave2[i2]
+					var/oname = dd_replacetext(puppetsave2[i2], "+", " ")
 					var/ostatus= puppetsave3[i2]
 					if(otype)
 						var/obj/items/o = new otype(x)
-						o.name=oname
-						if(ostatus==1)
+						o.name = "[oname]"
+						//world.log<<"OSTATUS FOR [oname] IS: [ostatus]"
+						if(ostatus == 1)
+							o.overlays += 'icons/Equipped1.dmi'
+							if(!ispath(otype, /obj/items/Puppet/weapon))
+								x.Puppets[1] = o
+							else
+								o.setup_puppet = 1
+						else if(ostatus == 2)
+							o.overlays += 'icons/Equipped2.dmi'
+							if(!ispath(otype, /obj/items/Puppet/weapon))
+								x.Puppets[2] = o
+							else
+								o.setup_puppet = 2
+						/*if(ostatus==1)
 							x.Puppets[1]=o
-							x.overlays+='icons/Equipped1.dmi'
+							o.overlays+='icons/Equipped1.dmi'
 						if(ostatus==2)
 							x.Puppets[2]=o
-							x.overlays+='icons/Equipped2.dmi'
+							o.overlays+='icons/Equipped2.dmi'*/
 					i2--
 
 		//ets
+
+				for(var/obj/items/Puppet/weapon/w in x.contents)
+					if(w.setup_puppet && x.Puppets[w.setup_puppet])
+						w.install = w.setup_puppet//x.Puppets[w.setup_puppet]
+						w.equipped = w.setup_puppet
+						w.setup_puppet = null
 
 			var/list/L=list(0,0,0,0,0)
 			for(var/i = 0; i <= (itemlist.len-2);)
@@ -1088,7 +1113,7 @@ mob
 		DoneCreate()
 			src.layer=MOB_LAYER
 			src.invisibility=0
-			if(client) client.Help()
+			//if(client) client.Help()
 
 			loc=locate_tag("maptag_[cVillage]_start")
 			if(!loc)

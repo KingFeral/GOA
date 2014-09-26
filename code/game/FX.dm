@@ -422,6 +422,7 @@ obj
 
 mob/human
 	sandmonster
+		combat_protection = 0
 		var/hp=3
 		var/tired=0
 		density=1
@@ -441,10 +442,10 @@ mob/human
 			del(src)
 
 		New()
-			src.underlays+=image('icons/sand-up.dmi',pixel_y=-10)
-			src.underlays+=image('icons/sand-down.dmi',pixel_y=10)
-			src.underlays+=image('icons/sand-right.dmi',pixel_x=-10)
-			src.underlays+=image('icons/sand-left.dmi',pixel_x=10)
+			src.underlays.Add(image('icons/sand-up.dmi',pixel_y=-10),
+			image('icons/sand-down.dmi',pixel_y=10),
+			image('icons/sand-right.dmi',pixel_x=-10),
+			image('icons/sand-left.dmi',pixel_x=10))
 			src.nopkloop()
 		proc
 			P_Attack(mob/human/etarget,mob/human/owner)
@@ -2282,7 +2283,7 @@ proc/Homing_Projectile_bang(mob/U,mob/human/clay/proj,xdur,mob/human/M,lag)
 						proj.density=0
 						//proj.loc = R.loc
 						//R.move_stun+=10
-						R.Timed_Stun(15)
+						//R.Timed_Stun(15)
 						hit = R
 						//	if(proj) proj.density=1
 			if(proj)
@@ -2297,6 +2298,7 @@ proc/Homing_Projectile_bang(mob/U,mob/human/clay/proj,xdur,mob/human/M,lag)
 		if(!proj) return
 		if(hit)
 			hit.movepenalty += 10
+			hit.Timed_Stun(15)
 			proj.Explode()
 		else
 			proj.Explode()

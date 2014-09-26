@@ -25,7 +25,7 @@ skill/taijutsu/arhat_style
 	rock_attack
 		// attack for pure damage.
 		id = ROCK_ATTACK
-		name = "Pressure Palm"
+		name = "Rock Attack"
 		icon_state = "Arhat_Fist"
 		default_stamina_cost = 300
 		default_cooldown = 90
@@ -33,7 +33,7 @@ skill/taijutsu/arhat_style
 	thrusting_shoulder
 		// knockback attack.
 		id = THRUSTING_SHOULDER
-		name = "Pressure Palm"
+		name = "Thrusting Shoulder"
 		icon_state = "Arhat_Fist"
 		default_stamina_cost = 300
 		default_cooldown = 90
@@ -41,7 +41,7 @@ skill/taijutsu/arhat_style
 	crumbling_palm
 		// slowdown attack.
 		id = CRUMBLING_PALM
-		name = "Pressure Palm"
+		name = "Crumbling Palm"
 		icon_state = "Arhat_Fist"
 		default_stamina_cost = 300
 		default_cooldown = 90
@@ -49,7 +49,7 @@ skill/taijutsu/arhat_style
 	rising_knee
 		// stun attack.
 		id = RISING_KNEE
-		name = "Pressure Palm"
+		name = "Rising Knee"
 		icon_state = "Arhat_Fist"
 		default_stamina_cost = 300
 		default_cooldown = 90
@@ -57,7 +57,7 @@ skill/taijutsu/arhat_style
 	upwards_palm
 		// silence attack.
 		id = UPWARDS_PALM
-		name = "Pressure Palm"
+		name = "Upwards Palm"
 		icon_state = "Arhat_Fist"
 		default_stamina_cost = 300
 		default_cooldown = 90

@@ -7,10 +7,7 @@ skill
 			icon_state = "medical_jutsu"
 			default_chakra_cost = 60
 			default_cooldown = 5
-			var
-				wounds_healed=0
-
-
+			var/tmp/wounds_healed=0
 
 			Use(mob/user)
 				var/mob/human/player/etarget = user.NearestTarget()
@@ -48,7 +45,10 @@ skill
 							if(effect>etarget.curwound)
 								effect=etarget.curwound
 
+							var/old_wound = etarget.curwound
 							etarget.curwound-=effect
+							if(old_wound >= etarget.maxwound && etarget.curwound < etarget.maxwound)
+								etarget.curstamina = etarget.stamina * 0.1
 							user.combat("Healed [etarget] [effect] Wound")
 							if(etarget.curwound<=0)
 								etarget.curwound=0
@@ -173,10 +173,6 @@ skill
 					if(S8)S8.Spread(-6,5*moy,160,smogs)
 					if(S9)S9.Spread(-4,6.5*moy,160,smogs)
 
-
-
-
-
 				sleep(35)
 				if(user)
 					//user.stunned=0
@@ -192,6 +188,12 @@ skill
 			default_chakra_cost = 100
 			default_cooldown = 30
 
+			IsUsable(mob/user)
+				. = ..()
+				if(.)
+					if(user.stance)
+						Error(user, "Exit your stance first")
+						return 0
 
 			ChakraCost(mob/user)
 				if(!user.scalpol)

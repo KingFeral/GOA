@@ -17,6 +17,11 @@ var/list/noncombat_skills = list(
 	BYAKUGAN,
 	SHARINGAN1,
 	SHARINGAN2,
+	STRONG_FIST,
+	ARHAT_FIST,
+	WRESTLING,
+	CURRY_PILL,
+	SPINACH_PILL,
 	)
 
 mob
@@ -46,6 +51,8 @@ skill
 		face_nearest = 0
 		modified
 		noskillbar
+		set_cooldown = 0 // used when a skill is canceled for whatever reason and should not use its default cooldown.
+		no_skill_delay = 0
 
 	proc
 		IsUsable(mob/user)
@@ -74,6 +81,9 @@ skill
 				return 0
 			else if(user.Size==2 && !istype(src, /skill/akimichi/super_size_multiplication))
 				Error(user, "This skill cannot be used while a Super Size Multiplication is active")
+				return 0
+			if(user.dancing_shadow && !istype(src, /skill/taijutsu/strong_fist))
+				Error(user, "This skill cannot be used while Dancing Leaf Shadow is active")
 				return 0
 			return 1
 
@@ -155,7 +165,7 @@ skill
 			user.curchakra -= ChakraCost(user)
 			user.curstamina -= StaminaCost(user)
 			user.supplies -= SupplyCost(user)
-			user.combat_flag()
+			//user.combat_flag()
 
 			if(base_charge)
 				user.combat("[src]: Use this skill again to stop charging.")
@@ -230,7 +240,9 @@ skill
 			if(presettime)
 				cooldown = presettime
 			else
-				if(!resume) cooldown = Cooldown(user)
+				if(set_cooldown)
+					cooldown = set_cooldown
+				else if(!resume) cooldown = Cooldown(user)
 
 			for(var/skillcard/card in skillcards)
 				card.overlays -= 'icons/dull.dmi'
@@ -249,6 +261,8 @@ skill
 			while(cooldown > 0)
 				sleep(10)
 				--cooldown
+
+			set_cooldown = 0
 
 			for(var/skillcard/card in skillcards)
 				card.overlays -= 'icons/dull.dmi'
@@ -529,12 +543,27 @@ mob
 
 		AddItem(code)
 			var/item_type = ItemType(code)
-			var/obj/items/equipable/item
+			//var/obj/items/equipable/item
 			if(!item_type)
 				return
 			else
-				item = new item_type()
-			item.Move(src)
+				if(ispath(item_type, /obj/items/usable))
+					// check for stacking
+					var/has_item = 0
+					for(var/obj/items/ex in usr.contents)
+						if(istype(ex, item_type))
+							has_item += 1 + ex.equipped
+							if(ex.equipped)
+								has_item-- // subtract the equipped item
+
+					if(!has_item)
+						new item_type(src)
+					else for(var/obj/items/usable/object in usr.contents)
+						if(istype(object, item_type))
+							object.equipped++
+							object.Refreshcountdd(usr)
+				else
+					new item_type(src)
 
 		HasSkill(id)
 			for(var/skill/skill in skills)
@@ -560,6 +589,8 @@ mob
 				. += 10 * skillspassive[PURE_POWER]
 			. = round((. / 150)) * 1.5
 
+		strength_damage_mult()
+			. = ((str + strbuff - strneg) / 150)// * 1.5
 
 		CanUseSkills(inskill = 0)
 			if(inskill && (inskill in bypass_stuns))
@@ -571,7 +602,7 @@ mob
 			if(client)
 				var/grid_item = 0
 				for(var/skillcard/X in contents)
-					if(client) src << output(X, "skills_grid:[++grid_item]")
+					if(client && !(X.skill.id in list(GATE2,GATE2,GATE3,GATE4,GATE5,GATE6/*,GATE7,GATE8*/))) src << output(X, "skills_grid:[++grid_item]")
 				if(client) winset(src, "skills_grid", "cells=[grid_item]")
 
 
@@ -586,7 +617,7 @@ mob
 				var/dir = pick(dirs)
 				dirs -= dir
 				t = get_step(x, dir)
-			if(t && !t.density)
+			if(t && !t.density && t.Enter(src))
 				new effect(t)
 				src.FaceTowards(x)
 				//src.Move(t)
@@ -613,7 +644,7 @@ mob
 				var/dir = pick(dirs)
 				dirs -= dir
 				t = get_step(x, dir)
-			if(t && !t.density)
+			if(t && !t.density && t.Enter(src))
 				new effect(t)
 				src.FaceTowards(x)
 				//src.Move(t)
@@ -640,7 +671,7 @@ mob
 				var/dir = pick(dirs)
 				dirs -= dir
 				t = get_step(x, dir)
-			if(t && !t.density)
+			if(t && !t.density && t.Enter(src))
 				new effect(t)
 				src.FaceTowards(x)
 				//src.Move(t)

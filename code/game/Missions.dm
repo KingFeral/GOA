@@ -45,6 +45,7 @@ mob
 					x.MissionFail()
 			for(var/mob/x in oview(4,usr))
 				if(x==usr.MissionTarget && usr.MissionLocation==dropoff)
+					call(x, "stop_following")()
 					usr.MissionComplete()
 
 	proc
@@ -60,7 +61,7 @@ mob
 			if(usr.Missionstatus)
 				usr.Missionstatus=0
 				if(!noduh)
-					alert(usr,"You have failed your mission..")
+					usr<<"You have failed your mission.."
 
 			for(var/mob/human/player/npc/X in world)
 				if(X.missionowner==usr)
@@ -69,7 +70,7 @@ mob
 					X.loc=locate(X.origx,X.origy,X.origz)
 		RankGrade()
 			if(!src.faction) return
-			if(src.faction.leader == realname && (faction.village in list("Konoha","Kiri","Suna")))
+			if(src.faction.leader == realname && (faction.name in list("Konohagakure","Kirigakure","Sunagakure")))
 				rankgrade = 5
 				return rankgrade
 			if(src.faction.village == "Missing")
@@ -94,8 +95,8 @@ mob
 			if(src.Missionstatus)
 				usr=src
 				var/list/P=Pvp_Escort
-				if(leading && usr.MissionTarget)
-					call(usr.MissionTarget, "stop_following")()
+				if(leading && leading == usr.MissionTarget)
+					call(leading, "stop_following")()
 					//leading.following = null
 				src.MissionTarget=0
 				//src.mission_rewards = null
@@ -371,7 +372,7 @@ mob
 				if(pik==9)
 					NPCpik=new/list()
 					for(var/mob/human/player/O in world)
-						if(O.client && O.initialized && (!O.AFK&&O.pk) && O.faction && O.faction.village!=usr.faction.village)
+						if(O.client && O.blevel >= 20 && O.initialized && (!O.AFK&&O.pk) && O.faction && O.faction.village!=usr.faction.village)
 							NPCpik+=O
 					if(!length(NPCpik))
 						pik=8

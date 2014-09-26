@@ -1,5 +1,5 @@
 var
-	list/Mute_Elects=new/list()
+	list/Mute_Elects//=new/list()
 mob/proc/RankGrade2()
 	switch(src.ninrank)
 		if("S")

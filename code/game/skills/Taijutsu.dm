@@ -2,25 +2,8 @@ skill
 	taijutsu
 		face_nearest = 1
 
-		dancing_leaf_shadow
-			// Toggle skill. Allows the user to teleport to their main target in the direction they are holding at
-			// the expense of stamina. (Basically a stamina Body Flicker)
-			//id = DANCING_LEAF_SHADOW
-			name = "Shadow of the Dancing Leaf"
-			icon_state = "shadow_dance"
-			//default_stamina_cost = 150
-			default_cooldown = 60
 
-			/*IsUsable(mob/user)
-				. = ..()
-				if(.)
-					var/mob/mtarget = user.MainTarget()
-					if(!mtarget)
-						Error(user, "You need a target.")
-						return 0*/
-
-
-		leaf_great_whirlwind
+/*		leaf_great_whirlwind
 			id = LEAF_WHIRLWIND
 			name = "Taijutsu: Leaf Great Whirlwind"
 			icon_state = "leaf_great_whirlwind"
@@ -93,7 +76,7 @@ skill
 				//user.stunned += 0.2
 				user.Timed_Stun(2)
 
-
+*/
 
 
 		lion_combo
@@ -756,7 +739,7 @@ skill
 				prev_gate
 				overlay_icons[]
 				underlay_icons[]
-				deactivation_timer = 0
+				//deactivation_timer = 0
 
 
 			IsUsable(mob/user)
@@ -816,6 +799,7 @@ skill
 				if(user.clan == "Youth")
 					user.curchakra = user.chakra
 
+				var/deactivation_timer = 0
 				switch(user.gate)
 					if(1)
 						viewers(user) << output("[user]: Opening Gate!", "combat_output")
@@ -842,10 +826,12 @@ skill
 						user.rfxbuff = user.str * 1.5
 						spawn(icon_time)
 							user.curstamina = user.stamina
+						deactivation_timer = 250
 					if(5)
 						viewers(user) << output("[user]: Limit Gate!", "combat_output")
 						user.strbuff = user.str * 1.65
 						user.rfxbuff = user.str * 1.65
+						deactivation_timer = 200
 					if(6)
 						viewers(user) << output("[user]: View Gate!", "combat_output")
 						user.strbuff = user.str * 1.75
@@ -1016,7 +1002,7 @@ skill
 				overlay_icons = list('icons/gate3chakra.dmi')
 				underlay_icons = list(/obj/gatesaura/bl, /obj/gatesaura/br, /obj/gatesaura/tl, /obj/gatesaura/tr)
 				icon_time = 30
-				deactivation_timer = 250
+				//deactivation_timer = 250
 				noskillbar = 1
 
 
@@ -1030,7 +1016,7 @@ skill
 				time_multiplier = 1.5
 				overlay_icons = list('icons/gate5.dmi')
 				icon_time = 5
-				deactivation_timer = 200
+				//deactivation_timer = 200
 				noskillbar = 1
 
 		gate_cancel

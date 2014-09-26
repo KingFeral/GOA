@@ -85,7 +85,7 @@ mob/proc
 					if(m.client && !same_client(m, src))
 						if(!(m.realname in list_of_mobs) || list_of_mobs[m.realname] <= world.time)
 							ez_count = 0
-						list_of_mobs[m.realname] = world.time + 3600
+						list_of_mobs[m.realname] = world.time + 4800
 
 				ez_count++
 				if(ez_count >= 7)

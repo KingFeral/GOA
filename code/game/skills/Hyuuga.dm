@@ -31,16 +31,14 @@ skill
 			name = "Byakugan"
 			icon_state = "byakugan"
 			default_chakra_cost = 80
-			default_cooldown = 240
+			default_cooldown = 3
 
-
-
-			IsUsable(mob/user)
+			/*IsUsable(mob/user)
 				. = ..()
 				if(.)
 					if(user.byakugan)
 						Error(user, "Byakugan is already active")
-						return 0
+						return 0*/
 
 
 			Cooldown(mob/user)
@@ -49,10 +47,20 @@ skill
 
 			Use(mob/user)
 				set waitfor = 0
-				viewers(user) << output("[user]: Byakugan!", "combat_output")
-				user.byakugan=1
-				user.Affirm_Icon()
-				user.byakugan_image_loop()
+				if(user.byakugan)
+					//overlays -= "cancel"
+					RemoveOverlay("cancel")
+					user.combat("You deactivate Byakugan.")
+					user.byakugan = 0
+					user.Affirm_Icon()
+					user.Load_Overlays()
+				else
+					viewers(user) << output("[user]: Byakugan!", "combat_output")
+					user.byakugan = 1
+					user.Affirm_Icon()
+					user.byakugan_image_loop()
+					AddOverlay("cancel")
+				/*
 				sleep(Cooldown(user)*10)
 				if(user)
 					user.byakugan=0
@@ -62,7 +70,7 @@ skill
 						user.gentlefist=0
 						user.overlays-='icons/hakkehand.dmi'
 						user.special=0
-						user.Load_Overlays()
+						user.Load_Overlays()*/
 
 
 

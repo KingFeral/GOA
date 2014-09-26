@@ -51,7 +51,18 @@ skill
 					//if(puppet)
 					Poof(puppet.loc)
 					//del(puppet)
-					puppet.dispose()
+					//puppet.dispose()
+					if(user.Puppet1==src)
+						var/skill/puppet_skill = user.GetSkill(PUPPET_SUMMON1)
+						user.Puppet1 = null
+						user.puppetsout--
+						puppet_skill.DoCooldown(user)
+					else if(user.Puppet2==src)
+						var/skill/puppet_skill = user.GetSkill(PUPPET_SUMMON2)
+						user.Puppet2 = null
+						user.puppetsout--
+						puppet_skill.DoCooldown(user)
+					del(puppet)
 					user.puppetsout--
 					/*else if(user.activePuppet[puppet_num])
 						var/mob/puppetMob = user.activePuppet[puppet_num]

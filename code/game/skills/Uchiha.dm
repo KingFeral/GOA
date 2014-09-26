@@ -155,6 +155,7 @@ skill
 
 			proc
 				CopySkill(id)
+					if(id == DANCING_LEAF_SHADOW) id = LION_COMBO
 					var/skill_type = SkillType(id)
 					var/skill/skill
 					if(!skill_type)
@@ -163,6 +164,7 @@ skill
 						skill.name = "Unknown Skill ([id])"
 					else
 						skill = new skill_type()
+
 					skill.master = src
 					copied_skill = skill
 					icon_overlays = list(icon('icons/gui_badges.dmi', "sharingan_copy"))

@@ -124,14 +124,30 @@ obj/items/drops
 		..()
 		overlays += "sparkle"
 
-	verb/get()
+	verb/get(mob/picked_up)
 		set src in view(1)
-		new item_ref(usr)
+		if(picked_up)
+			usr = picked_up
+		if(get_dist(src, usr) <= 1)
+			var/has_item = 0
+			for(var/obj/items/ex in usr.contents)
+				if(istype(ex, item_ref))
+					has_item += 1 + ex.equipped
+					if(ex.equipped)
+						has_item-- // subtract the equipped item
+
+			if(!has_item)
+				new item_ref(usr)
+			else for(var/obj/items/usable/object in usr.contents)
+				if(istype(object, item_ref))
+					object.equipped++
+					object.Refreshcountdd(usr)
 		usr << "You picked up the [src]."
 		loc = null
 
 	Click()
-		if(get_dist(src, usr) <= 1)
+		src.get(usr)
+		/*if(get_dist(src, usr) <= 1)
 			var/has_item = 0
 			for(var/obj/items/ex in usr.contents)
 				if(istype(ex, item_ref))
@@ -148,6 +164,7 @@ obj/items/drops
 
 			usr << "You picked up the [src]."
 			loc = null
+			*/
 
 	scrolls
 		icon = 'icons/scrolls.dmi'

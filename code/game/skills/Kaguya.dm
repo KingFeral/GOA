@@ -89,7 +89,7 @@ skill
 					ChangeIconState("bone_harden_cancel")
 					while(user && user.boneharden && user.curchakra >= 0)
 						sleep(3)
-					if(user.curchakra <= 0)
+					if(user && user.curchakra <= 0)
 						user.combat("Your bones soften!")
 						user.boneharden = FALSE
 						ChangeIconState("bone_harden")

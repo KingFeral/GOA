@@ -219,16 +219,17 @@ skill
 						d = 5
 					if(d > 0)
 						etarget.gen_effective_int = user.int+user.intbuff-user.intneg + (10 *user.skillspassive[GENJUTSU_MASTERY])
-						etarget.sight=(BLIND|SEE_SELF|SEE_OBJS)
+						etarget.sight = (BLIND|SEE_SELF|SEE_OBJS)
 						while(user && etarget && etarget.genjutsu && etarget.genjutsu["timestamp"] == recorded_timestamp && etarget.genjutsu["user"] == user && d>0)
 							d--
 							sleep(10)
 						if(user)
 							if(user.client) user.client.images -= I
-						if(etarget && etarget.genjutsu && etarget.genjutsu["timestamp"] == recorded_timestamp)
+						if(etarget)// && etarget.genjutsu && etarget.genjutsu["timestamp"] == recorded_timestamp)
 							etarget.sight = 0
-							etarget.gen_effective_int = 0
-							etarget.genjutsu = null
+							if(etarget.genjutsu && etarget.genjutsu["timestamp"] == recorded_timestamp)
+								etarget.gen_effective_int = 0
+								etarget.genjutsu = null
 							if(etarget.client) etarget.client.images -= I
 						I.loc = null
 

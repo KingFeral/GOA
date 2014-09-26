@@ -187,15 +187,18 @@ mob
 					else angle = dir2angle(src.dir)
 
 					var/damage = 900
+					var/list/ignorethem = list(u)
+					if(u.Puppet1) ignorethem += u.Puppet1//if(u.Puppets.len >= 1) ignorethem += u.Puppets[1]
+					if(u.Puppet2) ignorethem += u.Puppet2//if(u.Puppets.len >= 2) ignorethem += u.Puppets[2]
 
-					advancedprojectile_angle(eicon, estate, usr, speed, angle, distance=10, damage=damage, wounds="passive", ignore_list = list(u))
+					advancedprojectile_angle(eicon, estate, usr, speed, angle, distance=10, damage=damage, wounds="passive", ignore_list = ignorethem)
 
 				if(2)//poison bomb
 					flick("hand",src)
 					var/eicon='icons/poison.dmi'
 					var/estate="ball"
 					if(!etarget)
-						etarget=straight_proj(eicon,estate,8,src)
+						etarget=straight_proj(eicon,estate,src,10)
 						if(etarget)
 							var/ex=etarget.x
 							var/ey=etarget.y
@@ -220,14 +223,14 @@ mob
 							etarget=X
 					else
 						var/mob/human/Puppet/p = src
-						p.pwalk_towards(src,etarget,2,10)
+						p.pwalk_towards(src,etarget,1,10)
 					if(get_dist(src, etarget) <= 1)
 						src.icon_state = "hid_setup"
 						src.Timed_Stun(5)
 						sleep(5)
 						if(etarget && get_dist(src,etarget) <= 1)
 							etarget.Timed_Stun(20)
-							src.Timed_Stun(90)
+							src.Timed_Stun(20)
 							src.layer++
 							src.icon_state="hid"
 							src.loc=etarget.loc
@@ -235,9 +238,11 @@ mob
 							etarget.underlays+=e
 							etarget.icon_state="hurt"
 							flick("bindover",src)
+							var/original_loc = etarget.loc
 							sleep(20)
 							src.icon_state=""
-							if(etarget)
+							src:Def(u)
+							if(etarget && etarget.loc == original_loc)
 								etarget.icon_state=""
 								etarget.underlays-=e
 								//etarget.Damage(rand(2000,3500), rand(4,9), u, "Body Crush", "Normal")
@@ -264,7 +269,9 @@ mob
 
 					var/angle=0
 					var/spread = 8
-					var/list/ignorethem = list(src, u)
+					var/list/ignorethem = list(u)
+					if(u.Puppet1) ignorethem += u.Puppet1//if(u.Puppets.len >= 1) ignorethem += u.Puppets[1]
+					if(u.Puppet2) ignorethem += u.Puppet2//if(u.Puppets.len >= 2) ignorethem += u.Puppets[2]
 					while(c>0)
 						etarget = u.MainTarget()
 						if(etarget) angle = get_real_angle(src, etarget)
@@ -330,16 +337,17 @@ obj
 		New()
 			..()
 			src.owner = usr
-			src.overlays+=image('icons/shield.dmi',icon_state="tl",pixel_x=-16,pixel_y=16)
-			src.overlays+=image('icons/shield.dmi',icon_state="tr",pixel_x=16,pixel_y=16)
-			src.overlays+=image('icons/shield.dmi',icon_state="bl",pixel_x=-16,pixel_y=-16)
-			src.overlays+=image('icons/shield.dmi',icon_state="br",pixel_x=16,pixel_y=-16)
+			src.overlays.Add(image('icons/shield.dmi',icon_state="tl",pixel_x=-16,pixel_y=16),
+			image('icons/shield.dmi',icon_state="tr",pixel_x=16,pixel_y=16),
+			image('icons/shield.dmi',icon_state="bl",pixel_x=-16,pixel_y=-16),
+			image('icons/shield.dmi',icon_state="br",pixel_x=16,pixel_y=-16))
 			sleep(70)
 			owner = null
 			owners = null
 			loc = null
 
 mob/human/Puppet
+	combat_protection = 0
 	var
 		shield_active
 
@@ -485,12 +493,14 @@ obj/items
 			var/oindex=0
 			var/costz=5
 			Hidden_Knife_Shot
+				name="HiddenKnifeShot"
 				icon='icons/gui.dmi'
 				icon_state="mouthknife"
 				oindex=1
 				costz=2
 				code=106
 			Poison_Bomb
+				name="PoisonBomb"
 				icon='icons/gui.dmi'
 				icon_state="poisonbomb"
 				oindex=2
@@ -573,13 +583,15 @@ obj/items
 					src.overlays+='icons/Equipped1.dmi'
 				if(ind==2)
 					src.overlays+='icons/Equipped2.dmi'
-				src.install=ind
-				src.equipped=ind
+				src.install = ind
+				src.equipped = ind
 
 			UnInstall()
-				src.equipped=0
-				src.overlays=0
+				src.equipped = 0
+				src.overlays = 0
+				src.install = 0
 
 obj
 	var
 		install=0
+		setup_puppet = 0

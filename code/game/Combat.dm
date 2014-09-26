@@ -117,14 +117,15 @@ obj
 			set waitfor = 0
 			. = ..()
 			flick("create", src)
-			while(src)
+			while(loc)
 				sleep(1)
 				++dissipate_count
 				for(var/mob/human/M in loc)
 					if(M.clan == "Haku")
 						dissipate_count = 0
 						break
-				if(dissipate_count > 50) del src
+				if(dissipate_count > 50)// del src
+					loc = null
 
 /*obj/water
 	Crossed(mob/m)
@@ -165,11 +166,17 @@ mob
 				time = max(time - 1, 0)
 				sleep(1)
 			End_Stun()
+
 		Begin_Stun()
+			//overlays += 'icons/new/stunned.dmi'
 			stunned++
+
 		End_Stun()
-			stunned--
-			if(stunned < 0) stunned = 0
+			stunned = max(0, --stunned)
+			//if(!stunned)
+			//	overlays -= 'icons/new/stunned.dmi'
+			//stunned--
+			//if(stunned < 0) stunned = 0
 		Reset_Stun()
 			set waitfor = 0
 			stunned = 0
@@ -483,7 +490,7 @@ mob/human
 					src.Get_Global_Coords()
 		//~~~~
 
-		if(wa && afteryou_cool < world.time && rockshinobis < 50)
+		if(wa && !combat_protection && afteryou_cool < world.time && rockshinobis < 50)
 			if(pick(0, 1))
 				new/Event(50, "rock_shinobi_ambush", list(src))
 
@@ -520,8 +527,8 @@ mob/human
 		//decrease_running_speed()
 
 		//(10)
-		new/Event(10, "decrease_running_speed", list(src))
-		/*
+		//new/Event(10, "decrease_running_speed", list(src))
+		spawn(10)
 			src.runlevel--
 			if(src.icon_state=="Run" &&src.runlevel<3)
 				src.icon_state=""
@@ -530,10 +537,11 @@ mob/human
 				src.icon_state="Run"
 		else
 			if(src.icon_state=="Run")
-				src.icon_state=""*/
+				src.icon_state=""
 
 		canmove=0
-		sleep(1)
+		if(!dancing_shadow)
+			sleep(1)
 		if(usr.Size==1)
 			src.movepenalty=25
 		if(usr.Size==2)
@@ -552,18 +560,6 @@ mob/human
 			sleep(1)
 		canmove=1
 
-mob/proc/decrease_running_speed()
-	set waitfor = 0
-	sleep(10)
-	src.runlevel--
-	if(src.icon_state=="Run" &&src.runlevel<3)
-		src.icon_state=""
-	if(src.runlevel>=4 &&!src.Size && !src.Get_Move_Stun())
-		if(!src.rasengan &&!src.larch)
-			src.icon_state="Run"
-	else
-		if(src.icon_state=="Run")
-			src.icon_state=""
 
 mob/Bump(obstacle)
 	//bumped(obstacle)
@@ -904,9 +900,13 @@ mob/var/combo=0
 mob
 	proc
 		Dec_Stam(x,xpierce,mob/attacker, hurtall,taijutsu, internal)
-			if(combat_protection && attacker && attacker != src && attacker.blevel >= 20)
-				if(attacker.client) attacker << "A force stops you from harming [realname]!"
+			if(combat_protection && !dojo && attacker && attacker != src && attacker.client && attacker.blevel >= 20)
+				attacker << "A force stops you from harming [realname]!"
 				return
+			if(attacker && attacker.combat_protection && src && !combat_protection)
+				attacker.combat_protection = 0
+				attacker << "Combat protection flag toggled off."
+
 			if(istype(attacker, /mob/human/player/npc/kage_bunshin))
 				x /= 4
 
@@ -1019,9 +1019,13 @@ mob
 
 		Wound(x,xpierce, mob/attacker, reflected)
 			//set waitfor = 0
-			if(combat_protection && attacker && attacker != src && attacker.blevel >= 20)
-				if(attacker.client) attacker << "A force stops you from harming [realname]!"
+			if(combat_protection && !dojo && attacker && attacker != src && attacker.client && attacker.blevel >= 20)
+				attacker << "A force stops you from harming [realname]!"
 				return
+			if(attacker && attacker.combat_protection && src && !combat_protection)
+				attacker.combat_protection = 0
+				attacker << "Combat protection flag toggled off."
+
 			if(istype(attacker, /mob/human/player/npc/kage_bunshin))
 				x /= 4
 
@@ -1132,6 +1136,10 @@ mob
 				return
 			src.curwound+=x
 			src.combat("<font color=#eca940>You took [x] Wound damage from [attacker]!")
+
+			if(clan == "Will of Fire" && !wof_adren_loop)
+				wof_adrenaline()
+
 			if(usr.Contract &&!reflected)
 				var/obj/C = usr.Contract
 				if(usr.loc==C.loc)
@@ -1213,7 +1221,9 @@ mob
 				attacker.combat_flag(OFFENSE_FLAG, 120)
 
 			if(src.leading)
-				src.leading=0
+				//src.leading=0
+				call(leading, "stop_following")()
+
 			if(istype(src,/mob/human/player/npc))
 				if(attacker && attacker!=src && attacker.faction && src.faction && attacker.faction.village != src.faction.village && !(attacker.MissionTarget==src && (attacker.MissionType=="Escort"||attacker.MissionType=="Escort PvP")))
 					if(!istype(attacker,/mob/human/player/npc/creep) && !(istype(attacker, /mob/human/player/npc) && src:nisguard))
@@ -1252,7 +1262,8 @@ mob
 			if(src.rasengan==2)
 				src.ORasengan_Fail()
 			if(istype(src,/mob/human/player/npc/bunshin))
-				call(src, "destroy")()
+				if(hascall(src, "destroy"))
+					call(src, "destroy")()
 				/*if(src:bunshintype==0)
 					Poof(loc)//(src.x,src.y,src.z)
 					src.invisibility=100
@@ -1465,9 +1476,9 @@ mob
 				M.timed_reaction_stun(5 - round(((rfx - 50) / 100)))//(10)
 				return
 
-			if(M.skillspassive[BRUTALITY] && M.weapon_ref && istype(M.weapon_ref, /obj/items/weapons/melee))
-				if(prob(5 * M.skillspassive[BRUTALITY]) && M.brutalitytime < world.time)
-					M.brutalitytime = world.time + 50
+			if(M.skillspassive[BRUTALITY] && M.weapon_ref && istype(M.weapon_ref, /obj/items/weapons/melee) && !M.handseal_stun && !M.kstun)
+				if(M.brutalitytime < world.time && prob(5 * M.skillspassive[BRUTALITY]))
+					M.brutalitytime = world.time + 100
 					flick("w-attack", M)
 					M.FaceTowards(src)
 					M.Timed_Stun(3)
@@ -1546,9 +1557,9 @@ mob
 				//Critical..
 
 				if(!usr.gentlefist)
-					critdam=round((usr.str+usr.strbuff)*rand(15,40)/10) *(1+0.10*src.skillspassive[FORCE])
+					critdam=round((usr.str+usr.strbuff)*rand(15,20)/10) *(1+0.10*src.skillspassive[FORCE])
 				else
-					critdam=round((usr.con+usr.conbuff)*rand(15,40)/10)*(1+0.10*src.skillspassive[FORCE])
+					critdam=round((usr.con+usr.conbuff)*rand(15,20)/10)*(1+0.10*src.skillspassive[FORCE])
 				M.movepenalty+=10
 				src.combat("Critical hit!")
 				if(M) M.Graphiked2()
@@ -1557,21 +1568,51 @@ mob
 
 			var/damage_stat=0
 			if(!usr.gentlefist)
-				damage_stat = (usr.str + usr.strbuff - usr.strneg) * pick(0.6, 0.7, 0.8, 0.9, 1)//usr.str+usr.strbuff-usr.strneg
+				damage_stat = (usr.str + usr.strbuff - usr.strneg) * pick(0.4, 0.5, 0.6)//usr.str+usr.strbuff-usr.strneg
 			else
-				damage_stat = (usr.con + usr.conbuff - usr.conneg) * pick(0.6, 0.7, 0.8, 0.9, 1)//usr.con+usr.conbuff-usr.conneg
+				damage_stat = (usr.con + usr.conbuff - usr.conneg) * pick(0.4, 0.5, 0.6)//usr.con+usr.conbuff-usr.conneg
 
 			//var/m=damage_stat/150
 
 			//if(src.gate>=5)
 			//	m*=1.5
 
+			var/outcome = Roll_Against(usr.rfx+usr.rfxbuff-usr.rfxneg, M.rfx+M.rfxbuff-M.rfxneg, rand(80,120))
 			var/dam = damage_stat
+			var/deltamove = 0
+
+			switch(outcome)
+				if(6)
+					deltamove += 8
+					M.increase_comboed(4.5)
+					//M.c+=4
+					//dam=round(150*m)
+				if(5)
+					deltamove += 6
+					M.increase_comboed(3.5)
+					//M.c+=3.5
+					//dam=round(115*m)
+				if(4)
+					deltamove += 6
+					M.increase_comboed(3)
+					//M.c+=3
+					//dam=round(100*m)
+				if(3)
+					deltamove += 5
+					M.increase_comboed(2.5)
+					//M.c+=2.5
+					//dam=round(70*m)
+				else
+					M.increase_comboed(1)
+
+			var/wound_damage = 0
+			if(usr.stance == STRONG_FIST && prob(20))
+				wound_damage = rand(0, 1)//rand(0, round(outcome / 3))
 
 			//M.c += 4
-			M.increase_comboed(4)
+			//M.increase_comboed(4)
 			if(M.c>13)
-				if(prob(60))
+				if(prob(40))
 					combo_advance(M)
 
 			if(combo)
@@ -1580,13 +1621,15 @@ mob
 			var/DD=dam+critdam
 
 			M.Dec_Stam(DD, 0, usr,0,1)
+			if(wound_damage)
+				M.Wound(wound_damage, 0, usr)
 
 			for(var/mob/human/v in view(1))
 				if(v.client)
 					v.combat("[M] was hit for [DD] damage by [src]!")
 
 			//M.movepenalty += deltamove
-			M.movepenalty = min(30, M.movepenalty + 3)
+			M.movepenalty = min(30, M.movepenalty + deltamove)
 			var/dazeresist=4*M.skillspassive[BUILT_SOLID]
 			var/evaderesist=3*M.skillspassive[EVASIVENESS]
 
@@ -1608,7 +1651,7 @@ mob
 			return
 		c += amount
 		var/old_c = c
-		sleep(50)
+		sleep(30)
 		if(c == old_c)
 			c = 0
 
@@ -1641,6 +1684,7 @@ mob
 			comboed.icon_state=""
 			comboed.dzed=0
 			comboed.c=0
+			comboed.cc=0
 
 mob/var/camo=0
 
@@ -1888,7 +1932,7 @@ mob
 			var/mob/T
 
 			if(target)
-				if(usr.gate >= 4 && !usr.gatepwn)
+				/*if(usr.gate >= 4 && !usr.gatepwn)
 					if(get_dist(target, usr) <= gate + 1)
 						//usr:AppearBefore(target)
 						//usr.dir = get_dir(src, target)
@@ -1900,9 +1944,9 @@ mob
 								usr.loc = appear
 								usr.FaceTowards(target)
 								sleep(1)
-				else
-					if(target in oview(attack_range))
-						T = target
+				else*/
+				if(target in oview(attack_range))
+					T = target
 
 				if(M)
 					T = M
@@ -1914,7 +1958,7 @@ mob
 					//world.log << "DEBUG: 2"
 					if(!rasengan && (lastskill != SHUNSHIN || lastskilltime + 20 < world.time))
 						if(gate)
-							if((gate && (gate in 1 to 3)) && distance <= gate)
+							if(gate && distance <= min(3, gate))
 								dash(nearesttarget, gate + 1)
 								FaceTowards(nearesttarget)
 						else
