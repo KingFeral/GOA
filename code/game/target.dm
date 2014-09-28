@@ -373,10 +373,10 @@ atom
 
 atom/DblClick(location, control)
 	//world.log << "CONTROL IS: [control]"
-	if(ismob(src) || control != "mappane.map")
+	if(!isturf(src) || control != "mappane.map")
 		return ..()
 	else
-		var/turf/relative_location = isobj(src) ? loc : src
+		var/turf/relative_location = src
 		if(relative_location)
 			for(var/mob/nearest in oview(4, relative_location))
 				if(nearest == usr)

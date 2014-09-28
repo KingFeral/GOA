@@ -11,14 +11,14 @@ skill
 
 
 
-			IsUsable(mob/user)
+			/*IsUsable(mob/user)
 				. = ..()
 				var/mob/human/target = user.NearestTarget()
 				if(. && target)
 					var/distance = get_dist(user, target)
 					if(distance > 5)
 						Error(user, "Target too far ([distance]/5 tiles)")
-						return 0
+						return 0*/
 
 
 			Use(mob/human/user)
@@ -39,19 +39,19 @@ skill
 					user.dir = dir
 				var/conmult = user.ControlDamageMultiplier()
 				if(dir == NORTH)
-					AOE(user.x, user.y + 3, user.z, 2, (100 + conmult * 50), 50, user, 3, 1)
+					AOEFire(user.x, user.y + 3, user.z, 2, (100 + conmult * 50), 50, user, 3, 1)
 					Fire(user.x, user.y + 3, user.z, 2, 50)
 
 				if(dir == SOUTH)
-					AOE(user.x, user.y - 3, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
+					AOEFire(user.x, user.y - 3, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
 					Fire(user.x, user.y- 3, user.z, 2, 50)
 
 				if(dir == EAST)
-					AOE(user.x + 3, user.y, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
+					AOEFire(user.x + 3, user.y, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
 					Fire(user.x + 3, user.y, user.z, 2, 50)
 
 				if(dir == WEST)
-					AOE(user.x - 3, user.y, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
+					AOEFire(user.x - 3, user.y, user.z, 2, (100 + conmult * 30), 50, user, 3, 1)
 					Fire(user.x - 3, user.y, user.z, 2, 50)
 
 				sleep(20)
@@ -64,7 +64,7 @@ skill
 			name = "Fire: Hôsenka"
 			icon_state = "katon_phoenix_immortal_fire"
 			default_chakra_cost = 50
-			default_cooldown = 10
+			default_cooldown = 40//10
 
 
 
@@ -86,7 +86,7 @@ skill
 						var/ex=etarget.x
 						var/ey=etarget.y
 						var/ez=etarget.z
-						AOE(ex,ey,ez,1,(100 +30*conmult),20,user,3,1)
+						AOEFire(ex,ey,ez,1,(100 +30*conmult),20,user,3,1)
 						Fire(ex,ey,ez,1,20)
 				else
 					var/ex=etarget.x
@@ -96,8 +96,8 @@ skill
 
 					projectile_to(eicon,estate,user,x)
 					//del(x)
-					x.loc = null
-					AOE(ex,ey,ez,1,(100 +30*conmult),20,user,3,1)
+					x.dispose()
+					AOEFire(ex,ey,ez,1,(100 +30*conmult),20,user,3,1)
 					Fire(ex,ey,ez,1,20)
 				user.icon_state=""
 
@@ -120,8 +120,8 @@ skill
 				user.icon_state="Seal"
 				user.overlays+='icons/breathfire2.dmi'
 				//user.stunned=10
-				user.Timed_Stun(30)
-				user.set_icon_state("Seal", 30)
+				user.Timed_Stun(12)
+				user.set_icon_state("Seal", 12)
 				var/dir = user.dir
 				var/mob/human/player/etarget = user.NearestTarget()
 				if(etarget)
@@ -130,18 +130,18 @@ skill
 				var/conmult = user.ControlDamageMultiplier()
 				//AOE(x,y,z,radius,stamdamage,duration)
 				if(dir==NORTH)
-					AOE(user.x,user.y+5,user.z,4,(75+40*conmult),90,user,2,1)
+					AOEFire(user.x,user.y+5,user.z,4,(75+40*conmult),90,user,2,1)
 					Ash(user.x,user.y+5,user.z,100)
 				if(dir==SOUTH)
-					AOE(user.x,user.y-5,user.z,4,(75+40*conmult),90,user,2,1)
+					AOEFire(user.x,user.y-5,user.z,4,(75+40*conmult),90,user,2,1)
 					Ash(user.x,user.y-5,user.z,100)
 				if(dir==EAST)
-					AOE(user.x+5,user.y,user.z,4,(75+40*conmult),90,user,2,1)
+					AOEFire(user.x+5,user.y,user.z,4,(75+40*conmult),90,user,2,1)
 					Ash(user.x+5,user.y,user.z,100)
 				if(dir==WEST)
-					AOE(user.x-5,user.y,user.z,4,(75+40*conmult),90,user,2,1)
+					AOEFire(user.x-5,user.y,user.z,4,(75+40*conmult),90,user,2,1)
 					Ash(user.x-5,user.y,user.z,100)
-				sleep(30)
+				sleep(12)
 				if(user)
 					user.overlays-='icons/breathfire2.dmi'
 
@@ -169,21 +169,28 @@ skill
 
 				var/mob/result=Trail_Straight_Projectile(user.x,user.y,user.z,user.dir,o,14,user)
 				if(result)
-					result.Timed_Move_Stun(100)
+					result.Timed_Move_Stun(100,2)
 					new/Event(45, "delayed_delete", list(o))
 					new/Event(40, "fire_dragon_end", list(user, result, I2))
 
 					o.overlays+=image('icons/dragonfire.dmi',icon_state="hurt")
 					var/turf/T=result.loc
 					var/conmult = user.ControlDamageMultiplier()
-					result.Dec_Stam(rand(1500,2000)+500*conmult,0,user)
-					result.Wound(rand(5,10)+round(conmult),0,user)
+					result.Damage(rand(1500,2000)+500*conmult,rand(5,10)+round(conmult),user, "Fire: Dragon Projectile")//result.Dec_Stam(rand(1500,2000)+500*conmult,0,user)
+					//result.Wound(rand(5,10)+round(conmult),0,user)
+					if(result.fire_counter)
+						result.Timed_Stun(30)
+						result.fire_counter = 0
+						result.fire_counter_cooldown = world.time + 30
+						//explosion(0, result.x, result.y, result.z, user, dontknock=1, dist = 3)
+						explosion(0, 0, result.loc, user, list("distance" = 3))
 					var/ie=3
 					while(result&&T==result.loc && ie>0)
 						ie--
-						result.Dec_Stam(rand(250,600)+50*conmult,0,user)
-						result.Wound(rand(1,3)+round(conmult/2),0,user)
+						result.Damage(rand(250,600)+50*conmult,rand(1,3)+round(conmult/2),user, "Fire: Dragon Projectile")//result.Dec_Stam(rand(250,600)+50*conmult,0,user)
+						//result.Wound(rand(1,3)+round(conmult/2),0,user)
 						result.Hostile(user)
+						result.increase_fire_counter(1)
 						sleep(15)
 
 				else

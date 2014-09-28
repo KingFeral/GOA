@@ -186,7 +186,7 @@ skill
 			name = "Medical: Chakra Scalpel"
 			icon_state = "mystical_palm_technique"
 			default_chakra_cost = 100
-			default_cooldown = 30
+			default_cooldown = 90
 
 			IsUsable(mob/user)
 				. = ..()
@@ -210,14 +210,18 @@ skill
 
 
 			Use(mob/human/user)
+				set waitfor = 0
 				if(user.scalpol)
 					user.special=0
 					user.scalpol=0
 					user.weapon=new/list()
 					user.Load_Overlays()
+					user.scalpoltime=0
+					RemoveOverlay('icons/activation.dmi')
 					ChangeIconState("mystical_palm_technique")
 				else
-					user.combat("Your hands are now equipped with chakra scalpels! You can only use medical skills and Body Replacement while this is active. Wait between attacks for a higher chance to critical hit.")
+					AddOverlay('icons/activation.dmi')
+					user.combat("Your hands are now equipped with chakra scalpels! This skill will drain your chakra heavily while active. Wait between attacks for a higher chance to critical hit.")
 					user.scalpol=1
 					user.overlays+='icons/chakrahands.dmi'
 					user.special=/obj/chakrahands
@@ -225,8 +229,15 @@ skill
 					user.weapon=list('icons/chakraeffect.dmi')
 					user.Load_Overlays()
 					ChangeIconState("mystical_palm_technique_cancel")
-
-
+					var/reduced_drain = 4 * user.skillspassive[MEDICAL_TRAINING]
+					var/regenlag = world.tick_lag
+					while(user && user.scalpol && user.curchakra >= 0)
+						user.scalpoltime = min(10, user.scalpoltime + 1 * regenlag)
+						user.curchakra -= 80 - reduced_drain
+						sleep(10)
+					if(user && user.scalpol)
+						src.Use(user)
+						DoCooldown(user)
 
 
 		cherry_blossom_impact
@@ -282,9 +293,11 @@ skill
 
 			Use(mob/human/user)
 				var/mob/human/player/etarget = user.NearestTarget()
-				var/CX=rand(1,(user.con+user.conbuff-user.conneg))
-				var/Cx=rand(1,(etarget.con+etarget.conbuff-etarget.conneg))
-				if(CX>Cx)
+				var/con_roll = Roll_Against((user.con+user.conbuff-user.conneg), (etarget.con+etarget.conbuff-etarget.conneg), 100)
+				//var/CX=rand(1,(user.con+user.conbuff-user.conneg))
+				//var/Cx=rand(1,(etarget.con+etarget.conbuff-etarget.conneg))
+				//if(CX>Cx)
+				if(con_roll >= 3)
 					user.combat("Nervous system disruption succeeded!")
 					etarget.combat("Your nervous system has been attacked, you are unable to control your muscles!")
 					etarget.overlays+='icons/disturbance.dmi'
@@ -298,7 +311,8 @@ skill
 						dirs2 -= new_dir
 						etarget.movement_map["[orig_dir]"] = new_dir
 					spawn(600)
-						if(etarget) etarget.movement_map = null
+						if(etarget && etarget.movement_map)
+							etarget.movement_map = null
 				else
 					user.combat("Nervous system disruption failed!")
 
@@ -411,12 +425,34 @@ skill
 									var/stamina_dmg = 50 * user.skillspassive[OPEN_WOUNDS]
 									if(user.skillspassive[MEDICAL_TRAINING])
 										stamina_dmg *= 1 + 0.05 * user.skillspassive[MEDICAL_TRAINING]
-									M.Dec_Stam(stamina_dmg, 0, user)
-									M.Poison += round(user.skillspassive[OPEN_WOUNDS] / 2)
+									M.Damage(stamina_dmg, 0, user, "Poison", "Internal")//M.Dec_Stam(stamina_dmg, 0, user)
+									M.poison(user.skillspassive[OPEN_WOUNDS] / 2)//M.Poison += round(user.skillspassive[OPEN_WOUNDS] / 2)
 								M.Hostile(user)
 
 
 
+mob
+	var/tmp/poison_loop = 0
+
+	proc/poison(amount)
+		set waitfor = 0
+		if(clan == "Battle Conditioned")
+			return
+		Poison += amount
+		if(poison_loop)
+			return
+		poison_loop = 1
+		var/poison_multiplier = 1
+		var/regenlag = world.tick_lag
+		var/sleeptime = 10 * regenlag
+		while(src && Poison > 0)
+			curchakra -= round(Poison / 2 * poison_multiplier) * regenlag
+			curstamina -= round(Poison * poison_multiplier) * regenlag
+			++Recovery
+			if(Recovery >= 2)
+				Recovery = 0
+				Poison -= 1 * regenlag
+			sleep(sleeptime)
 
 obj
 	chakrahands
@@ -459,8 +495,8 @@ obj
 							var/stamina_dmg = 10 * owner.skillspassive[OPEN_WOUNDS]
 							if(owner.skillspassive[MEDICAL_TRAINING])
 								stamina_dmg *= 1 + 0.05 * owner.skillspassive[MEDICAL_TRAINING]
-							m.Dec_Stam(stamina_dmg, 0, owner)
-							m.Poison += round(owner.skillspassive[OPEN_WOUNDS] / 2)
+							m.Damage(stamina_dmg, 0, owner, "Poison")//m.Dec_Stam(stamina_dmg, 0, owner)
+							m.poison(owner.skillspassive[OPEN_WOUNDS] / 2)//m.Poison += round(owner.skillspassive[OPEN_WOUNDS] / 2)
 						if(m.movepenalty<20)
 							m.movepenalty=25
 						m.Hostile(owner)

@@ -79,6 +79,8 @@ mob/human/player
 						usr.tempmute=0
 
 	Topic(href, href_list)
+		if(!client)
+			return
 		switch(href_list["action"])
 			if("view_whisper")
 				winshow(src, "whisper__[href_list["name"]]")

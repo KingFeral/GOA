@@ -51,12 +51,17 @@ skill
 		face_nearest = 0
 		modified
 		noskillbar
-		set_cooldown = 0 // used when a skill is canceled for whatever reason and should not use its default cooldown.
-		no_skill_delay = 0
+		tmp/set_cooldown = 0 // used when a skill is canceled for whatever reason and should not use its default cooldown.
+		tmp/skill_delay = 1 // 1/10 seconds
+		tmp/cooling_down = 0
+		tmp/activated = 0
 
 	proc
 		IsUsable(mob/user)
-			if(user.skillusecool > world.time || user.skillcooldown)
+			//if(user.skillusecool > world.time || user.skillcooldown)
+			//	return 0
+			if(user.sixty_four_palms > world.time)
+				Error(user, "You cannot use any skills while Sixty Four Palms stance is activated.")
 				return 0
 			if(cooldown > 0)
 				Error(user, "Cooldown Time ([cooldown] seconds)")
@@ -70,9 +75,9 @@ skill
 			else if(user.supplies < SupplyCost(user))
 				Error(user, "Insufficient Supplies ([user.supplies]/[SupplyCost(user)])")
 				return 0
-			else if(user.scalpol && !(id in scalpels_only))
-				Error(user, "You can only use medical ninjutsu and Body Replacement while Chakra Scalpels are active.")
-				return 0
+			//else if(user.scalpol && !(id in scalpels_only))
+			//	Error(user, "You can only use medical ninjutsu and Body Replacement while Chakra Scalpels are active.")
+			//	return 0
 			else if(user.gate && ChakraCost(user) && !istype(src, /skill/taijutsu/gates) && !(istype(src, /skill/body_replacement) || istype(src, /skill/body_flicker)))
 				Error(user, "This skill cannot be used while a gate is active")
 				return 0
@@ -82,9 +87,11 @@ skill
 			else if(user.Size==2 && !istype(src, /skill/akimichi/super_size_multiplication))
 				Error(user, "This skill cannot be used while a Super Size Multiplication is active")
 				return 0
-			if(user.dancing_shadow && !istype(src, /skill/taijutsu/strong_fist))
-				Error(user, "This skill cannot be used while Dancing Leaf Shadow is active")
+			if(!(istype(src, /skill/taijutsu/strong_fist) || istype(src, /skill/weapon)) && user.stance == STRONG_FIST)
+				Error(user, "This skill cannot be used while Strong Fist is active")
 				return 0
+			if(user.client && user.keys["shift"])
+				modified = 1
 			return 1
 
 
@@ -130,7 +137,7 @@ skill
 		Activate(mob/human/user)
 			//set waitfor = 0
 			if(user.leading)
-				user.leading=0
+				user.leading = 0
 				return
 
 			if(user.rasengan==1)
@@ -138,21 +145,31 @@ skill
 			else if(user.rasengan==2)
 				user.ORasengan_Fail()
 
-			if(user.isguard)
-				user.icon_state=""
-				user.isguard=0
+			if(!user)
+				return
 
+			if(user.isguard)
+				user.icon_state = ""
+				user.isguard = 0
+
+			/**
+			 * What is this?
 			if(user.zetsu)
 				user.invisibility=1
 				user.density=1
 				user.targetable=1
 				user.protected=0
 				user.zetsu=0
+			*
+			*/
 
 			if(user.camo)
-				user.Affirm_Icon()
-				user.Load_Overlays()
-				user.camo=0
+				var/skill/camouflaged_hiding/camou = user.GetSkill(CAMOUFLAGE_CONCEALMENT)
+				if(camou)
+					camou.deactivate(user, time = 50)
+				//user.Affirm_Icon()
+				//user.Load_Overlays()
+				//user.camo = 0
 
 			if(charging)
 				charging = 0
@@ -160,8 +177,8 @@ skill
 
 			if(user.skillusecool > world.time || user.skillcooldown || (user.handseal_stun && !istype(src, /skill/body_flicker)) || !user.CanUseSkills(id) || !IsUsable(user) || (user.mane && !istype(src,/skill/nara)))
 				return
-			user.skillcooldown=1
 
+			user.skillcooldown = 1
 			user.curchakra -= ChakraCost(user)
 			user.curstamina -= StaminaCost(user)
 			user.supplies -= SupplyCost(user)
@@ -212,11 +229,15 @@ skill
 			DoSeals(user)
 
 			if(user && user.CanUseSkills(id))
-				Use(user)
+				if(user.controlmob && id != EXPLODING_KAGE_BUNSHIN)
+					Use(user.controlmob)
+				else
+					Use(user)
 
 			if(!user) return
-			user.skillusecool = (id == LEAF_WHIRLWIND) ? world.time + 10 : world.time + 5
-			user.skillcooldown=0
+			if(!user.controlmob && skill_delay)
+				user.skillusecool = world.time + skill_delay
+			user.skillcooldown = 0
 
 			DoCooldown(user)
 
@@ -224,6 +245,8 @@ skill
 		DoSeals(mob/human/user)
 			var/time = SealTime(user)
 			if(time)
+				if(user.controlmob)
+					user = user.controlmob
 				user.icon_state="HandSeals"
 				user.handseal_stun = 1
 				for(, time > 0, --time)
@@ -231,9 +254,9 @@ skill
 					if(!user || !user.CanUseSkills())
 						break
 				if(user)
-					user.icon_state=""
+					user.icon_state = ""
 					user.handseal_stun = 0
-
+					default_seal_time = initial(default_seal_time)
 
 		DoCooldown(mob/user, resume = 0,presettime=0)
 			set waitfor = 0
@@ -244,13 +267,18 @@ skill
 					cooldown = set_cooldown
 				else if(!resume) cooldown = Cooldown(user)
 
+			if(!cooldown || cooling_down)
+				return
+
 			for(var/skillcard/card in skillcards)
 				card.overlays -= 'icons/dull.dmi'
+				//card.overlays -= 'icons/activation.dmi'
 			if(master)
 				for(var/skillcard/card in master.skillcards)
 					card.overlays -= 'icons/dull.dmi'
+					//card.overlays -= 'icons/activation.dmi'
 
-			if(!cooldown) return
+			cooling_down = 1
 
 			for(var/skillcard/card in skillcards)
 				card.overlays += 'icons/dull.dmi'
@@ -263,6 +291,9 @@ skill
 				--cooldown
 
 			set_cooldown = 0
+			modified = 0
+			cooling_down = 0
+			activated = 0
 
 			for(var/skillcard/card in skillcards)
 				card.overlays -= 'icons/dull.dmi'
@@ -272,8 +303,8 @@ skill
 
 
 		Error(mob/user, message)
-			user.combat("[src] can not be used currently: [message]")
-
+			if(user.client)
+				user.combat("[src] can not be used currently: [message]")
 
 		ChangeIconState(new_state)
 			icon_state = new_state
@@ -602,7 +633,7 @@ mob
 			if(client)
 				var/grid_item = 0
 				for(var/skillcard/X in contents)
-					if(client && !(X.skill.id in list(GATE2,GATE2,GATE3,GATE4,GATE5,GATE6/*,GATE7,GATE8*/))) src << output(X, "skills_grid:[++grid_item]")
+					if(client && !(X.skill.id in list(GATE2,GATE2,GATE3,GATE4,GATE5,GATE6/*,GATE7,GATE8*/,DOTON_CHAMBER_CRUSH))) src << output(X, "skills_grid:[++grid_item]")
 				if(client) winset(src, "skills_grid", "cells=[grid_item]")
 
 

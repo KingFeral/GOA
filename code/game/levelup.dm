@@ -1,76 +1,74 @@
-mob/human/var/tmp
-	_img_str_cache
-	_img_con_cache
-	_img_int_cache
-	_img_rfx_cache
-	_img_levelpoints_cache
-	_img_skillpoints_cache
+mob/
+	var/tmp
+		_img_str_cache
+		_img_con_cache
+		_img_int_cache
+		_img_rfx_cache
+		_img_levelpoints_cache
+		_img_skillpoints_cache
 
 
-mob/human/proc/Refresh_Stat_Screen()
-	set waitfor = 0
-	//if(!EN[9])
-	//	return
-	if(!src)
-		return
-	if(!client)
-		return
-	if(_img_str_cache != round(str))
-		//del Screen_Num[4]
-		if(Screen_Num[4])
-			var/image/cache_image = Screen_Num[4]
-			cache_image.loc = null
-		var/turf/over_loc = locate_tag("maptag_skilltree_str")
-		Screen_Num[4]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(str))
-		_img_str_cache = round(str)
-	if(_img_con_cache != round(con))
-		if(Screen_Num[5])
-			var/image/cache_image = Screen_Num[5]
-			cache_image.loc = null
-		var/turf/over_loc = locate_tag("maptag_skilltree_con")
-		Screen_Num[5]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(con))
-		_img_con_cache = round(con)
-	if(_img_int_cache != round(int))
-		if(Screen_Num[6])
-			var/image/cache_image = Screen_Num[6]
-			cache_image.loc = null
-		var/turf/over_loc = locate_tag("maptag_skilltree_int")
-		Screen_Num[6]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(int))
-		_img_int_cache = round(int)
-	if(_img_rfx_cache != round(rfx))
-		if(Screen_Num[7])
-			var/image/cache_image = Screen_Num[7]
-			cache_image.loc = null
-		var/turf/over_loc = locate_tag("maptag_skilltree_rfx")
-		Screen_Num[7]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(rfx))
-		_img_rfx_cache = round(rfx)
+mob
+	proc/Refresh_Stat_Screen()
+		set waitfor = 0
+		if(!src || !client)
+			return
+		if(_img_str_cache != round(str))
+			//del Screen_Num[4]
+			if(Screen_Num[4])
+				var/image/cache_image = Screen_Num[4]
+				cache_image.loc = null
+			var/turf/over_loc = locate_tag("maptag_skilltree_str")
+			Screen_Num[4]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(str))
+			_img_str_cache = round(str)
+		if(_img_con_cache != round(con))
+			if(Screen_Num[5])
+				var/image/cache_image = Screen_Num[5]
+				cache_image.loc = null
+			var/turf/over_loc = locate_tag("maptag_skilltree_con")
+			Screen_Num[5]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(con))
+			_img_con_cache = round(con)
+		if(_img_int_cache != round(int))
+			if(Screen_Num[6])
+				var/image/cache_image = Screen_Num[6]
+				cache_image.loc = null
+			var/turf/over_loc = locate_tag("maptag_skilltree_int")
+			Screen_Num[6]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(int))
+			_img_int_cache = round(int)
+		if(_img_rfx_cache != round(rfx))
+			if(Screen_Num[7])
+				var/image/cache_image = Screen_Num[7]
+				cache_image.loc = null
+			var/turf/over_loc = locate_tag("maptag_skilltree_rfx")
+			Screen_Num[7]=DisplayNumber(over_loc.x,over_loc.y,over_loc.z,round(rfx))
+			_img_rfx_cache = round(rfx)
 
-	//Refresh_Gold()
-	Refresh_Levelpoints()
-	Refresh_Skillpoints()
+		//Refresh_Gold()
+		Refresh_Levelpoints()
+		Refresh_Skillpoints()
 
-mob/human/proc/Refresh_Levelpoints()
-	if(_img_levelpoints_cache != levelpoints)
-		if(Screen_Num[1])
-			var/image/cache_image = Screen_Num[1]
-			cache_image.loc = null
-		var/turf/over_loc = locate_tag("maptag_skilltree_attrib")
-		Screen_Num[1]=DisplayNumberO(over_loc.x,over_loc.y,over_loc.z,levelpoints,"levelpoints")
-		_img_levelpoints_cache = levelpoints
+	proc/Refresh_Levelpoints()
+		if(_img_levelpoints_cache != levelpoints)
+			if(Screen_Num[1])
+				var/image/cache_image = Screen_Num[1]
+				cache_image.loc = null
+			var/turf/over_loc = locate_tag("maptag_skilltree_attrib")
+			Screen_Num[1]=DisplayNumberO(over_loc.x,over_loc.y,over_loc.z,levelpoints,"levelpoints")
+			_img_levelpoints_cache = levelpoints
 
-mob/human/proc/Refresh_Skillpoints()
-	if(_img_skillpoints_cache != skillpoints)
-		if(Screen_Num[2])
-			var/image/cache_image1 = Screen_Num[2]
-			cache_image1.loc = null
-		if(Screen_Num[3])
-			var/image/cache_image1 = Screen_Num[3]
-			cache_image1.loc = null
-		var/turf/over_loc = locate_tag("maptag_skilltree_skillpoints_clan")
-		Screen_Num[2]=DisplayNumberO(over_loc.x,over_loc.y,over_loc.z,skillpoints,"skillpoints")
-		over_loc = locate_tag("maptag_skilltree_skillpoints_nonclan")
-		Screen_Num[3]=DisplayNumberO(over_loc.x,over_loc.y,over_loc.z,skillpoints,"skillpoints")
-		_img_skillpoints_cache = skillpoints
+	proc/Refresh_Skillpoints()
+		if(_img_skillpoints_cache != skillpoints)
+			if(Screen_Num[2])
+				var/image/cache_image1 = Screen_Num[2]
+				cache_image1.loc = null
+			if(Screen_Num[3])
+				var/image/cache_image1 = Screen_Num[3]
+				cache_image1.loc = null
+			var/turf/over_loc = locate_tag("maptag_skilltree_skillpoints_clan")
+			Screen_Num[2]=DisplayNumberO(over_loc.x,over_loc.y,over_loc.z,skillpoints,"skillpoints")
+			over_loc = locate_tag("maptag_skilltree_skillpoints_nonclan")
+			Screen_Num[3]=DisplayNumberO(over_loc.x,over_loc.y,over_loc.z,skillpoints,"skillpoints")
+			_img_skillpoints_cache = skillpoints
 
 image/var
 	group=0

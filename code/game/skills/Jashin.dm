@@ -17,7 +17,8 @@ skill
 			Use(mob/user)
 				oviewers(user) << output("[user] stabbed himself!", "combat_output")
 				user.combat("You stabbed yourself!")
-				user.Wound(10,3,user)
+				//user.Wound(10,3,user)
+				user.Damage(0, 10, user, "Stab Self", "Internal")
 				Blood2(user)
 
 

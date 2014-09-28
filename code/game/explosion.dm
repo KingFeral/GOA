@@ -1,7 +1,7 @@
 mob
 	var
 		motion=0
-
+/*
 obj
 	Explosion
 		icon='icons/explosion2.dmi'
@@ -56,7 +56,7 @@ obj
 					owned+=hit
 					hit.icon_state = "hurt"
 					if(hit)
-						hit.Dec_Stam(src.pow,0,src.owner,1)
+						hit.Damage(pow, 0, owner,)//hit.Dec_Stam(src.pow,0,src.owner,1)
 						hit.Hostile(src.owner)
 
 			if(hit)hit.animate_movement=2
@@ -95,3 +95,4 @@ obj
 				if(X.icon_state=="hurt")
 					X.icon_state=""
 			owned = null
+*/

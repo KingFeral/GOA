@@ -116,7 +116,7 @@ skill
 					if(user) user.overlays-='icons/senpuu.dmi'
 				sleep(15)
 				if(etarget && etarget.ko) return
-				if(user && get_dist(user, etarget) <= 2)//if(user && etarget && etarget.x==vx && etarget.y==vy && etarget.z==vz)
+				if(user && get_dist(user, etarget) <= 2 && !etarget.IsProtected())//if(user && etarget && etarget.x==vx && etarget.y==vy && etarget.z==vz)
 					user.Taijutsu(etarget)
 
 					user.AppearBefore(etarget)
@@ -614,15 +614,15 @@ skill
 					sleep(1)
 					if(etarget && user)
 						if(result>=5)
-							etarget.Dec_Stam(2000*multiplier,0,user)
+							etarget.Damage(2000*multiplier, 0, user, "Lion Combo")//etarget.Dec_Stam(2000*multiplier,0,user)
 						if(result==4)
-							etarget.Dec_Stam(1700*multiplier,0,user)
+							etarget.Damage(1700*multiplier, 0, user, "Lion Combo")//etarget.Dec_Stam(1700*multiplier,0,user)
 						if(result==3)
-							etarget.Dec_Stam(1400*multiplier,0,user)
+							etarget.Damage(1400*multiplier, 0, user, "Lion Combo")//etarget.Dec_Stam(1400*multiplier,0,user)
 						if(result==2)
-							etarget.Dec_Stam(1000*multiplier,0,user)
+							etarget.Damage(1000*multiplier, 0, user, "Lion Combo")//etarget.Dec_Stam(1000*multiplier,0,user)
 						if(result==1)
-							etarget.Dec_Stam(700*multiplier,0,user)
+							etarget.Damage(700*multiplier, 0, user, "Lion Combo")//etarget.Dec_Stam(700*multiplier,0,user)
 						if(result<=0)
 							user.combat("[etarget] managed to defend himself from all of your attacks!")
 							etarget.combat("You managed to defend yourself from all of [user]'s attacks!")
@@ -870,7 +870,7 @@ skill
 						gate_counter++
 						if(gate_counter >= (30 - (user.gate * 5)))
 							gate_counter = 0
-							user.Wound(wounds, 0, user)
+							user.Damage(0, wounds, user, "Gate Stress", "Internal")//user.Wound(wounds, 0, user)
 							user.gate_wounds += wounds
 						sleep(10)
 
@@ -1059,9 +1059,11 @@ mob/proc
 		if(src.curstamina>src.stamina)
 			src.curstamina=src.stamina
 		if(clan == "Youth")
-			Wound(gate_wounds * 0.5, 0, src)
+			//Wound(gate_wounds * 0.5, 0, src)
+			Damage(0, gate_wounds * 0.5, null, "Gates", "Internal")
 		else
-			Wound(gate_wounds, 0, src)
+			//Wound(gate_wounds, 0, src)
+			Damage(0, gate_wounds, null, "Gates", "Internal")
 		gate_wounds=0
 		src.strbuff=0
 		src.rfxbuff=0
@@ -1079,8 +1081,8 @@ mob/proc
 
 			if(M.larch)
 				Blood2(src)
-				src.Wound(rand(5,10))
-				src.Dec_Stam(rand(100,500))
+				Damage(rand(100, 500), rand(5, 10), M, "Bone Spines")//src.Wound(rand(5,10))
+				//src.Dec_Stam(rand(100,500))
 				src.Hostile(M)
 				//src.move_stun+=3
 				src.Timed_Move_Stun(3)
@@ -1095,7 +1097,8 @@ mob/proc
 			sleep(1)
 		sleep(1)
 		src.pixel_y=0
-		explosion(1,src.x,src.y,src.z,src,1)
+		//explosion(1,src.x,src.y,src.z,src,1)
+		explosion(0, 0, loc, src)
 		src.incombo=0
 		src.pixel_x=0
 		//src.stunned=2

@@ -79,13 +79,20 @@ obj/interactable
 				set src in oview(1)
 
 mob/human/npc/shopnpc
-	Dec_Stam()
+	/*Dec_Stam()
 		return
 	Wound()
 		return
+	*/
+
+	Damage()
+		return
+
 	Hostile()
 		return
+
 	interact="Shop"
+
 	verb
 		Shop()
 			set src in oview(1)
@@ -226,16 +233,19 @@ mob/proc
 	Protect(protect_time as num)
 		set waitfor = 0
 		protected++
-		while(protect_time > 0)
-			if(protectendall)
-				--protectendall
-				if(protectendall < 0) protectendall = 0
-				break
+		noknock++
+		if(protect_time)
+			while(protect_time > 0)
+				if(protectendall)
+					--protectendall
+					if(protectendall < 0) protectendall = 0
+					break
 
-			protect_time--
-			sleep(1)
-		protected--
-		if(protected < 0) protected = 0
+				protect_time--
+				sleep(1)
+			protected--
+			noknock--
+			if(protected < 0) protected = 0
 
 	End_Protect()
 		if(protected > 0)
@@ -246,6 +256,8 @@ mob/proc
 		if(protected/* || mole*/)
 			return 1
 		for(var/obj/Shield/s in oview(1,src))
+			if(istype(s, /obj/Shield/water_collision) && s.owner == src)
+				return 1
 			if(istype(src, /mob/human/Puppet))
 				if(src == s.owner)
 					return 1
@@ -342,8 +354,8 @@ mob/human
 					var/obj/t = new/obj(Xe.loc)
 					t.icon='icons/gatesmack.dmi'
 					flick("smack",t)
-					del(t)
-					Xe.Dec_Stam((src.str+src.strbuff-strneg)*pick(1,3)+400,1,src)
+					t.dispose()//del(t)
+					Xe.Damage((src.str+src.strbuff-strneg)*pick(1,3)+400,0,src,"Meat Tank")//Xe.Dec_Stam((src.str+src.strbuff-strneg)*pick(1,3)+400,1,src)
 					Xe.Hostile(src)
 					if(!Xe.Tank)
 						Xe.loc=locate(src.x,src.y,src.z)
@@ -372,10 +384,10 @@ mob/human
 		//	return ..()
 		if(src.zetsu)
 			return ..()
-		if(!src.movedrecently)
+		/*if(!src.movedrecently)
 			src.movedrecently++
 			if(src.movedrecently>10)
-				src.movedrecently=10
+				src.movedrecently=10*/
 
 		if(src.isguard)
 			src.icon_state=""
@@ -527,17 +539,17 @@ mob/human
 		//decrease_running_speed()
 
 		//(10)
-		//new/Event(10, "decrease_running_speed", list(src))
-		spawn(10)
+		new/Event(10, "decrease_running_speed", list(src))
+		/*spawn(10)
 			src.runlevel--
-			if(src.icon_state=="Run" &&src.runlevel<3)
-				src.icon_state=""
-		if(src.runlevel>4 &&!src.Size)
-			if(!src.icon_state &&!src.rasengan &&!src.larch)
-				src.icon_state="Run"
+			if(src.icon_state == "Run" && src.runlevel < 3)
+				src.icon_state = ""
+		if(src.runlevel > 4 && !src.Size)
+			if(/*!src.icon_state &&*/!src.rasengan && !src.larch)
+				src.icon_state = "Run"
 		else
-			if(src.icon_state=="Run")
-				src.icon_state=""
+			//if(src.icon_state=="Run")
+			src.icon_state = ""*/
 
 		canmove=0
 		if(!dancing_shadow)
@@ -560,7 +572,7 @@ mob/human
 			sleep(1)
 		canmove=1
 
-
+/*
 mob/Bump(obstacle)
 	//bumped(obstacle)
 	if(hascall(obstacle, "on_bump"))
@@ -570,7 +582,7 @@ mob/Bump(obstacle)
 
 atom
 	proc/bumped(atom/movable/am)
-
+*/
 
 obj/Bonespire
 	proc/on_bump(mob/crossing)
@@ -759,9 +771,12 @@ mob
 			set name="Interact"
 			set hidden = 1
 			if(usr.camo)
-				usr.Affirm_Icon()
+				/*usr.Affirm_Icon()
 				usr.Load_Overlays()
-				usr.camo=0
+				usr.camo=0*/
+				var/skill/camouflaged_hiding/camo = GetSkill(CAMOUFLAGE_CONCEALMENT)
+				if(camo)
+					camo.deactivate(usr)
 			if(usr.lastwitnessing && usr.lastwitnessing_time >= world.time && usr.sharingan && usr:HasSkill(SHARINGAN_COPY))
 				var/skill/uchiha/sharingan_copy/copy = usr:GetSkill(SHARINGAN_COPY)
 				var/skill/copied = copy.CopySkill(usr.lastwitnessing)
@@ -788,36 +803,14 @@ mob
 				return
 			if(usr.controlmob || usr.tajuu)
 				for(var/mob/human/player/npc/kage_bunshin/X in world)
-					if(X.ownerkey==usr.key || X.owner==usr)
-						var/dx=X.x
-						var/dy=X.y
-						var/dz=X.z
-						if(dx&&dy&&dz)
-							if(!X:exploading)
-								Poof(X.loc)//(dx,dy,dz)
-							else
-								X:exploading=0
-								explosion(rand(1000,2500),dx,dy,dz,usr)
-								X.icon=0
-								X.targetable=0
-								X.invisibility=100
-								X.density=0
-								sleep(5)
-						if(usr.client.eye!=usr.client.mob&&usr.client)
-							usr.client.eye = usr.client.mob
-							usr.controlmob = 0
-						if(X)
-							//if(locate(X) in usr.pet)
-							//	usr.pet-=X
-							X.dispose()
-							//X.loc=null
-							//X.owner = null
-				usr.tajuu=0
-				//usr.RecalculateStats()
-				usr.controlmob=0
+					if(X.ownerkey == usr.key || X.owner == usr)
+						X.destroyed()
+				usr.tajuu = 0
+				usr.controlmob = 0
 				if(usr.client && usr.client.mob)
-					usr.client.eye=usr.client.mob
-					src.hidestat=0
+					usr.client.eye = usr.client.mob
+					src.hidestat = 0
+				return
 
 			if(usr.curwound >= usr.maxwound && usr.ko)
 				usr.Respawn()
@@ -895,8 +888,397 @@ mob/proc/Blood_Add(mob/V)
 		sleep(600)
 		bloodrem-=V
 
-mob/var/pill=0
-mob/var/combo=0
+mob
+	var/tmp/pill = 0
+	var/tmp/combo = 0
+
+
+mob/human/npc/Damage()
+	return
+
+mob
+	proc
+		KO()
+			if(ko) return
+			if(istype(src, /mob/human/player/npc) && src:lasthurtme)
+				var/mob/attacker = src:lasthurtme
+				if(attacker && attacker.client)
+					attacker.ez_count = 0
+					attacker.ez_immune = 30
+			else if(client)
+				for(var/mob/m in ohearers(10, src))
+					if(m.key == lasthostile)
+						m.ez_count = 0
+						m.ez_immune = 30
+
+			//ez_count = 0
+			//ez_immune = 60
+
+			var/mob/killer
+			for(var/mob/m in players)
+				if(lasthostile == m.key)
+					killer = m
+					break
+
+			if(!pk)
+				curstamina = stamina
+				curwound = 0
+
+			else if(gate >= 4)
+				Damage(0, rand(27, 32), killer, "KO", "Internal")//src.Wound(rand(27,33),3)
+				src.curstamina=src.stamina * ((maxwound-curwound)/maxwound)
+				src.curchakra=max(round(src.chakra/4), curchakra)
+
+			else
+				if(src.pill>=2)
+					src.overlays-='icons/Chakra_Shroud.dmi'
+					src.strbuff = 0
+					src.conbuff = 0
+					src.pill = 0
+					src.combat("The effects from the pill(s) wore off.")
+					for(var/skill/akimichi/curry_pill/currypill in skills)
+						currypill.DoCooldown(src,0,300)
+
+				src.Poison = 0
+				Damage(0, rand(27,33), killer, "KO")
+				//src.Wound(rand(27,33),3)
+				src.ko = 1
+
+				sleep(10)
+
+				flick("Knockout",src)
+
+				src.icon_state = "Dead"
+				src.layer = TURF_LAYER
+
+				for(var/obj/items/Heavenscroll/II in src.contents)
+					II.Drop()
+				for(var/obj/items/Earthscroll/EI in src.contents)
+					EI.Drop()
+
+				var/maxwound1 = 100
+				if(clan == "Will of Fire")
+					maxwound1 = 130
+				else if(clan == "Jashin")
+					maxwound1 = 150
+					if(immortality)
+						maxwound1 = 300
+
+				if(movement_map) // cancel IBPD
+					movement_map = null
+
+				if(camo)
+					var/skill/camouflaged_hiding/camou = GetSkill(CAMOUFLAGE_CONCEALMENT)
+					if(camou)
+						camou.deactivate(src)
+
+				if(src.curwound<maxwound1||(src.immortality&&src.cexam!=5))
+					sleep(src.curwound + 100)
+					if(src.ko && src.curwound<300)
+						if(clan == "Will of Fire")
+							src.curstamina=src.stamina
+							if(curwound >= 100)
+								src.curstamina=src.stamina*1.25
+								src.curchakra=src.chakra*1.25
+							if(skillspassive[ENDURANCE])
+								curstamina *= 1 + 0.03 * skillspassive[ENDURANCE]
+						else
+							var/durr=((maxwound-curwound)/maxwound)/2
+							if(durr<0)
+								durr=0
+							src.curstamina=src.stamina * durr + src.stamina/2
+							if(skillspassive[ENDURANCE])
+								curstamina *= 1 + 0.03 * skillspassive[ENDURANCE]
+						if(src.curchakra<src.chakra/5)
+							src.curchakra=src.chakra/5 +20
+
+					//if(clan == "Will of Fire")
+					//	combat("The Will of Fire burns within you..!")
+					//	WOF_adrenaline()
+					//src.protected=3
+					Protect(30)
+					Reset_Stun()
+					//Reset_Move_Stun()
+					movepenalty = round(movepenalty * 0.6)
+					//src.stunned=0
+					src.ko = 0
+					src.icon_state = ""
+					combat_flag(DEFENSE_FLAG, time = 120)
+				else
+					Die()
+
+		Damage(stamina_dmg, wound_dmg, mob/attacker, source, class="Normal")
+			if(ko || (!pk && !istype(src,/mob/human/Puppet)) || mole) return
+
+			// start counters
+			if(replacement && attacker && attacker != src && class != "Internal")
+				replacement.activate(src)
+				return
+
+			if(istype(attacker, /mob/human/player/npc/kage_bunshin))
+				stamina_dmg /= 4
+				wound_dmg /= 4
+
+			if(attacker && src && skillspassive[KEEN_EYE] && (HasSkill(attacker.lastskill) || (clan == "Uchiha" && HasSkill(SHARINGAN_COPY))))
+				if(clan == "Uchiha")
+					var/skill/uchiha/sharingan_copy/s = GetSkill(SHARINGAN_COPY)
+					if(s && s.copied_skill && s.copied_skill.id == attacker.lastskill)
+						x *= 1 - 0.02 * skillspassive[KEEN_EYE]
+				else// if(HasSkill(attacker.lastskill))
+					x *= 1 - 0.02 * skillspassive[KEEN_EYE]
+
+			if(attacker && attacker != src)
+				lasthostile = attacker.key
+
+			var/piercing_stamina_dmg = 0
+			if(source == "Taijutsu" && attacker && attacker.skillspassive[PIERCING_STRIKE])
+				piercing_stamina_dmg = round(stamina_dmg * 3 * attacker.skillspassive[PIERCING_STRIKE] / 100)
+				stamina_dmg -= piercing_stamina_dmg
+
+			var/deflection_stamina_dmg = 0
+			var/ironskin_stamina_dmg = 0
+			var/boneharden_dmg = 0
+			if(class != "Internal")
+				if(IsProtected() || kaiten)
+					if(source == "Taijutsu" && piercing_stamina_dmg)
+						stamina_dmg = 0
+						wound_dmg = 0
+					else
+						return
+
+				if(locate(/obj/Shield) in orange(1, src))
+					return
+
+				var/obj/earthcage/cage = locate() in loc
+				if(cage && stamina_dmg > 0 && source != "Earth Chamber Crush")
+					viewers(0, loc) << output("<font color=#eca940>The Doton Chamber has blocked [x] stamina damage!", "combat_output")
+					cage.Damage(stamina_dmg)
+					return
+
+				if(class == "Normal")
+					if(length(pet) && loc)
+						var/mob/human/sandmonster/S = locate() in (pet & loc.contents)
+						if(S)
+							flick("hurt", S)
+							--S.hp
+							if(S.hp <= 0)
+								S.loc = null
+							return
+
+					if(sandarmor)
+						var/damage = stamina_dmg + wound_dmg*100
+						wound_dmg = 0
+						var/sandarmor_leftover_dmg = sandarmor - damage
+						sandarmor = max(0, sandarmor - damage)
+
+						if(sandarmor)
+							combat("<font color=#eca940>Your sand armor absorbed [damage] from [attacker]!")
+							if(attacker && attacker != src) attacker.combat("<font color=#eca940>[src.name]'s sand armor absorbed [damage] from you!")
+							return
+						else
+							combat("<font color=#eca940>Your sand armor absorbed [damage] from [attacker] and broke!")
+							if(attacker && attacker != src) attacker.combat("<font color=#eca940>[src.name]'s sand armor absorbed [damage] from you and broke!")
+							stamina_dmg = abs(sandarmor_leftover_dmg)
+							wound_dmg = 0
+
+				if(attacker && attacker.skillspassive[BLINDSIDE] && attacker != src && attacker.squad != src.squad && source != "Rend" && source != "Demonic Ice Mirrors" && !byakugan && !istype(src,/mob/human/Puppet) && !istype(attacker,/mob/human/Puppet))
+					FilterTargets()
+					if((!(attacker in active_targets)))
+						if((attacker in targets))
+							piercing_stamina_dmg *= (1 + 0.05*attacker.skillspassive[BLINDSIDE])
+							stamina_dmg *= (1 + 0.05*attacker.skillspassive[BLINDSIDE])
+							wound_dmg *= (1 + 0.05*attacker.skillspassive[BLINDSIDE])
+						else
+							/**if(active_genjutsu == "Dark Genjutsu")
+								piercing_stamina_dmg *= (1 + 0.05*attacker.skillspassive[BLINDSIDE])
+								stamina_dmg *= (1 + 0.05*attacker.skillspassive[BLINDSIDE])
+								wound_dmg *= (1 + 0.05*attacker.skillspassive[BLINDSIDE])
+							else**/
+							piercing_stamina_dmg *= (1 + 0.10*attacker.skillspassive[BLINDSIDE])
+							stamina_dmg *= (1 + 0.10*attacker.skillspassive[BLINDSIDE])
+							wound_dmg *= (1 + 0.10*attacker.skillspassive[BLINDSIDE])
+
+				if(boneharden)
+					// TODO: Real math rather than these for loops
+					//var/bone_harden_reduction = (boneharden == 1) ? 3 : 4
+					while(curchakra > 0 && stamina_dmg > 0)
+						--curchakra
+						stamina_dmg -= 3//bone_harden_reduction
+						boneharden_dmg++
+					stamina_dmg = max(0, stamina_dmg)
+
+					while(curchakra >= 30 && wound_dmg >= 1)
+						curchakra -= 20
+						--wound_dmg
+						boneharden_dmg += 20
+					wound_dmg = max(0, wound_dmg)
+
+					if(curchakra <= 0)
+						var/skill/kaguya/bone_harden/BH = GetSkill(BONE_HARDEN)
+						BH.Use(src)
+						spawn() BH.Cooldown(src)
+
+				if(pill == 2)
+					if(stamina_dmg > 2) stamina_dmg *= 0.7
+					wound_dmg *= 0.8
+
+
+				if(Size)
+					if(stamina_dmg > 2) stamina_dmg *= 0.7
+					if(wound_dmg > 2) wound_dmg *= 0.7
+					wound_dmg = min(wound_dmg, 20)
+
+				if(Tank)
+					wound_dmg = min(wound_dmg, 10)
+
+				if(isguard)
+					stamina_dmg /= 2
+
+				if(clan == "Battle Conditioned")
+					stamina_dmg *= 0.8
+					if(class == "Normal")
+						wound_dmg *= 0.85
+
+				if(clan == "Jashin")
+					wound_dmg = min(wound_dmg, 100)
+
+				if(class == "Normal")
+					if(ironskin)
+						stamina_dmg /= 2
+						ironskin_stamina_dmg = wound_dmg * 100
+						wound_dmg = 0
+
+					if(wound_dmg)
+						var/effective_armor = AC / 100
+						if(isguard)
+							effective_armor = 1
+						effective_armor = max(0, min(effective_armor, 1))
+
+						//wound_dmg *= 1 - ((AC) / 175)
+						wound_dmg *= 1 - (((AC) / (AC * 1.2 + 180)))
+
+						//var/min_dmg = (effective_armor >= 1)?(1):(0) //(0):(1)
+						//wound_dmg = max(min_dmg, wound_dmg * (1-effective_armor) + wound_dmg * effective_armor * (100/(str+strbuff-strneg)))
+
+				if(skillspassive[BUILT_SOLID])
+					var/checked_wounds = 0
+
+					while(checked_wounds < wound_dmg && (deflection_stamina_dmg + 150) < curstamina)
+						++checked_wounds
+						if(prob(2*skillspassive[BUILT_SOLID]))
+							--wound_dmg
+							deflection_stamina_dmg += 150
+
+
+			var/total_stamina_dmg = max(0, round(stamina_dmg + piercing_stamina_dmg + deflection_stamina_dmg + ironskin_stamina_dmg))
+			var/stamina_msg = ""
+			if(total_stamina_dmg > 0)
+				var/detailed_stamina_msg = ""
+
+				if(piercing_stamina_dmg || deflection_stamina_dmg || ironskin_stamina_dmg)
+					detailed_stamina_msg = " ([stamina_dmg]"
+					if(piercing_stamina_dmg)
+						detailed_stamina_msg += " + [piercing_stamina_dmg] piercing"
+					if(deflection_stamina_dmg)
+						detailed_stamina_msg += " + [deflection_stamina_dmg] deflection"
+					if(ironskin_stamina_dmg)
+						if(ironskin == 1)
+							detailed_stamina_msg += " + [ironskin_stamina_dmg] Iron Skin"
+						else if(ironskin == 2)
+							detailed_stamina_msg += " + [ironskin_stamina_dmg] Larch Dance"
+					if(boneharden_dmg)
+						detailed_stamina_msg += " + [boneharden_dmg] Bone Harden"
+					detailed_stamina_msg += ")"
+
+				stamina_msg = "[total_stamina_dmg][detailed_stamina_msg] stamina damage"
+
+			wound_dmg = max(0, round(wound_dmg))
+			var/wound_msg = ""
+			if(wound_dmg > 0)
+				// TODO: Why is this proc (Damage)  not implemented on /mob/human anyway...
+				if(istype(src, /mob/human) && src:HasSkill(MASOCHISM))
+					var/Rlim=round(rfx/2.5)-rfxbuff
+					var/Slim=round(str/2.5)-strbuff
+					if(Rlim<0)
+						Rlim=0
+					if(Slim<0)
+						Slim=0
+					var/R=round(rfx/10)
+					var/S=round(str/10)
+					if(R>Rlim)
+						R=Rlim
+					if(S>Slim)
+						S=Slim
+					rfxbuff+=R
+					strbuff+=S
+					spawn(200)
+						rfxbuff-=R
+						strbuff-=S
+						/*if(rfxbuff<=0)
+							rfxbuff=0
+						if(strbuff<=0)
+							strbuff=0*/
+
+				if(Contract && source != "Sorcery: Death-Ruling Possession Blood")
+					var/obj/C = Contract
+					if(loc == C.loc && Contract2)
+						var/mob/F = Contract2
+						wound_msg += " (Blood Contract => [F])"
+						if(source == "Stab Self")
+							F.Damage(150, wound_dmg, src, "Sorcery: Death-Ruling Possession Blood", "Internal")
+						else
+							F.Damage(0, wound_dmg, src, "Sorcery: Death-Ruling Possession Blood", "Internal")
+						if(F) spawn() F.Hostile(usr)
+				//if(source == "Stab Self")//due to the wound cap change for jashins, I am making stab self do 8 wounds to the user and 10 wounds to the contract
+				//	wound_dmg -= 2
+				wound_msg = "[wound_dmg] wounds"
+
+			var/join_msg = ""
+			if(stamina_msg && wound_msg)
+				join_msg = " and "
+
+			if(source != "Gate Stress" && source != "Pill Stress") combat("<font color=#eca940>You took [stamina_msg][join_msg][wound_msg][attacker?" from [attacker]":""]!")
+			if(attacker && attacker != src) attacker.combat("<font color=#eca940>You dealt [stamina_msg][join_msg][wound_msg][attacker?" to [src]":""]!")
+
+			if(istype(src,/mob/human/player/npc/creep) && (total_stamina_dmg||wound_dmg) && attacker && attacker.client)
+				src:lasthurtme = attacker
+
+			curstamina -= total_stamina_dmg
+			curwound += wound_dmg
+
+			/*if(Tournament)
+				if(Tournament.mode == "Team")
+					Tournament.Add_Wounds(src,wound_dmg)
+
+			if(Tournament)
+				if(Tournament.mode == "Single Elimination")
+					TournamentWounds  += wound_dmg
+					TournamentDamage += total_stamina_dmg*/
+
+
+			if(curstamina <= 0 && source != "KO")
+				spawn() KO()
+
+			if(clan == "Will of Fire" && !wof_adren_loop)
+				wof_adrenaline()
+
+			if(client && attacker && attacker.clan == "Ruthless")
+				attacker.adren += round(total_stamina_dmg / 100) + wound_dmg*2
+
+			//This should be handled by Hostile not by Damage. Removing, hopefully it doesn't break too many things. I'll fix it later if it does.
+			//if(asleep)
+			//	asleep = 0
+
+		// TODO: These procs should be removed eventually. Just here for transitional purposes.
+		//Dec_Stam(x,xpierce,mob/attacker, hurtall,taijutsu, internal)
+		//	Damage(x, 0, attacker, taijutsu?"Tajutsu":"Stamina", internal?"Internal":"Normal")
+
+		//Wound(x,xpierce, mob/attacker, reflected)
+		//	Damage(0, x, attacker, reflected?"Sorcery: Death-Ruling Possession Blood":"Wound", (xpierce>=3)?"Internal":"Normal")
+
+
+// Old damage code (Semptember 27th).
+/*
 mob
 	proc
 		Dec_Stam(x,xpierce,mob/attacker, hurtall,taijutsu, internal)
@@ -934,6 +1316,7 @@ mob
 				x-=y
 				src.combat("<font color=#eca940>You took [y] Piercing Stamina damage from [attacker]!")
 				src.curstamina-=y
+				return
 			if(!xpierce && !internal && length(src.pet))
 				for(var/mob/human/sandmonster/S in src.pet)
 					if(S.loc==src.loc)
@@ -960,6 +1343,13 @@ mob
 				fu=1
 			if(fu)
 				return
+
+			var/obj/earthcage/cage = locate() in loc
+			if(cage && xpierce != -1 && !cage.destroyed && x > 0)
+				viewers(0, loc) << output("The shield has blocked [x] stamina damage!", "combat_output")
+				cage.Damage(x)
+				return
+
 			if((locate(/obj/Shield) in oview(1,src)) && !internal)
 				return
 			if(src.ko)
@@ -1080,6 +1470,8 @@ mob
 			//		if(clan == "Battle Conditioned")
 			//			var/y=round(x*0.85)
 			//			x=y
+				if(locate(/obj/earthcage) in loc)
+					return
 				if((locate(/obj/Shield) in oview(1,src)) && xpierce < 3)
 					return
 				if(src.ko)
@@ -1158,7 +1550,7 @@ mob
 				src.asleep=0
 				//src.stunned=0
 				src.End_Stun()
-
+*/
 mob
 	proc/jashin_boost()
 		set waitfor = 0
@@ -1223,6 +1615,15 @@ mob
 			if(src.leading)
 				//src.leading=0
 				call(leading, "stop_following")()
+
+			if(camo)
+				var/skill/camouflaged_hiding/camou = GetSkill(CAMOUFLAGE_CONCEALMENT)
+				if(camou)
+					camou.deactivate(src, time = 50)
+			if(attacker && attacker.camo)
+				var/skill/camouflaged_hiding/camou = attacker.GetSkill(CAMOUFLAGE_CONCEALMENT)
+				if(camou)
+					camou.deactivate(attacker, time = 50)
 
 			if(istype(src,/mob/human/player/npc))
 				if(attacker && attacker!=src && attacker.faction && src.faction && attacker.faction.village != src.faction.village && !(attacker.MissionTarget==src && (attacker.MissionType=="Escort"||attacker.MissionType=="Escort PvP")))
@@ -1400,7 +1801,7 @@ mob
 		sleep(time)
 		cantreact--
 
-	proc/Combo(mob/M,r)
+	proc/Combo(mob/M,r, ranged)
 		if(src.skillspassive[FLURRY]&& src.combo<(1+src.skillspassive[FLURRY]))
 			increase_combo()
 		if(M && src)
@@ -1426,31 +1827,34 @@ mob
 				//Critical..
 					var/critdamx=round((usr.con-usr.conneg)*rand(20,40)/10)
 					var/wounddam=round(((rand(1,4)/2)*(usr.con-usr.conneg))/150)
-					if(lastdash)
-						lastdash = 0
+					if(ranged)
 						critdamx *= 0.6
-					M.Dec_Stam(critdamx, 0, usr)
+					M.Damage(critdamx, wounddam, usr, "Chakra Scalpels")//M.Dec_Stam(critdamx, 0, usr)
 					M.movepenalty += round(10 * 1 + 0.05 * usr.skillspassive[MEDICAL_TRAINING])
+					M.criticaltime = world.time + 50
 					src.combat("Critical hit [M] for [critdamx] Stamina damage and [wounddam] Wounds!")
 					if(M) M.Graphiked2()
-					M.Wound(wounddam, 0, usr)
+					//M.Wound(wounddam, 0, usr)
 				else
 					var/critdamx=(usr.con + usr.conbuff - usr.conneg) * pick(0.6, 0.7, 0.8, 0.9, 1)//round((usr.con+usr.conbuff)*rand(50,100)/100)
 					if(usr.skillspassive[MEDICAL_TRAINING])
 						critdamx *= 1 + 0.04 * usr.skillspassive[MEDICAL_TRAINING]
-					if(lastdash)
-						lastdash = 0
+					if(ranged)
 						critdamx *= 0.6
 					var/wounddam=pick(0,1)
-					M.Dec_Stam(critdamx, 0, usr)
+					M.Damage(critdamx, wounddam, usr, "Chakra Scalpels")//M.Dec_Stam(critdamx, 0, usr)
 					//M.movepenalty+=10
-					//M.movepenalty += 0 + 0.5 * usr.skillspassive[MEDICAL_TRAINING]
-					//M.movepenalty = min(30, M.movepenalty)
+					var/movepenalty_effect = 1 * usr.skillspassive[MEDICAL_TRAINING] * ((ranged) ? 0 : 1)
+					if(Roll_Against((M.rfx + M.rfxbuff - M.rfxneg), (usr.rfx + usr.rfxbuff - usr.rfxneg), 100) >= 3)
+						movepenalty_effect *= 0.5
+					if(movepenalty_effect > 0)
+						M.movepenalty += movepenalty_effect
+						M.movepenalty = min(30, M.movepenalty)
 					src.combat("Hit [M] for [critdamx] Stamina damage and [wounddam] Wounds!")
 
-					M.Wound(wounddam, 0, usr)
+					//M.Wound(wounddam, 0, usr)
 
-				if(src.skillspassive[OPEN_WOUNDS] && prob(usr.skillspassive[OPEN_WOUNDS] * 3))
+				if(!ranged && src.skillspassive[OPEN_WOUNDS] && prob(usr.skillspassive[OPEN_WOUNDS] * 3))
 					M.combat("[src]'s Scalpel blade has caused internal bleeding!")
 					var/bleed = pick(2, 4, 6)
 					M.bleed(bleed, src)
@@ -1485,7 +1889,8 @@ mob
 					M.combat("You counter attack [src] with your [M.weapon_ref.name]!")
 					combat("[M] countered your attack!")
 					var/stamina_dmg = M.weapon_ref.get_stamina_damage(M) * 0.2
-					Dec_Stam(stamina_dmg, 0, M)
+					//Dec_Stam(stamina_dmg, 0, M, "Bruality")
+					Damage(stamina_dmg, 0, M, "Bruality")
 					set_icon_state("hurt", 30)
 					Knockback(2, M.dir)
 					if(istype(src, /mob/human/player/npc/kage_bunshin))
@@ -1532,9 +1937,10 @@ mob
 					critdam=round((usr.str+usr.strbuff)*rand(2,4)) +800
 				if(usr.Size==2)
 					critdam=round((usr.str+usr.strbuff)*rand(3,5.5)) +800
-				M.Dec_Stam(critdam,0,usr)
+				//M.Dec_Stam(critdam,0,usr)
 				if(!usr.Size)
-					M.movepenalty+=usr.skillspassive[MEDICAL_TRAINING] +rand(0,5)
+					M.Damage(critdam, 0, usr, "Cherry Blossom Impact")
+					M.movepenalty += usr.skillspassive[MEDICAL_TRAINING] +rand(0,5)
 				else
 					M.movepenalty+=20
 				if(!usr.Size)
@@ -1543,7 +1949,9 @@ mob
 					src.combat("Hit [M] for [critdam] with your massive fist!!")
 				if(M) M.Graphiked2()
 
-				if(!usr.Size)explosion(50,M.x,M.y,M.z,usr,1)
+				if(!usr.Size)
+					//explosion(50,M.x,M.y,M.z,usr,1)
+					explosion(0, 0, M.loc, usr)
 				if(src)
 					src.pixel_x=0
 					src.pixel_y=0
@@ -1570,14 +1978,15 @@ mob
 			if(!usr.gentlefist)
 				damage_stat = (usr.str + usr.strbuff - usr.strneg) * pick(0.4, 0.5, 0.6)//usr.str+usr.strbuff-usr.strneg
 			else
-				damage_stat = (usr.con + usr.conbuff - usr.conneg) * pick(0.4, 0.5, 0.6)//usr.con+usr.conbuff-usr.conneg
+				//damage_stat = (usr.con + usr.conbuff - usr.conneg) * pick(0.4, 0.5, 0.6)//usr.con+usr.conbuff-usr.conneg
+				damage_stat = (((usr.str + usr.strbuff - usr.strneg) + (usr.con + usr.conbuff - usr.conneg)) * 0.6) * pick(0.4, 0.5, 0.6)
 
 			//var/m=damage_stat/150
 
 			//if(src.gate>=5)
 			//	m*=1.5
 
-			var/outcome = Roll_Against(usr.rfx+usr.rfxbuff-usr.rfxneg, M.rfx+M.rfxbuff-M.rfxneg, rand(80,120))
+			var/outcome = Roll_Against(damage_stat, M.str + M.strbuff - M.strneg, rand(80, 120))
 			var/dam = damage_stat
 			var/deltamove = 0
 
@@ -1604,6 +2013,8 @@ mob
 					//dam=round(70*m)
 				else
 					M.increase_comboed(1)
+			if(Roll_Against((usr.rfx+usr.rfxbuff-usr.rfxneg), (M.rfx+M.rfxbuff-M.rfxneg), rand(80,100)) < 3)
+				deltamove *= 0.5
 
 			var/wound_damage = 0
 			if(usr.stance == STRONG_FIST && prob(20))
@@ -1620,13 +2031,15 @@ mob
 				//dam*=1+0.20*combo
 			var/DD=dam+critdam
 
-			M.Dec_Stam(DD, 0, usr,0,1)
-			if(wound_damage)
-				M.Wound(wound_damage, 0, usr)
+			//M.Dec_Stam(DD, 0, usr,0,1)
+			//if(wound_damage)
+			//	M.Wound(wound_damage, 0, usr)
+			M.Damage(DD, wound_damage, usr, "Taijutsu")
 
-			for(var/mob/human/v in view(1))
+			/*for(var/mob/human/v in view(1))
 				if(v.client)
-					v.combat("[M] was hit for [DD] damage by [src]!")
+					v.combat("[M] was hit for [DD] damage by [src]!")*/
+			viewers(1, src) << output("[M] was hit for [DD] damage by [src]!", "combat_output")
 
 			//M.movepenalty += deltamove
 			M.movepenalty = min(30, M.movepenalty + deltamove)
@@ -1706,10 +2119,26 @@ mob
 				src=controlmob
 				weirdflick=1
 
-			if(src.camo)
+			if(usr.sixty_four_palms >= world.time)
+				usr.sixty_four_palms = 0
+				var/mob/target = usr.NearestTarget()
+				if(target)
+					usr.FaceTowards(target)
+				if(get_dist(usr, target) > 1)
+					target = locate() in get_step(usr, usr.dir)
+				if(target)
+					target.incombo = 1
+					target.Timed_Stun(30)
+				Hakke_Circle(usr, target)
+				if(target && !target.ko && !target.IsProtected())
+					usr.Taijutsu(target)
+					usr.Hakke_Pwn(target)
+				return
+
+			/*if(src.camo)
 				src.Affirm_Icon()
 				src.Load_Overlays()
-				src.camo=0
+				src.camo=0*/
 
 			if(usr.sakpunch)
 				usr.sakpunch=0
@@ -1843,10 +2272,10 @@ mob
 			if(usr.stunned||usr.kstun||usr.handseal_stun)
 				return
 
-			if(usr.client && usr.attackbreak)
-				return
+			//if(usr.attackbreak > world.time)
+			//	return
 
-			var/trfx=usr.rfx+usr.rfxbuff-usr.rfxneg
+			/*var/trfx = (usr.rfx + usr.rfxbuff - usr.rfxneg)
 			if(trfx<75)
 				usr.attackbreak=10
 			else if(trfx<100)
@@ -1860,7 +2289,7 @@ mob
 			else if(trfx<200)
 				usr.attackbreak=3
 			else if(trfx<250)
-				usr.attackbreak=2
+				usr.attackbreak=2*/
 
 			var/rx=rand(1,8)
 
@@ -1910,16 +2339,21 @@ mob
 			var/deg=0
 			var/hassword=usr.hassword
 			var/attack_range = 1
-			if(hassword)deg+=2
+			var/ranged = 0
+			if(hassword)
+				deg += 2
+			if(scalpol)
+				attack_range = 2
+				ranged = 1
 			if(usr.Size==1)
 				deg=15
 				attack_range = 2
-			if(usr.Size==2)
+			else if(usr.Size == 2)
 				deg=25
-				attack_range = 2
+				attack_range = 3
 
-			if(usr.move_stun)
-				deg = (deg * 1.5) + 5
+			//if(usr.move_stun)
+			//	deg = (deg * 1.5) + 5
 
 			usr.canattack = world.time+(4+deg)
 
@@ -1932,28 +2366,28 @@ mob
 			var/mob/T
 
 			if(target)
-				/*if(usr.gate >= 4 && !usr.gatepwn)
+				if(usr.gate >= 4 && !usr.gatepwn)
 					if(get_dist(target, usr) <= gate + 1)
 						//usr:AppearBefore(target)
 						//usr.dir = get_dir(src, target)
 						var/turf/appear
-						var/direction = get_dir(usr, target)
+						var/direction = angle2dir(get_real_angle(target, usr))
 						if(direction)
-							appear = get_step(target, turn(target.dir,180))//opposite_dir(direction))
+							appear = get_step(target, turn(direction,180))//opposite_dir(direction))
 							if(appear)
 								usr.loc = appear
 								usr.FaceTowards(target)
 								sleep(1)
-				else*/
-				if(target in oview(attack_range))
-					T = target
+				else
+					if(target in oview(attack_range))
+						T = target
 
 				if(M)
 					T = M
 
 				var/mob/nearesttarget = usr.NearestTarget()
 				//world.log << "DEBUG: 1"
-				if(usr.client && (dashtime < world.time || (gate && gate < 4)) && nearesttarget)
+				if(usr.client && !usr.scalpol && (dashtime < world.time || (gate && gate < 4)) && nearesttarget)
 					var/distance = get_dist(usr, nearesttarget)
 					//world.log << "DEBUG: 2"
 					if(!rasengan && (lastskill != SHUNSHIN || lastskilltime + 20 < world.time))
@@ -1971,7 +2405,7 @@ mob
 					if(usr.gate >= 5)
 						gate_smack_effect(T.loc,4)
 
-					usr.Combo(T,r)
+					usr.Combo(T,r, ranged)
 
 					usr.Taijutsu(T)
 					return
@@ -1988,7 +2422,7 @@ mob
 				if(usr.gate >= 5)
 					gate_smack_effect(T.loc, 4)
 
-				usr.Combo(T,r)
+				usr.Combo(T,r, ranged)
 
 				usr.Taijutsu(T)
 
@@ -2011,6 +2445,13 @@ mob
 
 			if(usr.Size||usr.Tank)
 				return
+
+			if(usr.water_collision > world.time)
+				var/skill/water/collision_destruction/collision = usr.GetSkill(SUITON_COLLISION_DESTRUCTION)
+				if(collision)
+					collision.defend(usr)
+					collision.DoCooldown(usr)
+					return
 
 		//	if(!EN[16])
 		//		return
@@ -2211,9 +2652,10 @@ mob
 	proc/gentle_fist_hit(mob/hit)
 		set waitfor = 0
 		if(prob(60))
-			hit.Wound(1, 0, src)
-		++hit.gentle_fist_block
-		hit.gentle_fist_timestamp = world.time
+			//hit.Wound(1, 0, src)
+			hit.Damage(0, 1, src, "Gentle Fist")
+		hit.gentle_fist_block++
+		hit.gentle_fist_timestamp = world.time + 100
 		//sleep(600)
 		//if(!hit)
 		//	return

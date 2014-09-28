@@ -1,0 +1,4 @@
+Exploding Clone now marks the user's location and triggers when attacked, creating an exploding clone that target tricks anyone actively targeting you (Int-based damage; uses the Trap Mastery passive). The user reappears at the marked location. The traditional Exploding Clone can be used by holding Shift prior to activation (it can also use skills).
+Caltrops are equippable and land two tiles in front of the user, slowing and damaging anyone on that location.
+Explosions no longer hit twice.
+Change Chidori back to the way it was before, with that addition that Rfx allows it to charge faster. Damage should be based on distance and Rfx.

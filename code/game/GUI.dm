@@ -378,7 +378,7 @@ obj
 				Move(usr)
 
 	gui/skillcards/Camouflage_Concealment_Technique
-		sindex=CAMOFLAGE_CONCEALMENT
+		sindex=CAMOUFLAGE_CONCEALMENT
 		code=4
 		icon='icons/gui.dmi'
 		icon_state="Camouflage Concealment Technique"

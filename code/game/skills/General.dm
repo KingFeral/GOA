@@ -303,31 +303,80 @@ skill
 		default_chakra_cost = 250
 		default_cooldown = 45
 
+		ChakraCost(mob/user)
+			if(activated)
+				return 0
+			else
+				return ..(user)
+
+		Cooldown(mob/user)
+			if(activated)
+				return 0
+			else
+				return ..(user)
 
 		Use(mob/user)
-			viewers(user) << output("[user]: Shadow Clone!", "combat_output")
-			for(var/mob/human/player/npc/kage_bunshin/O in world)
-				if(O.ownerkey==user.key)
-					del(O)
-			flick("Seal",user)
-			var/mob/human/player/npc/kage_bunshin/X = new/mob/human/player/npc/kage_bunshin(user.loc)
-			if(user.client) user.client.eye=X
+			//set waitfor = 0
+			if(activated)
+				activated = 0
+				for(var/mob/human/player/npc/kage_bunshin/O in world)
+					if(O.owner == user || O.ownerkey == user.key)
+						O.destroyed()
+						break
+				RemoveOverlay('icons/activation.dmi')
+				DoCooldown(user)
+				return
 
-			X.ownerkey=user.key
-			user.controlmob=X
-			X.icon=user.icon
-			X.overlays=user.overlays
-			X.underlays=user.underlays
-			X.con=user.con
-			X.str=user.str
-			X.rfx=user.rfx
-			X.int=user.int
-			X.exploading=1
-			X.name="[user.name]"
-			X.CreateName(255, 255, 255)
-			X.regeneration2()
+			AddOverlay('icons/activation.dmi')
+			if(!modified)
+				user.combat("Exploding Shadow Clone is now active. When you are hit, you will return to this location, being replaced with an explosive shadow clone!")
+				user.replacement = replacements[REPLACEMENT_EXPLOSIVE_CLONE]
+				user.replacement_loc = user.loc
+				//sleep(100)
+				spawn()
+					var/time = 100
+					while(user && time > 0 && user.replacement && user.replacement.id == REPLACEMENT_EXPLOSIVE_CLONE && user.replacement_loc)
+						time -= 3
+						sleep(3)
+					if(!user)
+						return
 
-			user.BunshinTrick(list(X))
+					RemoveOverlay('icons/activation.dmi')
+					DoCooldown(user)
+
+					if(user.replacement && user.replacement.id == REPLACEMENT_EXPLOSIVE_CLONE && user.replacement_loc)
+						user.replacement = null
+						user.replacement_loc = null
+						user.combat("Exploding Clone activation has expired.")
+			else
+				activated = 1
+				for(var/mob/human/player/npc/kage_bunshin/O in world)
+					if(O.ownerkey == user.key)
+						O.dispose()
+
+				user.combat("You are now controlling an explosive shadow clone. Activate this skill again or press <strong>Space</strong> to explode!")
+
+				var/mob/human/player/npc/kage_bunshin/X = new/mob/human/player/npc/kage_bunshin(user.loc)
+				if(user.client)
+					user.controlmob = X
+					user.client.eye = X
+
+				X.ownerkey = user.key
+				X.owner = user
+				//user.controlmob = X
+				X.icon = user.icon
+				X.overlays = user.overlays
+				X.underlays = user.underlays
+				X.con = user.con
+				X.str = user.str
+				X.rfx = user.rfx
+				X.int = user.int
+				X.exploading = 1
+				X.name = "[user.name]"
+				X.CreateName(255, 255, 255)
+				X.regeneration2()
+
+				user.BunshinTrick(list(X))
 
 
 
@@ -438,23 +487,51 @@ skill
 
 
 	camouflaged_hiding
-		id = CAMOFLAGE_CONCEALMENT
+		id = CAMOUFLAGE_CONCEALMENT
 		name = "Camouflaged Hiding"
 		icon_state = "Camouflage Concealment Technique"
 		default_chakra_cost = 100
 		default_cooldown = 60
 		default_seal_time = 5
+		var/tmp/deactivating
 
+		proc/deactivate(mob/user, time)
+			set waitfor = 0
+			if(deactivating)
+				return
+			deactivating = 1
+			if(time > 0)
+				user.combat("Camouflaged Hiding is deactivating in [round(time / 10)] seconds.")
+			if(time)
+				sleep(time)
+			if(!user)
+				return
+			user.combat("Camouflaged Hiding has deactivated.")
+			user.camo = 0
+			user.Affirm_Icon()
+			user.Load_Overlays()
+			deactivating = 0
+			RemoveOverlay('icons/activation.dmi')
+			DoCooldown(user)
 
+		Cooldown(mob/user)
+			if(user.camo)
+				return 0
+			else
+				return ..(user)
 
 		Use(mob/human/player/user)
-			user.camo=1
-			user.icon='icons/base_invisible.dmi'
-			user.overlays=0
-			Poof(user.loc)//(user.x,user.y,user.z)
-
-
-
+			if(user.camo)
+				deactivate(user)
+				return
+			AddOverlay('icons/activation.dmi')
+			user.camo = 1
+			user.icon = 'icons/base_invisible.dmi'
+			user.overlays = null
+			Poof(user.loc)
+			for(var/mob/m in user.targeted_by)
+				if(!(user in m.active_targets) && !(user in oview(m)))
+					m.RemoveTarget(user)
 
 	chakra_leech
 		id = CHAKRA_LEECH
@@ -560,32 +637,11 @@ mob/human/player/npc
 			//new/Event(30, "delayed_delete", list(src))
 			dispose()
 
-		Del()
-			if(loc == null)
-				return ..()
-			loc = null
-
-
-
-		Dec_Stam()
-			return
-
-
-		Wound()
-			return
-
+		Damage()
+			Hostile()
 
 		Hostile(mob/human/player/attacker)
-			. = ..()
-			/*if(bunshintype == 0)
-				Poof(loc)//(x, y, z)
-				invisibility = 100
-				loc = null
-				targetable = 0
-				density = 0
-				// Didn't this just happen two lines above? Not even a sleep to give other stuff a chance to mess it up.
-				targetable = 0
-				loc = null*/
+			Poof(loc)
 			dispose()
 
 		dispose()
@@ -597,9 +653,6 @@ mob/human/player/npc
 					user.controlmob = null
 					user.client.eye = user.client.mob
 			owner = null*/
-			squad = null
-			Squad = null
-			skills = null
 			clear_targets()
 			clear_targeted_by()
 			loc = null
@@ -614,8 +667,8 @@ mob/human/player/npc
 
 
 		var
-			ownerkey=""
-			owner=""
+			ownerkey
+			mob/owner
 			temp=0
 			exploading=0
 			attack_cd
@@ -628,9 +681,10 @@ mob/human/player/npc
 				if(user.controlmob == src || user.client.eye == src)
 					user.controlmob = null
 					user.client.eye = user.client.mob
+			ownerkey = null
 			owner = null
-			squad = null
-			Squad = null
+			if(squad) squad = null
+			if(Squad) Squad = null
 			skills = null
 			clear_targets()
 			clear_targeted_by()
@@ -638,34 +692,26 @@ mob/human/player/npc
 
 		proc/destroyed()
 			set waitfor = 0
-			var/dx=src.x
-			var/dy=src.y
-			var/dz=src.z
 			if(!src:exploading)
-				Poof(loc)//(dx,dy,dz)
+				Poof(loc)
 			else
 				src:exploading=0
-				explosion(rand(1000,2500),dx,dy,dz,src)
+				if(owner)
+					var/explosion_damage = (owner.int + owner.intbuff - owner.intneg) * 4
+					explosion_damage = min(3000, explosion_damage)
+					explosion(explosion_damage, 0, loc, owner, list("distance" = 6))
+					if(owner && owner.client && owner.controlmob)
+						owner.controlmob = null
+						owner.client.eye = owner.client.mob
 				src.icon=0
 				src.targetable=0
 				src.invisibility=100
 				src.density=0
-				//sleep(5)
-			src:dead=1
+			src:dead = 1
 			src.Begin_Stun()
-			//src.loc=locate(0,0,0)
-			for(var/mob/human/player/p in players)
-				if(p.key==src:ownerkey && p.controlmob == src)
-					p.controlmob=0
-					p.client.eye=p.client.mob
-					break
-			src.invisibility=100
-			//src.target=-15
-			//clear_targets()
-			//clear_targeted_by()
-			src.targetable=0
+			src.invisibility = 100
+			src.targetable = 0
 			src.density=0
-			//src.targetable=0
 			dispose()
 
 		New()
@@ -679,11 +725,14 @@ mob/human/player/npc
 				//src.Hostile()
 
 
-		Dec_Stam()
+	/*	Dec_Stam()
 			return
 
 
 		Wound()
+			return
+			*/
+		Damage()
 			return
 
 
@@ -752,16 +801,18 @@ mob/proc
 
 		x.Timed_Stun(20)
 		u.Timed_Stun(20)
-		x.Wound(rand(15,30),0,u)
+		//x.Wound(rand(15,30),0,u)
+		//x.Damage(0, rand(15, 30), u, "Giant Rasengan")
 		x.Earthquake(20)
 		sleep(20)
 		o.loc = null
 		//x.stunned=0
 		//u.stunned=0
 		x.Knockback(10,xdir)
-		explosion(50,x.x,x.y,x.z,u,1)
+		//explosion(50,x.x,x.y,x.z,u,1)
+		explosion(0, 0, x.loc, u)
 		if(x)
-			x.Dec_Stam(2000+1500*conmult,0,u)
+			x.Damage(2000+1500*conmult, rand(15, 30), u, "Giant Rasengan")//x.Dec_Stam(2000+1500*conmult,0,u)
 
 			//x.stunned+=3
 			x.Timed_Stun(30)
@@ -798,8 +849,9 @@ mob/proc
 		if(x)
 			x.Knockback(10,xdir)
 			if(x)	// Knockback sleeps, I think. It really shouldn't though.
-				explosion(50,x.x,x.y,x.z,u,1)
-				x.Dec_Stam(1000+1000*conmult,0,u)
+				//explosion(50,x.x,x.y,x.z,u,1)
+				explosion(0, 0, x.loc, u)
+				x.Damage(1000+1000*conmult,0,u,"Rasengan")//x.Dec_Stam(1000+1000*conmult,0,u)
 				//x.stunned+=3
 				x.Timed_Stun(30)
 				if(!x.ko)
@@ -807,35 +859,64 @@ mob/proc
 				x.Hostile(u)
 
 
-	BunshinTrick(list/bunshins)
+	BunshinTrick(list/bunshins, list/tricked)
 		FilterTargets()
-		for(var/mob/M in targeted_by)
-			var/max_targets = M.MaxTargets()
-			var/active = (src in M.active_targets)
-			if(!active)
-				max_targets -= M.MaxActiveTargets()
+		if(tricked)
+			for(var/mob/M in tricked)
+				var/max_targets = M.MaxTargets()
+				var/active = (src in M.active_targets)
+				if(!active)
+					max_targets -= M.MaxActiveTargets()
 
-			var/result=Roll_Against((int+intbuff-intneg) + (10 * skillspassive[CLONE_MASTERY]),(M.int+M.intbuff-M.intneg) * (1 + 0.1 * M.skillspassive[TRACKING]),100)
-			if(result > 3 && !M.sharingan)
-				var/list/valid_targets = list(src)
-				if(result >= 5) // full clone trick.
-					valid_targets -= src
-				valid_targets += bunshins
-				var/picked_targets = 0
-				while(valid_targets.len && picked_targets < max_targets)
-					var/target = pick(valid_targets)
-					valid_targets -= target
-					M.AddTarget(target, active, silent=1)
-					++picked_targets
-			else
-				var/list/valid_targets = bunshins.Copy()
-				var/picked_targets = 0
-				while(valid_targets.len && picked_targets < (max_targets - 1))
-					var/target = pick(valid_targets)
-					valid_targets -= target
-					M.AddTarget(target, 0, silent=1)
-					++picked_targets
-				M.AddTarget(src, active, silent=1)
+				var/result=Roll_Against((int+intbuff-intneg) + (10 * skillspassive[CLONE_MASTERY]),(M.int+M.intbuff-M.intneg) * (1 + 0.1 * M.skillspassive[TRACKING]),100)
+				if(result > 3 && !M.sharingan)
+					var/list/valid_targets = list(src)
+					if(result >= 5) // full clone trick.
+						valid_targets -= src
+					valid_targets += bunshins
+					var/picked_targets = 0
+					while(valid_targets.len && picked_targets < max_targets)
+						var/target = pick(valid_targets)
+						valid_targets -= target
+						M.AddTarget(target, active, silent=1)
+						++picked_targets
+				else
+					var/list/valid_targets = bunshins.Copy()
+					var/picked_targets = 0
+					while(valid_targets.len && picked_targets < (max_targets - 1))
+						var/target = pick(valid_targets)
+						valid_targets -= target
+						M.AddTarget(target, 0, silent=1)
+						++picked_targets
+					M.AddTarget(src, active, silent=1)
+		else
+			for(var/mob/M in targeted_by)
+				var/max_targets = M.MaxTargets()
+				var/active = (src in M.active_targets)
+				if(!active)
+					max_targets -= M.MaxActiveTargets()
+
+				var/result=Roll_Against((int+intbuff-intneg) + (10 * skillspassive[CLONE_MASTERY]),(M.int+M.intbuff-M.intneg) * (1 + 0.1 * M.skillspassive[TRACKING]),100)
+				if(result > 3 && !M.sharingan)
+					var/list/valid_targets = list(src)
+					if(result >= 5) // full clone trick.
+						valid_targets -= src
+					valid_targets += bunshins
+					var/picked_targets = 0
+					while(valid_targets.len && picked_targets < max_targets)
+						var/target = pick(valid_targets)
+						valid_targets -= target
+						M.AddTarget(target, active, silent=1)
+						++picked_targets
+				else
+					var/list/valid_targets = bunshins.Copy()
+					var/picked_targets = 0
+					while(valid_targets.len && picked_targets < (max_targets - 1))
+						var/target = pick(valid_targets)
+						valid_targets -= target
+						M.AddTarget(target, 0, silent=1)
+						++picked_targets
+					M.AddTarget(src, active, silent=1)
 
 obj/fxobj
 	New(location, life_time)
@@ -846,3 +927,47 @@ obj/fxobj
 		..()
 		sleep(life_time)
 		loc = null
+
+
+// replacements
+
+replacement
+	explosive_clone
+		id = REPLACEMENT_EXPLOSIVE_CLONE
+
+		activate(mob/user)
+			set waitfor = 0
+			if(!user || !user.replacement || !user.replacement_loc)
+				return
+			var/mob/eclone = new(user.loc)
+			eclone.copy_appearance(user)
+			eclone.dir = user.dir
+			user.BunshinTrick(list(eclone), user.targeted_by)
+			user.loc = user.replacement_loc
+			user.replacement = null
+			user.replacement_loc = null
+			flick("Seal", user)
+			var/time_reduct = round(((((user.int + user.intbuff - user.intneg) + (10 * user.skillspassive[CLONE_MASTERY])) / 10) / 3))
+			time_reduct = min(15, time_reduct)
+			sleep(20 - time_reduct)
+			smoke_effect(eclone.loc)
+			var/explosion_damage = (user.int + user.intbuff - user.intneg) * 4
+			explosion_damage = min(3000, explosion_damage)
+			//explosion(explosion_damage, eclone.x, eclone.y, eclone.z, user, dist = 5)
+			explosion(explosion_damage, 0, eclone.loc, user, list("distance" = 5))
+			eclone.dispose()
+
+replacement
+	var/id
+
+	proc/activate(mob/user)
+
+var/list/replacements = list(
+	REPLACEMENT_EXPLOSIVE_CLONE = new/replacement/explosive_clone,
+)
+
+mob
+	proc/copy_appearance(mob/base)
+		icon      = base.icon
+		overlays  = base.overlays
+		underlays = base.underlays

@@ -144,7 +144,8 @@ skill
 						user.RemoveTrigger(T)
 					if(C3)
 						C3.overlays = 0
-						explosion(P, C3.x, C3.y, C3.z, user, 0, 6)
+						//explosion(P, C3.x, C3.y, C3.z, user, 0, 6)
+						explosion(P, 0, C3.loc, user, list("distance" = 6))
 						new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x+1,C3.y+1,C3.z,user,0,6))
 						new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x-1,C3.y+1,C3.z,user,0,6))
 						new/Event(pick(1, 2, 3), "delayed_explosion", list(P,C3.x-1,C3.y-1,C3.z,user,0,6))

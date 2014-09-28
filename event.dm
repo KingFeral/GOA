@@ -60,7 +60,7 @@ event_handler
 
 	proc/rock_shinobi_ambush(mob/target)
 		set waitfor = 0
-		if(!target)
+		if(!target || !target.pk)
 			return
 		var/squadsize=min(50 - rockshinobis, pick(1,2,3,4))
 		squadsize=min(squadsize,target.afteryou)
@@ -104,25 +104,33 @@ event_handler
 		moving.runlevel--
 		if(moving.icon_state == "Run" && moving.runlevel < 3)
 			moving.icon_state = ""
-		if(moving.runlevel > 4 && !moving.Size)
+		if(moving.runlevel >= 4 && !moving.Size)
 			if(!moving.icon_state && !moving.rasengan && !moving.larch)
 				moving.icon_state = "Run"
 		else
-			if(moving.icon_state == "Run")
-				moving.icon_state = ""
+			//if(moving.icon_state == "Run")
+			moving.icon_state = ""
 
 	proc/clone_dissipate(mob/human/player/npc/kage_bunshin/clone)
 		set waitfor = 0
 		if(!clone)
 			return
-		var/dx=clone.x
+		/*var/dx=clone.x
 		var/dy=clone.y
-		var/dz=clone.z
+		var/dz=clone.z*/
 		if(!clone:exploading)
 			Poof(clone.loc)//(dx,dy,dz)
 		else
 			clone:exploading=0
-			explosion(rand(1000,2500),dx,dy,dz,clone)
+			//explosion(rand(1000,2500),dx,dy,dz,clone)
+			if(clone.owner)
+				var/explosion_damage = (clone.owner.int + clone.owner.intbuff - clone.owner.intneg) * 4
+				explosion_damage = min(3000, explosion_damage)
+				explosion(explosion_damage, 0, clone.loc, clone.owner, list("distance" = 6))
+				if(clone.owner.client)
+					clone.owner.controlmob = null
+					clone.owner.client.eye = clone.owner.client.mob
+			//explosion(0, 0, x.loc, u)
 			clone.icon=0
 			clone.targetable=0
 			clone.invisibility=100
@@ -157,8 +165,9 @@ event_handler
 			return
 		for(var/a in args)
 			if(islist(a))
-				for(var/b in a)
-					del(b)
+				var/list/ourlist = a
+				for(var/thing in ourlist)
+					del(thing)
 			else
 				del(a)
 
@@ -178,7 +187,14 @@ event_handler
 
 	proc/delayed_explosion(damage, x, y, z, mob/user, dontknock, distance)
 		set waitfor = 0
-		explosion(damage, x, y, z, user, dontknock, distance)
+		//explosion(damage, x, y, z, user, dontknock, distance)
+		if(!user)
+			return
+		var/explosion_location = locate(x, y, z)
+		if(!explosion_location)
+			return
+
+		explosion((dontknock) ? 0 : damage, 0, explosion_location, user, list("distance" = distance))
 
 	proc/trigger_AI_Attack(mob/human/player/npc/kage_bunshin/X, mob/etarget)
 		set waitfor = 0

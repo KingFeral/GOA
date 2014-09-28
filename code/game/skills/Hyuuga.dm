@@ -1,4 +1,6 @@
 mob
+	var/tmp/sixty_four_palms = 0
+
 	proc/byakugan_image_loop()
 		set waitfor = 0
 		if(!src)
@@ -98,13 +100,15 @@ skill
 				var/obj/b2=new/obj/kbr(locate(user.x,user.y,user.z))
 				var/obj/b3=new/obj/ktl(locate(user.x,user.y,user.z))
 				var/obj/b4=new/obj/ktr(locate(user.x,user.y,user.z))
-				AOExk(user.x,user.y,user.z,1,150,30,user,0,1,1)
+				//user.noknock = 1
+				AOExk(user.x, user.y, user.z, 1, 150, 30, user, 0, 1, 1)
 				user.kaiten = 1
 				//user.protected=5
 				//user.stunned=3.2
 				user.Timed_Stun(30)
-				user.Protect(30)
+				user.Protect(33)
 				sleep(30)
+				//user.noknock = 0
 				user.kaiten = 0
 				b1.loc = null
 				b2.loc = null
@@ -133,9 +137,21 @@ skill
 
 
 			Use(mob/human/user)
-				viewers(user) << output("[user]: Eight Trigrams: 64 Palms!", "combat_output")
+				set waitfor = 0
+				oviewers(5, user) << output("[user] stance changes.", "combat_output")
+				AddOverlay('icons/activation.dmi')
+				user.sixty_four_palms = world.time + 50
+				var/recorded_timestamp = user.sixty_four_palms
+				user.combat("You are ready to perform Sixty Four Palms. Press <strong>your attack key</strong> while next to your target to begin the attack! This activation will only last for 5 seconds.")
+				while(user && user.sixty_four_palms >= world.time)
+					sleep(1)
+				if(user)
+					RemoveOverlay('icons/activation.dmi')
+					if(user.sixty_four_palms == recorded_timestamp)
+						user.combat("Sixty Four Palms is no longer active.")
+						DoCooldown(user)
 				//user.stunned=10
-				user.Timed_Stun(100)
+			/*	user.Timed_Stun(100)
 
 				var/mob/human/player/etarget = user.NearestTarget()
 				if(!etarget)
@@ -156,13 +172,13 @@ skill
 						if(etarget && user)
 							etarget.curchakra=0
 							etarget.chakrablocked=60
-							etarget.Dec_Stam(3000+user.ControlDamageMultiplier()*500,0,user)
+							etarget.Damage(3000+user.ControlDamageMultiplier()*500, 0, user, "64 Palms")//etarget.Dec_Stam(3000+user.ControlDamageMultiplier()*500,0,user)
 							etarget.Hostile(user)
 					if(user) user.End_Stun()//user.stunned=0
 				else
 					Hakke_Circle(user,0)
 					//user.stunned=0
-					user.End_Stun()
+					user.End_Stun()*/
 
 
 
@@ -181,6 +197,9 @@ skill
 					if(!user.byakugan)
 						Error(user, "Byakugan is required to use this skill")
 						return 0
+					if(user.stance)
+						Error(user, "Deactivate your current stance first")
+						return 0
 					if(user.gentlefist)
 						Error(user, "Gentle Fist is already active")
 						return 0
@@ -188,6 +207,6 @@ skill
 
 			Use(mob/human/user)
 				viewers(user) << output("[user]: Gentle Fist!", "combat_output")
-				user.gentlefist=1
-				user.overlays+='icons/hakkehand.dmi'
-				user.special=/obj/hakkehand
+				user.gentlefist = 1
+				user.overlays += 'icons/hakkehand.dmi'
+				user.special = /obj/hakkehand

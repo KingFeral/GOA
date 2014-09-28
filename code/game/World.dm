@@ -5,8 +5,8 @@ var
 	Lcount = 0
 	voteclear = 10
 	list
-		DeathList = new/list
-		tolog = new()
+		DeathList// = new/list
+		tolog// = new()
 
 world
 	mob=/mob/charactermenu
@@ -19,6 +19,7 @@ world
 	//tick_lag = 1
 	loop_checks = 1
 	//fps = 20
+	//map_format = TOPDOWN_MAP
 
 #if DM_VERSION >= 455
 	//map_format = TOPDOWN_MAP

@@ -650,7 +650,7 @@ obj
 					cost = 2500
 					skill_reqs = list(RASENGAN)
 				Camouflaged_Hiding
-					sindex = CAMOFLAGE_CONCEALMENT
+					sindex = CAMOUFLAGE_CONCEALMENT
 					cost = 1200
 				Chakra_Leech
 					sindex = CHAKRA_LEECH

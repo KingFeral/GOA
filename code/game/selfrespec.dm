@@ -1,34 +1,45 @@
-client
+respecverbs/respecverb
 	verb/respec()
-		if(mob.realname in respecers)
-			mob << "You've already respeced this reboot."
+		if(!istype(src, /mob/human) || !usr.initialized)
+			return
+		if(usr.respeced)
+			usr << "You've already used your respec."
+			usr.verbs -= /respecverbs/respecverb/verb/respec
+			if(winexists(usr, "respecid"))
+				winset(usr, "respecid", "parent=")
 			return 0
-		if(mob && mob.skills.len) //skills.len check is to make sure they have a character loaded.. seems odd but it's one of the simpler ways I can think of
+		if(usr && usr.skills.len) //skills.len check is to make sure they have a character loaded.. seems odd but it's one of the simpler ways I can think of
 			//if(mob.realname in respecers)
 			//	usr << "You have already used your respec for this reboot cycle"
 			//	return 0
-			for(var/skill/sk in mob.skills)
+			for(var/skill/sk in usr.skills)
 				for(var/skillcard/sc in sk.skillcards) del(sc);del(sk)
-			saves.ClearSkills(ckey)
+			saves.ClearSkills(usr.ckey)
 
-			for(var/i=1, i<=mob.skillspassive.len, i++)			mob.skillspassive[i]=0
-			for(var/obj/gui/passives/Q in world)	mob.client.Passive_Refresh(Q);mob.elements = list()
+			for(var/i=1, i<=usr.skillspassive.len, i++)			usr.skillspassive[i]=0
+			for(var/obj/gui/passives/Q in world)	usr.client.Passive_Refresh(Q);usr.elements = list()
 
-			if(!mob.HasSkill(KAWARIMI))			mob.AddSkill(KAWARIMI)
-			if(!mob.HasSkill(SHUNSHIN))			mob.AddSkill(SHUNSHIN)
-			if(!mob.HasSkill(BUNSHIN))			mob.AddSkill(BUNSHIN)
-			if(!mob.HasSkill(HENGE))			mob.AddSkill(HENGE)
-			if(!mob.HasSkill(EXPLODING_NOTE))	mob.AddSkill(EXPLODING_NOTE)
-			mob:AddSkill(WINDMILL_SHURIKEN)
+			if(!usr.HasSkill(KAWARIMI))			usr.AddSkill(KAWARIMI)
+			if(!usr.HasSkill(SHUNSHIN))			usr.AddSkill(SHUNSHIN)
+			if(!usr.HasSkill(BUNSHIN))			usr.AddSkill(BUNSHIN)
+			if(!usr.HasSkill(HENGE))			usr.AddSkill(HENGE)
+			if(!usr.HasSkill(EXPLODING_NOTE))	usr.AddSkill(EXPLODING_NOTE)
+			usr:AddSkill(WINDMILL_SHURIKEN)
 
-			mob.str = 50
-			mob.con = 50
-			mob.rfx = 50
-			mob.int = 50
-			mob.skillpoints = 0
-			mob.levelpoints = mob.blevel*6
+			usr.str = 50
+			usr.con = 50
+			usr.rfx = 50
+			usr.int = 50
+			usr.skillpoints = 0
+			usr.levelpoints = usr.blevel*6
 
 			//mob.RecalculateStats()
-			mob.RefreshSkillList()
-			mob << "<font color=#800080>Your character has been respec'd."
-			respecers.Add(mob.realname)
+			usr.RefreshSkillList()
+			usr << "<strong>Your character has been respec'd."
+			usr.respeced=1
+			usr.verbs -= /respecverbs/respecverb/verb/respec
+			winset(usr, "respecid", "parent=")
+			usr.client.SaveMob()
+
+mob
+	var/respeced=1

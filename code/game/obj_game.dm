@@ -10,8 +10,10 @@ obj
 			if(istype(usr,/mob/human/player))
 				if(!usr.icon_state)
 					flick("hurt",usr)
-				usr.Dec_Stam(400 * 1 + 0.05 * owner.skillspassive[TRAP_MASTERY], 0, owner)
-				usr.Wound(rand(1,3) * 1 + 0.05 * owner.skillspassive[TRAP_MASTERY])
+
+				if(owner)
+					usr.Damage(400 * 1 + 0.05 * owner.skillspassive[TRAP_MASTERY], rand(1,3) * 1 + 0.05 * owner.skillspassive[TRAP_MASTERY], owner, "Explosion")//usr.Dec_Stam(400 * 1 + 0.05 * owner.skillspassive[TRAP_MASTERY], 0, owner)
+					//usr.Wound(rand(1,3) * 1 + 0.05 * owner.skillspassive[TRAP_MASTERY])
 				//usr.move_stun+=20
 				usr.Timed_Move_Stun(20)
 				if(owner && owner.skillspassive[TRAP_MASTERY])
@@ -93,11 +95,21 @@ obj
 				r4=1
 			else
 				r4=0
+			var/explosion_damage = 400 * (1 + 0.3 * trapskill)
+			var/explosion_location = locate(xx-1,xy-1,xz)
+			if(explosion_location) explosion(explosion_damage, 0, explosion_location)
+			explosion_location = locate(xx+1,xy+1,xz)
+			if(explosion_location) explosion(explosion_damage, 0, explosion_location)
+			explosion_location = locate(xx+1,xy-1,xz)
+			if(explosion_location) explosion(explosion_damage, 0, explosion_location)
+			explosion_location = locate(xx-1,xy+1,xz)
+			if(explosion_location) explosion(explosion_damage, 0, explosion_location)
+			/*
 			if(r1)explosion(400*(1+0.3*trapskill),xx-1,xy-1,xz,usr,1)
 			if(r2)explosion(400*(1+0.3*trapskill),xx+1,xy+1,xz,usr,1)
 			if(r3)explosion(400*(1+0.3*trapskill),xx+1,xy-1,xz,usr,1)
 			if(r4)explosion(400*(1+0.3*trapskill),xx-1,xy+1,xz,usr,1)
-			explosion(600*(1+0.3*trapskill),xx,xy,xz,usr)
+			explosion(600*(1+0.3*trapskill),xx,xy,xz,usr)*/
 			//del(src)
 			dispose()
 

@@ -132,7 +132,7 @@ world
 					skill_info += skill.cooldown
 					skill_info += skill.uses
 
-				nums.len=41
+				nums.len=42
 				nums[1]=x.ezing
 				nums[2]=x.MissionCool
 				nums[3]=0
@@ -174,6 +174,7 @@ world
 				nums[39] = x.eyecolor_blue
 				nums[40] = x.double_xp_time
 				nums[41] = x.triple_xp_time
+				nums[42] = 1
 
 				lst.len=8
 				lst[1]=list2params(x.skillspassive)
@@ -308,6 +309,7 @@ client
 			x.eyecolor_blue = nums[39]
 			x.double_xp_time = nums[40]
 			x.triple_xp_time = nums[41]
+			x.respeced = nums[42]
 
 			x.Last_Hosted=strg[1]
 			x.lasthostile=strg[2]

@@ -11,7 +11,7 @@ proc
 		var/result=0
 		var/turf/sourceloc = location//locate(dx, dy, dz)
 		var/turf/water/X1 = istype(sourceloc, /turf/water)
-		var/obj/Water/X2 = locate(/obj/Water) in sourceloc//locate(dx, dy, dz)
+		var/obj/water/X2 = locate(/obj/water) in sourceloc//locate(dx, dy, dz)hprojectile_to
 		/*if(X1)
 			result=1
 		if(X2)
@@ -273,9 +273,9 @@ obj
 			for(var/mob/human/player/X in oview(0,src))
 				if(!X.icon_state)
 					flick("hurt",X)
-				X.Dec_Stam(rand(1500,5000) + 1000*conbuff, 0, cause)
+				X.Damage(rand(1500, 5000) + 1000 * conbuff, 10, cause)//X.Dec_Stam(rand(1500,5000) + 1000*conbuff, 0, cause)
 				X.Hostile(cause)
-				X.Wound(10, 0, cause)
+				//X.Wound(10, 0, cause)
 				Blood2(X)
 				//X.move_stun+=30
 				X.Timed_Move_Stun(30)
@@ -468,7 +468,8 @@ mob/human
 							sleep(1)
 						if(hit)
 							attack_reaction()
-							etarget.Dec_Stam(src.con*rand(50,150)/100)
+							//etarget.Dec_Stam(src.con*rand(50,150)/100)
+							etarget.Damage(src.con*rand(50,150)/100, )
 							if(!etarget.icon_state)
 								flick("hurt",etarget)
 							etarget.Hostile(owner)
@@ -487,7 +488,7 @@ mob/human
 			src.density=1
 			walk(src,0)
 
-		Del()
+		/*Del()
 			if(loc == null)
 				return ..()
 			src.invisibility=99
@@ -495,10 +496,13 @@ mob/human
 			src.loc=locate(0,0,0)
 			owner = null
 			loc = null
-
-		Dec_Stam()
+*/
+	/*	Dec_Stam()
 			return
 		Wound()
+			return*/
+
+		Damage()
 			return
 
 mob/proc/nopkloop()
@@ -621,10 +625,10 @@ turf/water
 		br
 			icon_state="br"
 
-	Del()
+	/*Del()
 		for(var/obj/haku_ice/ice in src)
 			del(ice)
-		return ..()
+		return ..()*/
 
 
 obj/windblast
@@ -638,9 +642,185 @@ obj/windblast
 		icon_state="x-1"
 	windtrail
 		icon_state="trail"
+
+
+
+proc
+	wet_proj(dx,dy,dz,eicon,estate,mob/human/u,dist,epower,emag,sticky,dur=1200)
+		set waitfor = 0
+		var/obj/proj/M = new/obj/proj(locate(dx, dy, dz))
+		M.projdisturber = 1
+		M.density = 0
+		M.icon = eicon
+		M.icon_state = estate
+
+		switch(u.dir)
+			if(NORTHEAST, NORTHWEST)
+				M.dir = NORTH
+			if(SOUTHEAST, SOUTHWEST)
+				M.dir = SOUTH
+			else
+				M.dir = u.dir
+
+		if(emag >= 1)
+			Wet_cap(M.x, M.y, M.z, M.dir, emag, dur, sticky)
+			Wet(M.x, M.y, M.z, M.dir, emag, dur, sticky)
+
+		sleep(1)
+		var/stepsleft = dist
+		while(stepsleft > 0 && M)
+			if(M && u)
+				var/mob/hit
+				for(var/mob/O in get_step(M, M.dir))
+					if(istype(O, /mob/human))
+						if(O != u)
+							hit = O
+
+				M.loc = get_step(M, M.dir)
+
+				sleep(1)
+
+				if(emag>=1)
+					Wet(M.x, M.y, M.z, M.dir, emag, dur, sticky)
+
+				walk(M, 0)
+				stepsleft--
+				if(hit)
+					//hit = hit.Replacement_Start(u)
+					if(epower) hit.Damage(epower, 0, u, "Water Projectile", "Normal")
+					if(sticky) hit.Timed_Stun(40)
+					//spawn(1)
+					if(hit)
+						hit.Knockback(1, M.dir)
+						if(u)
+							if(hit)
+								hit.Hostile(u)
+
+		M.loc = get_step(M, M.dir)
+
+		if(emag >= 1)
+			Wet_cap(M.x, M.y, M.z, M.dir, emag, dur, sticky)
+
+		sleep(1)
+
+		M.loc = null
+
+proc
+	Wet_cap(start_x, start_y, start_z, xdir, mag, xdur, sticky)
+		set waitfor = 0
+		var
+			side_dx = 0
+			side_dy = 0
+			water_type
+			sides[0]
+
+		switch(xdir)
+			if(NORTH)
+				side_dx = 1
+				if(sticky) water_type = /obj/water_sides/sticky/wu
+				else water_type = /obj/water_sides/wu
+			if(SOUTH)
+				side_dx = 1
+				if(sticky) water_type = /obj/water_sides/sticky/wd
+				else water_type = /obj/water_sides/wd
+			if(EAST)
+				side_dy = 1
+				if(sticky) water_type = /obj/water_sides/sticky/wr
+				else water_type = /obj/water_sides/wr
+			if(WEST)
+				side_dy = 1
+				if(sticky) water_type = /obj/water_sides/sticky/wl
+				else water_type = /obj/water_sides/wl
+			else
+				CRASH("Unsupported xdir ([xdir])")
+
+		//sides += new water_type(locate(start_x, start_y, start_z))
+		if(!(locate(water_type) in locate(start_x, start_y, start_z)))
+			sides += new water_type(locate(start_x, start_y, start_z))
+		while(mag > 1)
+			//sides.Add(
+			//new water_type(locate(start_x + (mag-1)*side_dx, start_y + (mag-1)*side_dy, start_z)),
+			//new water_type(locate(start_x - (mag-1)*side_dx, start_y - (mag-1)*side_dy, start_z)))
+			var/turf/t1 = locate(start_x + (mag-1)*side_dx, start_y + (mag-1)*side_dy, start_z)
+			var/turf/t2 = locate(start_x - (mag-1)*side_dx, start_y - (mag-1)*side_dy, start_z)
+			if(!(locate(water_type) in t1)) sides += new water_type(t1)
+			if(!(locate(water_type) in t2)) sides += new water_type(t2)
+			--mag
+
+		sleep(xdur)
+		for(var/obj/O in sides)
+			O.dispose()
+
+	Wet(start_x, start_y, start_z, xdir, mag, xdur, sticky)
+		set waitfor = 0
+		var
+			side_dx = 0
+			side_dy = 0
+			side_type1
+			side_type2
+			water_type = /obj/water
+			water[0]
+
+		if(sticky) water_type = /obj/water/sticky
+
+		switch(xdir)
+			if(NORTH)
+				side_dx = 1
+				if(sticky)
+					side_type1 = /obj/water_sides/sticky/wr
+					side_type2 = /obj/water_sides/sticky/wl
+				else
+					side_type1 = /obj/water_sides/wr
+					side_type2 = /obj/water_sides/wl
+			if(SOUTH)
+				side_dx = 1
+				if(sticky)
+					side_type1 = /obj/water_sides/sticky/wr
+					side_type2 = /obj/water_sides/sticky/wl
+				else
+					side_type1 = /obj/water_sides/wr
+					side_type2 = /obj/water_sides/wl
+			if(EAST)
+				side_dy = 1
+				if(sticky)
+					side_type1 = /obj/water_sides/sticky/wu
+					side_type2 = /obj/water_sides/sticky/wd
+				else
+					side_type1 = /obj/water_sides/wu
+					side_type2 = /obj/water_sides/wd
+			if(WEST)
+				side_dy = 1
+				if(sticky)
+					side_type1 = /obj/water_sides/sticky/wu
+					side_type2 = /obj/water_sides/sticky/wd
+				else
+					side_type1 = /obj/water_sides/wu
+					side_type2 = /obj/water_sides/wd
+			else
+				CRASH("Unsupported xdir ([xdir])")
+
+		if(!(locate(water_type) in locate(start_x, start_y, start_z)))
+			water.Add(new water_type(locate(start_x, start_y, start_z)),
+			new side_type1(locate(start_x + mag * side_dx, start_y + mag * side_dy, start_z)),
+			new side_type2(locate(start_x - mag * side_dx, start_y - mag * side_dy, start_z)))
+		while(mag > 1)
+			var/t1 = locate(start_x + (mag-1)*side_dx, start_y + (mag-1)*side_dy, start_z)
+			var/t2 = locate(start_x - (mag-1)*side_dx, start_y - (mag-1)*side_dy, start_z)
+			if(!locate(water_type) in t1) water += new water_type(t1)
+			if(!locate(water_type) in t2) water += new water_type(t2)
+			//water.Add(new water_type(locate(start_x + (mag-1)*side_dx, start_y + (mag-1)*side_dy, start_z)),
+			//new water_type(locate(start_x - (mag-1)*side_dx, start_y - (mag-1)*side_dy, start_z)))
+
+			--mag
+
+		sleep(xdur)
+		for(var/obj/O in water)
+			O.dispose()
+/*
 proc
 	wet_proj(dx,dy,dz,eicon,estate,mob/human/u,dist,epower,emag)
 		set waitfor = 0
+		//world.log << "EPOWER IS [epower]"
 		if(emag>=1)
 			if(u.dir==NORTH)
 				Wet_cap(u.x,u.y,u.z,SOUTH,emag,1200)
@@ -650,7 +830,6 @@ proc
 				Wet_cap(u.x,u.y,u.z,EAST,emag,1200)
 			if(u.dir==EAST)
 				Wet_cap(u.x,u.y,u.z,WEST,emag,1200)
-
 
 		var/obj/proj/M = new/obj/proj(locate(dx,dy,dz))
 		M.projdisturber=1
@@ -667,6 +846,7 @@ proc
 		sleep(1)
 		var/stepsleft=dist
 		//var/alreadyhit[] = list()
+		var/list/hitlist = list()
 		while(stepsleft>0 && M )
 			if(M && u)
 				var/mob/hit
@@ -674,6 +854,7 @@ proc
 					if(istype(O,/mob/human))
 						if(O!=u)
 							hit=O
+							break
 
 			//	walk(M,M.dir)
 				if(M.dir==NORTH)
@@ -689,9 +870,10 @@ proc
 					Wet(M.x,M.y,M.z,M.dir,emag,1200)
 				walk(M,0)
 				stepsleft--
-				if(hit)
-					hit.Dec_Stam(epower,0,u)
-					//alreadyhit += hit
+				if(hit && (!(hit.realname in hitlist) || hitlist[hit.realname] < 5))
+					hit.Timed_Stun(5)
+					hit.Damage(epower, 0, u, "Water Wave")
+					hitlist[hit.realname]++
 					if(hit)
 						hit.Knockback(1,M.dir)
 						if(u)
@@ -708,7 +890,10 @@ proc
 		if(emag>=1)
 			Wet_cap(M.x,M.y,M.z,M.dir,emag,1200)
 		sleep(1)
-		M.loc = null//del(M)
+		M.dispose()//del(M)
+
+
+
 
 proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 	set waitfor = 0
@@ -747,9 +932,9 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w2=new/obj/Water_sides/wr(locate(dx,dy+1,dz))
 				w3=new/obj/Water_sides/wr(locate(dx,dy-1,dz))
 			sleep(xdur)
-			del(w1)
-			del(w2)
-			del(w3)
+			w1.dispose()//del(w1)
+			w2.dispose()//del(w2)
+			w3.dispose()//del(w3)
 		if(3)
 			var/obj/Water_sides/w1
 			var/obj/Water_sides/w2
@@ -781,11 +966,11 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w4=new/obj/Water_sides/wr(locate(dx,dy+2,dz))
 				w5=new/obj/Water_sides/wr(locate(dx,dy-2,dz))
 			sleep(xdur)
-			del(w1)
-			del(w2)
-			del(w3)
-			del(w4)
-			del(w5)
+			w1.dispose()//del(w1)
+			w2.dispose()//del(w2)
+			w3.dispose()//del(w3)
+			w4.dispose()//del(w4)
+			w5.dispose()//del(w5)
 		if(4)
 			var/obj/Water_sides/w1
 			var/obj/Water_sides/w2
@@ -827,13 +1012,13 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w6=new/obj/Water_sides/wr(locate(dx,dy+3,dz))
 				w7=new/obj/Water_sides/wr(locate(dx,dy-3,dz))
 			sleep(xdur)
-			del(w1)
-			del(w2)
-			del(w3)
-			del(w4)
-			del(w5)
-			del(w6)
-			del(w7)
+			w1.dispose()//del(w1)
+			w2.dispose()//del(w2)
+			w3.dispose()//del(w3)
+			w4.dispose()//del(w4)
+			w5.dispose()//del(w5)
+			w6.dispose()//del(w1)
+			w7.dispose()//del(w2)
 		if(5)
 			var/obj/Water_sides/w1
 			var/obj/Water_sides/w2
@@ -885,15 +1070,15 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w8=new/obj/Water_sides/wr(locate(dx,dy+4,dz))
 				w9=new/obj/Water_sides/wr(locate(dx,dy-4,dz))
 			sleep(xdur)
-			del(w1)
-			del(w2)
-			del(w3)
-			del(w4)
-			del(w5)
-			del(w6)
-			del(w7)
-			del(w8)
-			del(w9)
+			w1.dispose()//del(w1)
+			w2.dispose()//del(w2)
+			w3.dispose()//del(w3)
+			w4.dispose()//del(w4)
+			w5.dispose()//del(w5)
+			w6.dispose()//del(w1)
+			w7.dispose()//del(w2)
+			w8.dispose()//del(w3)
+			w9.dispose()//del(w4)
 		else//if(mag>=6)
 			var/obj/Water_sides/w1
 			var/obj/Water_sides/w2
@@ -955,17 +1140,17 @@ proc/Wet_cap(dx,dy,dz,xdir,mag,xdur)
 				w10=new/obj/Water_sides/wr(locate(dx,dy+5,dz))
 				w11=new/obj/Water_sides/wr(locate(dx,dy-5,dz))
 			sleep(xdur)
-			del(w1)
-			del(w2)
-			del(w3)
-			del(w4)
-			del(w5)
-			del(w6)
-			del(w7)
-			del(w8)
-			del(w9)
-			del(w10)
-			del(w11)
+			w1.dispose()//del(w1)
+			w2.dispose()//del(w2)
+			w3.dispose()//del(w3)
+			w4.dispose()//del(w4)
+			w5.dispose()//del(w5)
+			w6.dispose()//del(w1)
+			w7.dispose()//del(w2)
+			w8.dispose()//del(w3)
+			w9.dispose()//del(w4)
+			w10.dispose()//del(w5)
+			w11.dispose()//del(w1)
 
 proc/Wet(dx,dy,dz,xdir,mag,xdur)
 	set waitfor = 0
@@ -982,9 +1167,9 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+1,dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-1,dz))
 			sleep(xdur)
-			del(ws1)
-			del(ws2)
-			del(w1)
+			ws1.dispose()//del(ws1)
+			ws2.dispose()//del(ws2)
+			w1.dispose()//del(w1)
 		if(2)
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
@@ -1000,11 +1185,11 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+2,dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-2,dz))
 			sleep(xdur)
-			del(ws1)
-			del(ws2)
-			del(w1)
-			del(w2)
-			del(w3)
+			ws1.dispose()//del(ws1)
+			ws2.dispose()//del(ws2)
+			w1.dispose()//del(w1)
+			w2.dispose()
+			w3.dispose()
 		if(3)
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
@@ -1026,13 +1211,13 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+(mag),dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-(mag),dz))
 			sleep(xdur)
-			del(ws1)
-			del(ws2)
-			del(w1)
-			del(w2)
-			del(w3)
-			del(w4)
-			del(w5)
+			ws1.dispose()//del(ws1)
+			ws2.dispose()//del(ws2)
+			w1.dispose()//del(w1)
+			w2.dispose()//del(w1)
+			w3.dispose()//del(w1)
+			w4.dispose()
+			w5.dispose()
 		if(4)
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
@@ -1059,15 +1244,15 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+(mag),dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-(mag),dz))
 			sleep(xdur)
-			del(ws1)
-			del(ws2)
-			del(w1)
-			del(w2)
-			del(w3)
-			del(w4)
-			del(w5)
-			del(w6)
-			del(w7)
+			ws1.dispose()//del(ws1)
+			ws2.dispose()//del(ws2)
+			w1.dispose()//del(w1)
+			w2.dispose()//del(w1)
+			w3.dispose()//del(w1)
+			w4.dispose()
+			w5.dispose()
+			w6.dispose()
+			w7.dispose()
 		if(5)
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
@@ -1102,17 +1287,17 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+(mag),dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-(mag),dz))
 			sleep(xdur)
-			del(ws1)
-			del(ws2)
-			del(w1)
-			del(w2)
-			del(w3)
-			del(w4)
-			del(w5)
-			del(w6)
-			del(w7)
-			del(w8)
-			del(w9)
+			ws1.dispose()//del(ws1)
+			ws2.dispose()//del(ws2)
+			w1.dispose()//del(w1)
+			w2.dispose()//del(w1)
+			w3.dispose()//del(w1)
+			w4.dispose()
+			w5.dispose()
+			w6.dispose()
+			w7.dispose()
+			w8.dispose()
+			w9.dispose()
 		else
 			var/obj/Water/w1= new/obj/Water(locate(dx,dy,dz))
 			var/obj/Water/w2
@@ -1152,20 +1337,20 @@ proc/Wet(dx,dy,dz,xdir,mag,xdur)
 				ws1=new/obj/Water_sides/wu(locate(dx,dy+(mag),dz))
 				ws2=new/obj/Water_sides/wd(locate(dx,dy-(mag),dz))
 			sleep(xdur)
-			del(ws1)
-			del(ws2)
-			del(w1)
-			del(w2)
-			del(w3)
-			del(w4)
-			del(w5)
-			del(w6)
-			del(w7)
-			del(w8)
-			del(w9)
-			del(w10)
-			del(w11)
-
+			ws1.dispose()//del(ws1)
+			ws2.dispose()//del(ws2)
+			w1.dispose()//del(w1)
+			w2.dispose()//del(w1)
+			w3.dispose()//del(w1)
+			w4.dispose()
+			w5.dispose()
+			w6.dispose()
+			w7.dispose()
+			w8.dispose()
+			w9.dispose()
+			w10.dispose()
+			w11.dispose()
+*/
 
 mob/var
 	obj/Contract=0
@@ -1530,7 +1715,8 @@ proc/Fire(dx,dy,dz,mag,dur)
 
 	sleep(dur)
 	for(var/obj/vv in xlist)
-		del(vv)
+		//del(vv)
+		vv.dispose()
 
 proc/Ash(dx,dy,dz,dur)
 	set waitfor = 0
@@ -1618,8 +1804,9 @@ proc/Ash(dx,dy,dz,dur)
 
 	sleep(dur)
 	for(var/obj/O in X)
-		del(O)
-	del(X)
+		//del(O)
+		O.dispose()
+	X = null
 
 
 obj
@@ -1745,10 +1932,9 @@ obj/Poison
 		loc = null
 
 obj/Fire
-	Del()
-		if(loc == null)
-			return ..()
+	dispose()
 		loc = null
+
 	f1
 		icon='icons/katon.dmi'
 		icon_state="1"
@@ -1795,10 +1981,9 @@ obj/Fire
 		density=0
 		layer=MOB_LAYER+1
 obj/Ash
-	Del()
-		if(loc == null)
-			return ..()
+	dispose()
 		loc = null
+
 	f1
 		icon='icons/ashfire.dmi'
 		icon_state="1"
@@ -1845,7 +2030,19 @@ obj/Ash
 		density=0
 		layer=MOB_LAYER+1
 
+mob
+	var/tmp/fire_counter = 0
+	var/tmp/fire_counter_cooldown = 0
 
+	proc/increase_fire_counter(amount)
+		set waitfor = 0
+		fire_counter += amount
+		var/old_amount = fire_counter
+		sleep(10)
+		if(!src)
+			return
+		if(fire_counter == old_amount)
+			fire_counter = 0
 
 proc/AOEPoison(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,poi,stun)
 	set waitfor = 0
@@ -1863,35 +2060,64 @@ proc/AOEPoisoned(mob/poisoned, mob/attacker, stamdamage, poison)
 	set waitfor = 0
 	if(!poisoned)
 		return
-	if(!poisoned.stunned && !poisoned.ko && !poisoned.IsProtected())
-		poisoned.Timed_Stun(10)
-	poisoned.Dec_Stam(stamdamage, 0, attacker)
+	if(!poisoned.ko && !poisoned.IsProtected())
+		poisoned.Timed_Stun(11)
+	//poisoned.Dec_Stam(stamdamage, 0, attacker)
+	poisoned.Damage(stamdamage, 0, attacker, "Poison", "Internal")
+	// TODO, poison should be its own proc.
 	poisoned.Poison += poison
 	poisoned.Hostile(attacker)
 
-proc/AOE(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun)
+proc/AOEFire(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun)
+	set waitfor = 0
+	var/obj/M=new/obj(locate(xx,xy,xz))
+	var/i=duration
+	while(i>0)
+		i-=5
+		for(var/mob/human/O in oview(radius,M))
+			AOEFireed(O, attacker, stamdamage, wo, stun)
+		sleep(5)
+	M.loc = null
+
+proc/AOEFireed(mob/hit, mob/attacker, stamdamage, wounds, stun)
+	set waitfor = 0
+	if((attacker.con + attacker.conbuff - attacker.conneg) >= (hit.str + hit.strbuff - hit.strneg))
+		hit.Timed_Move_Stun(15, 3)
+	hit.Damage(stamdamage, rand(0, wounds), attacker, "Fire")//hit.Wound(rand(0, wounds), 0, attacker)
+	hit.increase_fire_counter(1)
+	if(hit.fire_counter >= 3 && hit.fire_counter_cooldown < world.time)
+		//explosion(stamdamage * 3, hit.x, hit.y, hit.z, attacker, dist = 3, dontknock=1)
+		explosion(stamdamage * 5, 0, hit.loc, attacker, list("distance" = 3, "ignore_owner" = 1))
+		hit.Timed_Stun(15)
+		hit.movepenalty += 10
+		hit.fire_counter = 0
+		//hit.fire_counter_cooldown = world.time + 30
+	//hit.Dec_Stam(stamdamage,0,attacker)
+	hit.Hostile(attacker)
+
+proc/AOE(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun,source)
 	set waitfor = 0
 	var/obj/M=new/obj(locate(xx,xy,xz))
 	var/i=duration
 	while(i>0)
 		i-=10
 		for(var/mob/human/O in oview(radius,M))
-			AOEed(O, attacker, stamdamage, wo, stun)
+			AOEed(O, attacker, stamdamage, wo, stun,source)
 		sleep(10)
 	M.loc = null
 
-proc/AOEed(mob/hit, mob/attacker, stamdamage, wounds, stun)
+proc/AOEed(mob/hit, mob/attacker, stamdamage, wounds, stun, source)
 	set waitfor = 0
-	hit.Wound(rand(0,wounds),0,attacker)
+	hit.Damage(0, rand(0, wounds), attacker, source)//hit.Wound(rand(0,wounds),0,attacker)
 	if(stun)
 		stun = stun*10
 		if(hit.move_stun<stun)
 			hit.Timed_Move_Stun(stun)
 	hit.Timed_Stun(10)
-	hit.Dec_Stam(stamdamage,0,attacker)
+	hit.Damage(stamdamage, 0, attacker, source)//hit.Dec_Stam(stamdamage,0,attacker)
 	hit.Hostile(attacker)
 
-proc/AOEx(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun)
+proc/AOEx(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun,source)
 	set waitfor = 0
 	var/obj/M=new/obj(locate(xx,xy,xz))
 	var/i=duration
@@ -1899,18 +2125,19 @@ proc/AOEx(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun)
 		i-=10
 		for(var/mob/human/O in oview(radius,M))
 			if(O!=attacker)
-				AOExed(O, attacker, stamdamage, wo, stun)
+				AOExed(O, attacker, stamdamage, wo, stun,source)
 		sleep(10)
 	M.loc = null
 
-proc/AOExed(mob/hit, mob/attacker, stamdamage, wounds, stun)
+proc/AOExed(mob/hit, mob/attacker, stamdamage, wounds, stun, source)
 	set waitfor = 0
-	hit.Wound(rand(0,wounds),0,attacker)
+	//hit.Wound(rand(0,wounds),0,attacker)
 	if(stun)
 		stun = stun*10
 		if(hit.move_stun<stun)
 			hit.Timed_Move_Stun(stun)
-	hit.Dec_Stam(stamdamage,0,attacker)
+	//hit.Dec_Stam(stamdamage,0,attacker)
+	hit.Damage(stamdamage, rand(0, wounds), attacker, source)
 	hit.Hostile(attacker)
 
 mob/var/justwalk=0
@@ -1926,11 +2153,11 @@ proc/AOExk(xx,xy,xz,radius,stamdamage,duration,mob/human/attacker,wo,stun,knock)
 		sleep(10)
 	del(M)
 
-proc/AOExked(xx,xy,xz,mob/O, mob/attacker, stamdamage, wo, stun, knock)
+proc/AOExked(xx,xy,xz,mob/O, mob/attacker, stamdamage, wo, stun, knock, source)
 	set waitfor = 0
 	if(O && O != attacker)
-		O.Wound(rand(0,wo),0,attacker)
-		O.Dec_Stam(stamdamage,0,attacker)
+		O.Damage(stamdamage, rand(0,wo), attacker, source)//O.Wound(rand(0,wo),0,attacker)
+		//O.Dec_Stam(stamdamage,0,attacker)
 		O.Hostile(attacker)
 		if(O && knock)
 			var/ns=0
@@ -1993,12 +2220,12 @@ proc/AOEcced(list/gotcha, mob/O, mob/attacker, stamdamage,stamdamage2,wo,stun,kn
 	set waitfor = 0
 	if(O && O != attacker && !O.IsProtected())
 		if(!gotcha.Find(O.realname))
-			O.Dec_Stam(stamdamage2, 0, attacker)
-			O.Wound(rand(0, wo), 0, attacker)
+			O.Damage(stamdamage, rand(0,wo), attacker, "Lightning: Chidori Current")//O.Dec_Stam(stamdamage2, 0, attacker)
+			//O.Wound(rand(0, wo), 0, attacker)
 			gotcha.Add(O.realname)
 		else
-			O.Dec_Stam(stamdamage2, 0, attacker)
-			O.Wound(rand(0, wo), 0, attacker)
+			O.Damage(stamdamage2, rand(0,wo), attacker, "Lightning: Chidori Current")//O.Dec_Stam(stamdamage2, 0, attacker)
+			//O.Wound(rand(0, wo), 0, attacker)
 		O.Hostile(attacker)
 		if(!O)
 			return
@@ -2115,7 +2342,7 @@ mob/proc/Knockback(k,xdir)
 			src.animate_movement=1
 			if(src.icon_state=="hurt")
 				src.icon_state=""
-proc/WaveDamage(mob/human/u,mag,dam,knockback,xdist)
+proc/WaveDamage(mob/human/u,mag,dam,knockback,xdist,source)
 	set waitfor = 0
 	var/dir = u.dir
 	var/turf/center = u.loc
@@ -2140,7 +2367,7 @@ proc/WaveDamage(mob/human/u,mag,dam,knockback,xdist)
 				if(!istype(M, /mob/human/npc) && !(M in hit))
 					hit += M
 					if(M) M.Knockback(knockback,dir)
-					M.Dec_Stam(dam,0,u)
+					M.Damage(dam, 0, u, source)//M.Dec_Stam(dam,0,u)
 					if(M) M.Hostile(u)
 
 		sleep(1)
@@ -2237,17 +2464,28 @@ mob/human/clay
 		..()
 		src.power=p
 		src.owner=u
+
+	dispose()
+		walk(src, 0)
+		owner = null
+		loc = null
+
 	proc
 		Explode()
 			set waitfor = 0
 			if(src.icon)
-				src.icon=null
+				if(istype(src, /mob/human/clay/bird))
+					for(var/mob/m in loc)
+						m.Timed_Stun(10)
+				src.icon = null
 				src.density=0
-				explosion(src.power,src.x,src.y,src.z,src.owner,0,src.explosionsize)
+				//explosion(src.power,src.x,src.y,src.z,src.owner,0,src.explosionsize)
+				if(src.owner && src.loc)
+					explosion(src.power, 0, src.loc, src.owner, list("distance" = src.explosionsize))
 				if(owner && istype(owner,/mob/human/player))
 					for(var/obj/trigger/exploding_spider/T in owner.triggers)
 						if(T.spider == src) owner.RemoveTrigger(T)
-				del(src)
+				dispose()
 
 proc/Homing_Projectile_bang(mob/U,mob/human/clay/proj,xdur,mob/human/M,lag)
 	set waitfor = 0
@@ -2298,7 +2536,6 @@ proc/Homing_Projectile_bang(mob/U,mob/human/clay/proj,xdur,mob/human/M,lag)
 		if(!proj) return
 		if(hit)
 			hit.movepenalty += 10
-			hit.Timed_Stun(15)
 			proj.Explode()
 		else
 			proj.Explode()
@@ -2803,40 +3040,6 @@ obj
 					o.loc = null
 				..()
 
-obj/earthcage
-	icon='icons/dotoncage.dmi'
-	layer=MOB_LAYER
-	pixel_x=-16
-	pixel_y=-16
-	density=0
-	var
-		crushed
-	Del()
-		if(loc == null)
-			return ..()
-		loc = null
-
-
-proc/Doton_Cage(dx,dy,dz,dur)
-	set waitfor = 0
-	var/obj/bl=new/obj/earthcage(locate(dx,dy,dz))
-	var/obj/br=new/obj/earthcage(locate(dx+1,dy,dz))
-	var/obj/tl=new/obj/earthcage(locate(dx,dy+1,dz))
-	var/obj/tr=new/obj/earthcage(locate(dx+1,dy+1,dz))
-	flick("bl",bl)
-	flick("br",br)
-	flick("tl",tl)
-	flick("tr",tr)
-	bl.icon_state="bls"
-	br.icon_state="brs"
-	tl.icon_state="tls"
-	tr.icon_state="trs"
-	sleep(dur)
-	del(bl)
-	del(br)
-	del(tl)
-	del(tr)
-
 obj
 	kbl
 		icon='icons/kaiten.dmi'
@@ -2870,15 +3073,15 @@ obj
 proc/Hakke_Circle(mob/u,mob/t)
 	set waitfor = 0
 	var/list/listx=new
-	listx+=image('icons/hakke64.dmi',locate(u.x,u.y,u.z),icon_state="1,1",layer=TURF_LAYER+1)
-	listx+=image('icons/hakke64.dmi',locate(u.x,u.y+1,u.z),icon_state="1,2",layer=TURF_LAYER+1)
-	listx+=image('icons/hakke64.dmi',locate(u.x,u.y-1,u.z),icon_state="1,0",layer=TURF_LAYER+1)
-	listx+=image('icons/hakke64.dmi',locate(u.x-1,u.y+1,u.z),icon_state="0,2",layer=TURF_LAYER+1)
-	listx+=image('icons/hakke64.dmi',locate(u.x-1,u.y-1,u.z),icon_state="0,0",layer=TURF_LAYER+1)
-	listx+=image('icons/hakke64.dmi',locate(u.x-1,u.y,u.z),icon_state="0,1",layer=TURF_LAYER+1)
-	listx+=image('icons/hakke64.dmi',locate(u.x+1,u.y+1,u.z),icon_state="2,2",layer=TURF_LAYER+1)
-	listx+=image('icons/hakke64.dmi',locate(u.x+1,u.y-1,u.z),icon_state="2,0",layer=TURF_LAYER+1)
-	listx+=image('icons/hakke64.dmi',locate(u.x+1,u.y,u.z),icon_state="2,1",layer=TURF_LAYER+1)
+	listx.Add(image('icons/hakke64.dmi',locate(u.x,u.y,u.z),icon_state="1,1",layer=TURF_LAYER+1),
+	image('icons/hakke64.dmi',locate(u.x,u.y+1,u.z),icon_state="1,2",layer=TURF_LAYER+1),
+	image('icons/hakke64.dmi',locate(u.x,u.y-1,u.z),icon_state="1,0",layer=TURF_LAYER+1),
+	image('icons/hakke64.dmi',locate(u.x-1,u.y+1,u.z),icon_state="0,2",layer=TURF_LAYER+1),
+	image('icons/hakke64.dmi',locate(u.x-1,u.y-1,u.z),icon_state="0,0",layer=TURF_LAYER+1),
+	image('icons/hakke64.dmi',locate(u.x-1,u.y,u.z),icon_state="0,1",layer=TURF_LAYER+1),
+	image('icons/hakke64.dmi',locate(u.x+1,u.y+1,u.z),icon_state="2,2",layer=TURF_LAYER+1),
+	image('icons/hakke64.dmi',locate(u.x+1,u.y-1,u.z),icon_state="2,0",layer=TURF_LAYER+1),
+	image('icons/hakke64.dmi',locate(u.x+1,u.y,u.z),icon_state="2,1",layer=TURF_LAYER+1))
 	for(var/image/i in listx)
 		u<<i
 		if(t)
@@ -2887,7 +3090,7 @@ proc/Hakke_Circle(mob/u,mob/t)
 	sleep(100)
 	for(var/image/x in listx)
 		del(x)
-	del(listx)
+	listx = null
 
 mob
 	proc/hakke_animation(iterations)
@@ -2900,7 +3103,8 @@ mob
 			flick("PunchA-2",src)
 
 mob/proc/Hakke_Pwn(mob/e)
-	if(e)
+	if(!stunned && e)
+		viewers(src) << output("[src]: Eight Trigrams: 64 Palms!", "combat_output")
 		//src.stunned+=10
 		Begin_Stun()
 		e.Begin_Stun()
@@ -2911,39 +3115,39 @@ mob/proc/Hakke_Pwn(mob/e)
 		src.combat("[src]: Two")
 		hakke_animation(1)
 		if(e) e.Chakrahit()
-		sleep(10)
+		sleep(6)
 		if(!e || !src) return
 		e.combat("[src]: Four")
 		src.combat("[src]: Four")
 		hakke_animation(2)
 		if(e) e.Chakrahit()
-		sleep(20)
+		sleep(6)
 		if(!e || !src) return
 		e.combat("[src]: Eight")
 		src.combat("[src]: Eight")
-		hakke_animation(4)
+		hakke_animation(2)
 		if(e) e.Chakrahit()
-		sleep(20)
+		sleep(6)
 		if(!e || !src) return
 		e.combat("[src]: Sixteen")
 		src.combat("[src]: Sixteen")
-		hakke_animation(8)
+		hakke_animation(4)
 		if(e) e.Chakrahit()
 		if(e) e.Chakrahit()
-		sleep(20)
+		sleep(6)
 		if(!e || !src) return
 		e.combat("[src]: Thirty-two")
 		src.combat("[src]: Thirty-two")
-		hakke_animation(16)
+		hakke_animation(8)
 		if(e) e.Chakrahit()
 		if(e) e.Chakrahit()
 		if(e) e.Chakrahit()
 
-		sleep(20)
+		sleep(6)
 		if(!e || !src) return
 		e.combat("[src]: Sixty Four!")
 		src.combat("[src]: Sixty Four!")
-		hakke_animation(32)
+		hakke_animation(16)
 		if(e) e.Chakrahit()
 		if(e) e.Chakrahit()
 		if(e) e.Chakrahit()
@@ -2951,7 +3155,14 @@ mob/proc/Hakke_Pwn(mob/e)
 		//e.stunned=0
 		e.End_Stun()
 		e.Knockback(3,src.dir)
-		src.overlays-='icons/hakkehand.dmi'
+		e.curchakra = 0
+		var/chakrablock_effect = 60 * (1 + 0.1 * e.c)
+		e.chakrablocked += chakrablock_effect
+		var/damage = (3000 + src.ControlDamageMultiplier() * 500) + (con + conbuff - conneg) * e.c
+		e.Damage(damage, 0, src, "64 Palms")//etarget.Dec_Stam(3000+user.ControlDamageMultiplier()*500,0,user)
+		e.Hostile(src)
+		src.overlays -= 'icons/hakkehand.dmi'
+		src.End_Stun()
 
 mob/proc/Chakrahit()
 	set waitfor = 0
@@ -3002,17 +3213,22 @@ obj
 			icon='icons/explbl.dmi'
 			pixel_x=-16
 			pixel_y=-16
-proc
+/*proc
 	explosion(power,dx,dy,dz,mob/u,dontknock,dist)
 		set waitfor = 0
 		var/d=4
 		if(dist)d=dist
 		if(u && u.skillspassive[TRAP_MASTERY])
 			power *= 1+ 0.02 * u.skillspassive[TRAP_MASTERY]
-		new/obj/Explosion(locate(dx,dy,dz),u,power,d,0,0,dontknock)
+		new/obj/Explosion(locate(dx,dy,dz),u,power,d,0,0,dontknock)*/
+
 proc
 	explosion_spread(power,dx,dy,dz,mob/u,dontknock)
-		explosion(power,dx,dy,dz,u,0,6)
+		//explosion(power,dx,dy,dz,u,0,6)
+		var/explosion_location = locate(dx, dy, dz)
+		if(!explosion_location || !u)
+			return
+		explosion((dontknock) ? 0 : power, 0, explosion_location, u, list("distance" = 6))
 
 mob/proc/Tag_Interact(obj/explosive_tag/U)
 	switch(input(usr,"What do you want to do to this Explosive Tag", "Trap",) in list("Disarm","Set Trap","Hide","Nothing"))

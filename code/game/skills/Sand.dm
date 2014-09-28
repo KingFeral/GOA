@@ -186,10 +186,11 @@ skill
 							etarget.Timed_Stun(20)
 							etarget.Timed_Move_Stun(40)
 							sleep(20)
-
-							etarget.Dec_Stam(3000, 0, user)
-							etarget.Wound(rand(5, 15), 0, user)
-							etarget.Hostile(user)
+							if(etarget.loc == target_loc)
+								var/stamina_damage = 1250 * user.ControlDamageMultiplier()
+								etarget.Damage(stamina_damage, rand(5, 15), user, "Sand Coffin")//etarget.Dec_Stam(3000, 0, user)
+								//etarget.Wound(rand(5, 15), 0, user)
+								etarget.Hostile(user)
 						else if(get_dist(etarget, p) <= 2)//Dipic: Partial hit
 							//etarget.sandcoffined=1
 							p.loc = etarget.loc
@@ -198,11 +199,15 @@ skill
 
 							etarget.Timed_Stun(10)
 							etarget.Timed_Move_Stun(30)
+							var/hit_loc = etarget.loc
 							sleep(10)
-
-							etarget.Dec_Stam(1800, 0, user)
-							etarget.Wound(rand(5, 15), 0, user)
-							etarget.Hostile(user)
+							if(!etarget)
+								return
+							if(etarget.loc == hit_loc)
+								var/stamina_damage = 400 * user.ControlDamageMultiplier()
+								etarget.Damage(stamina_damage, rand(3, 10), user, "Sand Coffin")//etarget.Dec_Stam(1800, 0, user)
+								//etarget.Wound(rand(5, 15), 0, user)
+								etarget.Hostile(user)
 						else //Dipic: damn, they teleported; miss
 							p.icon_state="" //Dipic: This will be changed to a half hitting state
 							flick("partial",p) //Dipic: and half hitting flick

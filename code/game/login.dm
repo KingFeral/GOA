@@ -96,34 +96,35 @@ mob/human/player
 		if(online_admins.Find(src))
 			online_admins -= src
 
-		if(!RP)
+		//if(!RP)
 			/*tolog+=src.key
 			if(tolog.len>5)
 				tolog-=tolog[1]*/
-			src.key=0
+		players -= src
+		newbies -= src
+		src.key = null
+		src.MissionFail()
+		src.density = 0
 
-			src.MissionFail()
-			src.density=0
+		var/obj/mapinfo/Minfo = locate("__mapinfo__[z]")
+		if(Minfo)
+			Minfo.PlayerLeft(src)
+			if(Minfo.in_war && faction)
+				if(faction.village == Minfo.village_control)
+					++Minfo.defender_deaths
+				else if(faction.village == Minfo.attacking_village)
+					++Minfo.attacker_deaths
 
-			var/obj/mapinfo/Minfo = locate("__mapinfo__[z]")
-			if(Minfo)
-				Minfo.PlayerLeft(src)
-				if(Minfo.in_war && faction)
-					if(faction.village == Minfo.village_control)
-						++Minfo.defender_deaths
-					else if(faction.village == Minfo.attacking_village)
-						++Minfo.attacker_deaths
-
-			src.icon=null
-			src.overlays=null
-			src.loc=null
-			if(map_pin)map_pin.loc = null
-			if(map_pin_target)map_pin_target = null
-			if(map_pin_self)map_pin_self = null
-			if(map_pin_squad)map_pin_squad = null
-			/*del map_pin
-			del map_pin_target
-			del map_pin_self
-			del map_pin_squad*/
-			sleep(50)
-			del(src)
+		src.icon=null
+		src.overlays=null
+		src.loc=null
+		if(map_pin)map_pin.loc = null
+		if(map_pin_target)map_pin_target = null
+		if(map_pin_self)map_pin_self = null
+		if(map_pin_squad)map_pin_squad = null
+		/*del map_pin
+		del map_pin_target
+		del map_pin_self
+		del map_pin_squad*/
+		sleep(50)
+		del(src)

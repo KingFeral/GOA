@@ -61,7 +61,8 @@ skill
 					if(!OP.ko && !OP.protected)
 
 						user.combat("[src]: Hit [OP] for [damage] damage!")
-						OP.Dec_Stam(damage,0,user)
+						//OP.Dec_Stam(damage,0,user)
+						OP.Damage(damage, 0, user, "Wind: Pressure Damage")
 						OP.Hostile(user)
 
 				P.Del()
@@ -130,23 +131,23 @@ skill
 						user.combat("[user] critically hit [etarget] with the Wind Sword")
 						etarget.combat("[user] critically hit [etarget] with the Wind Sword")
 
-						//etarget.Damage(round(rand(1000+125*rfxmult,(1000+500*rfxmult))*dmg_mult),round(rand(10,20)*dmg_mult),user,"Wind Sword","Normal")
-						etarget.Dec_Stam(round(rand(1000+125*rfxmult,(1000+500*rfxmult))*dmg_mult),0,user)
-						etarget.Wound(round(rand(10,20)*dmg_mult),0,user)
+						etarget.Damage(round(rand(1000+125*rfxmult,(1000+500*rfxmult))*dmg_mult),round(rand(10,20)*dmg_mult),user,"Wind Sword","Normal")
+						//etarget.Dec_Stam(round(rand(1000+125*rfxmult,(1000+500*rfxmult))*dmg_mult),0,user)
+						//etarget.Wound(round(rand(10,20)*dmg_mult),0,user)
 					else if(result==4)
 						user.combat("[user] hit [etarget] with the Wind Sword")
 						etarget.combat("[user] hit [etarget] with the Wind Sword")
 
-						//etarget.Damage(round(rand(800+100*rfxmult,(800+400*rfxmult))*dmg_mult),round(rand(5,15)*dmg_mult),user,"Wind Sword","Normal")
-						etarget.Dec_Stam(round(rand(800+100*rfxmult,(800+400*rfxmult))*dmg_mult),0,user)
-						etarget.Wound(round(rand(10,20)*dmg_mult),0,user)
+						etarget.Damage(round(rand(800+100*rfxmult,(800+400*rfxmult))*dmg_mult),round(rand(5,15)*dmg_mult),user,"Wind Sword","Normal")
+						//etarget.Dec_Stam(round(rand(800+100*rfxmult,(800+400*rfxmult))*dmg_mult),0,user)
+						//etarget.Wound(round(rand(10,20)*dmg_mult),0,user)
 					else if(result==3)
 						user.combat("[user] managed to partially hit [etarget] with the Wind Sword")
 						etarget.combat("[user] managed to partially hit [etarget] with the Wind Sword")
-						etarget.Dec_Stam(round(rand(500+60*rfxmult,(500+250*rfxmult))*dmg_mult),0,user)
-						etarget.Wound(round(rand(3,8)*dmg_mult),0,user)
+						//etarget.Dec_Stam(round(rand(500+60*rfxmult,(500+250*rfxmult))*dmg_mult),0,user)
+						//etarget.Wound(round(rand(3,8)*dmg_mult),0,user)
 
-						//etarget.Damage(round(rand(500+60*rfxmult,(500+250*rfxmult))*dmg_mult),round(rand(3,8)*dmg_mult),user,"Wind Sword","Normal")
+						etarget.Damage(round(rand(500+60*rfxmult,(500+250*rfxmult))*dmg_mult),round(rand(3,8)*dmg_mult),user,"Wind Sword","Normal")
 					else if(result<3)
 						user.combat("You Missed!!!")
 						if(!user.icon_state)
@@ -288,21 +289,21 @@ mob/proc
 		src.rasengan=0
 		src.overlays-=/obj/rasengan
 		src.overlays-=/obj/rasengan2
-		var/obj/o=new/obj(locate(src.x,src.y,src.z))
+		var/obj/fxobj/o=new/obj(loc, 50)
 		o.layer=MOB_LAYER+1
 		o.icon='icons/rasengan.dmi'
 		flick("failed",o)
-		spawn(50)
-			del(o)
+		//spawn(50)
+		//	del(o)
 	Rasenshuriken_Hit(mob/x,mob/u,xdir)
 		u.overlays-=/obj/rasengan
 		u.overlays-=/obj/rasengan2
 		u.rasengan=0
-		var/conmult=(u.con+u.conbuff-u.conneg)/100
+		//var/conmult=(u.con+u.conbuff-u.conneg)/100
 		x.cantreact=1
 		spawn(30)	// Can we please not forget to make sure things are still valid after any sleep or spawn call.
 			if(x)	x.cantreact=0
-		var/obj/o=new/obj(locate(x.x,x.y,x.z))
+		var/obj/fxobj/o=new/obj(loc, 50)
 		o.icon='icons/rasengan.dmi'
 		o.layer=MOB_LAYER+1
 		if(!x.icon_state)
@@ -311,14 +312,15 @@ mob/proc
 		flick("hit",o)
 
 		x.Earthquake(10)
-		spawn(50)
-			del(o)
+		//spawn(50)
+		//	del(o)
 		sleep(10)
 		if(x)
 			x.Knockback(10,xdir)
 			if(x)	// Knockback sleeps, I think. It really shouldn't though.
-				explosion(50,x.x,x.y,x.z,u,1)
-				x.Dec_Stam(1000+500*conmult,0,u)
+				//explosion(50,x.x,x.y,x.z,u,1)
+				explosion(0, 0, x.loc, u)
+				//x.Dec_Stam(1000+500*conmult,0,u)
 				//x.stunned+=3
 				x.Timed_Stun(30)
 				if(!x.ko)

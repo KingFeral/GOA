@@ -50,6 +50,54 @@ proc/smoke_effect(turf/location)
 
 	sleep(8)
 	global.atom_pool.pool(e, "effects")
+
+proc/smoke_effect_2(turf/location)
+	set waitfor = 0
+	if(!location)
+		return
+
+	var/effect/e = global.atom_pool.get_instance("/effect", /effect)
+
+	e.loc = location
+	e.icon = 'icons/new/smoke.dmi'
+	e.icon_state = "1"
+	e.pixel_x = -16
+	e.pixel_y = -16
+	// TODO, format the map.
+
+	sleep(6)
+	global.atom_pool.pool(e, "effects")
+
+proc/smoke_effect_3(turf/location)
+	set waitfor = 0
+	if(!location)
+		return
+
+	var/effect/e = global.atom_pool.get_instance("/effect", /effect)
+
+	e.loc = location
+	e.icon = 'icons/new/smoke.dmi'
+	e.icon_state = "2"
+	// TODO, format the map.
+
+	sleep(6)
+	global.atom_pool.pool(e, "effects")
+
+proc/smoke_effect_4(turf/location)
+	set waitfor = 0
+	if(!location)
+		return
+
+	var/effect/e = global.atom_pool.get_instance("/effect", /effect)
+
+	e.loc = location
+	e.icon = 'icons/new/smoke.dmi'
+	e.icon_state = "3"
+	// TODO, format the map.
+
+	sleep(6)
+	global.atom_pool.pool(e, "effects")
+
 /*
 proc/appear_effect(turf/location, style)
 	set waitfor = 0

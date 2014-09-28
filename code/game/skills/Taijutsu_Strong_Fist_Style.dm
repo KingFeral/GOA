@@ -17,9 +17,12 @@ skill/taijutsu/strong_fist
 		id = STRONG_FIST
 		name = "Taijutsu Stance: Strong Fist"
 		icon_state = "Strong_Fist"
-		default_cooldown = 3
+		default_cooldown = 60
 
 		IsUsable(mob/user)
+			if(user.gentlefist)
+				Error(user, "Deactivate Gentle Fist first")
+				return 0
 			if(user.scalpol)
 				Error(user, "You cannot enter this stance while Chakra Scalpels are active")
 				return 0
@@ -40,6 +43,7 @@ skill/taijutsu/strong_fist
 		icon_state = "leaf_whirlwind"
 		default_stamina_cost = 350
 		default_cooldown = 10
+		skill_delay = 50
 
 		Use(mob/user)
 			set waitfor = 0
@@ -77,7 +81,7 @@ skill/taijutsu/strong_fist
 					if(3)
 						etarget.Wound(rand(0, 2), 0, user)*/
 
-				etarget.Dec_Stam(stamina_damage, 0, user)
+				etarget.Damage(stamina_damage, 0, user, "Leaf Whirlwind")//etarget.Dec_Stam(stamina_damage, 0, user)
 				etarget.increase_comboed(1)//etarget.c++
 			else
 				set_cooldown = 10
@@ -126,7 +130,7 @@ skill/taijutsu/strong_fist
 					if(3)
 						etarget.Wound(rand(0, 2), 0, user)*/
 
-				etarget.Dec_Stam(stamina_damage, 0, user)
+				etarget.Damage(stamina_damage, 0, user, "Leaf Great Whirlwind")//etarget.Dec_Stam(stamina_damage, 0, user)
 				etarget.Knockback(3, get_dir(user, etarget))
 				etarget.increase_comboed(1)//etarget.c++
 
@@ -261,27 +265,20 @@ skill/taijutsu/strong_fist
 			var/mob/etarget = locate() in get_step(user, user.dir)
 			if(etarget)
 				if(!etarget.IsProtected())
-					//var/rfx_roll = Roll_Against((user.rfx + user.rfxbuff - user.rfxneg), (etarget.rfx + etarget.rfxbuff - etarget.rfxneg), 100)
 					var/str_mult = user.strength_damage_mult()
-					var/base_damage = 0
-
-					/*switch(rfx_roll)
-						if(5 to 6)
-							etarget.Wound(rand(1, 3), 0, user)
-						if(4)
-							etarget.Wound(rand(1, 2), 0, user)
-						if(3)
-							etarget.Wound(rand(0, 2), 0, user)*/
+					var/base_damage = 600
 
 					etarget.combat("You stumble from [user]'s attack!")
-					etarget.Dec_Stam(base_damage * str_mult, 0, user)
+					etarget.Damage(base_damage * str_mult, 0, user, "Leaf Whirlwind")//etarget.Dec_Stam(base_damage * str_mult, 0, user)
 					etarget.movepenalty += 10
 					flick("Knockout", etarget)
 
-					etarget.set_icon_state("Dead", 30)
-					etarget.overlay('icons/new/stunned.dmi', 30)
-					etarget.Timed_Stun(30)
-					etarget.increase_comboed(1)//etarget.c++
+					var/rfx_roll = Roll_Against((user.rfx+user.rfxbuff-user.rfxneg), (etarget.rfx+etarget.rfxbuff-etarget.rfxneg), 100)
+					var/stun_time = rfx_roll * 10
+					etarget.set_icon_state("Dead", stun_time)
+					etarget.overlay('icons/new/stunned.dmi', stun_time)
+					etarget.Timed_Stun(stun_time)
+					etarget.increase_comboed(1)
 					user.Taijutsu(etarget)
 					smack(etarget, rand(-6,6), rand(-8,8))
 			else
@@ -308,17 +305,17 @@ skill/taijutsu/strong_fist
 					//var/str_mult = user.strength_damage_mult()
 					var/stamina_damage = (((user.str + user.strbuff - user.strneg) * 0.6) + ((user.rfx + user.rfxbuff - user.rfxneg) * 0.4))
 					stamina_damage += stamina_damage * (1 + 0.3 * etarget.c)
-
-					switch(rfx_roll)
+					var/wound_damage = rfx_roll
+					/*switch(rfx_roll)
 						if(5 to 6)
-							etarget.Wound(rand(1, 3), 0, user)
+							//etarget.Wound(rand(1, 3), 0, user)
 						if(4)
-							etarget.Wound(rand(1, 2), 0, user)
+							//etarget.Wound(rand(1, 2), 0, user)
 						if(3)
-							etarget.Wound(rand(0, 2), 0, user)
-
+							//etarget.Wound(rand(0, 2), 0, user)
+*/
 					etarget.Earthquake(15)
-					etarget.Dec_Stam(stamina_damage, 0, user)
+					etarget.Damage(stamina_damage, wound_damage, user, "Leaf Rising Wind")//etarget.Dec_Stam(stamina_damage, 0, user)
 					etarget.increase_comboed(1)//etarget.c++
 					user.Taijutsu(etarget)
 					smack(etarget, rand(-6,6), rand(-8,8))
@@ -368,7 +365,7 @@ skill/taijutsu/strong_fist
 					continue
 				//var/rfx_roll = Roll_Against((user.rfx + user.rfxbuff - user.rfxneg), (m.rfx + m.rfxbuff - m.rfxneg), 100)
 				var/str_mult = user.strength_damage_mult()
-				m.Dec_Stam(600 + rand(350, 500) * str_mult, 0, user)
+				m.Damage(600 + rand(350, 500) * str_mult, 0, user, "Leaf Strong Whirlwind")//m.Dec_Stam(600 + rand(350, 500) * str_mult, 0, user)
 				m.Timed_Stun(5)
 				m.Knockback(4, get_dir(user.loc, m))
 				user.Taijutsu(m)

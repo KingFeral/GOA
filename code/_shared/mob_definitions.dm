@@ -3,6 +3,7 @@ mob
 		tmp/loggedin = 0
 		tmp/loggingout = 0
 		tmp/transform_chat_icon = ""
+		tmp/replacement/replacement // used for replacement counter skills (exploding clone, ...)
 		canwalk=1
 		Tank=0
 		list/bloodrem=new
@@ -172,7 +173,7 @@ mob
 		tmp/pcon=0
 		tmp/pint=0
 		tmp/prfx=0
-		tmp/controlmob=0
+		tmp/mob/human/controlmob
 		tmp/paralysed=0
 		tmp/waterlogged=0
 	//	tmp/targetaddress=0
@@ -208,7 +209,7 @@ mob
 		elevel=1
 		body=0
 		blevel=1
-		injury[20]
+		//injury[20]
 		staminaregen=17 //%
 		chakraregen=50 //pts
 		skills[0]

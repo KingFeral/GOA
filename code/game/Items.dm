@@ -2850,6 +2850,13 @@ obj/items/weapons
 			supplycost=1
 			nottossable=1
 
+	/*	Caltrops
+			itype = "caltrops"
+			icon = 'icons/gui.dmi'
+			icon_state = "caltrops"
+			code = 118*/
+
+
 	melee
 		get_stamina_damage(mob/user)
 			if(!user)
@@ -2862,7 +2869,7 @@ obj/items/weapons
 			aspecial="knife"
 
 			Kunai_Melee
-				name = "Kunai"
+				name = "Melee Kunai"
 				icon='icons/kunai_melee.dmi'
 				icon_state="gui"
 				code=215
@@ -2904,6 +2911,7 @@ obj/items/weapons
 				usr=u
 				usr.removeswords()
 				usr.weapon_ref=null
+				usr.hassword = 0
 				for(var/obj/items/O in usr.contents)
 					if(O.weapon)
 						O.overlays=0
@@ -3087,10 +3095,10 @@ mob/verb
 	usev()
 		set name= "Use"
 		set hidden=1
-		if(usr.camo)
+		/*if(usr.camo)
 			usr.Affirm_Icon()
 			usr.Load_Overlays()
-			usr.camo=0
+			usr.camo=0*/
 		if(usr.Size||usr.Tank || usr.dancing_shadow || can_use_F > world.time)
 			return
 		if(usr.stunned||usr.handseal_stun||usr.kstun)
@@ -3148,11 +3156,13 @@ mob/verb
 			usr.zetsu=0
 		if(usr.incombo)
 			return
-		if(usr.usedelay>0||usr.stunned||usr.handseal_stun||usr.paralysed)
+		if(usr.usedelay||usr.stunned||usr.handseal_stun||usr.paralysed)
 			return
 		if(usr.move_stun)
 			++usr.usedelay
 		++usr.usedelay
+		/*var/usedelay = usr.move_stun ? 20 : 10
+		usr.usedelay = world.time + usedelay*/
 		if(usr.larch)
 			return
 		if(usr.frozen)
@@ -3319,7 +3329,7 @@ mob/verb
 					damz=round((estam_static + (usr.rfx)*erfxstam_mod)*pick(0.7,0.8,0.9,1))
 					if(usr.skillspassive[WEAPON_MASTERY])
 						damz *= 1 + 0.06 * usr.skillspassive[WEAPON_MASTERY]
-					T.Dec_Stam(damz,0,usr)
+					T.Damage(damz, 0, usr, name)//T.Dec_Stam(damz,0,usr)
 					var/wound2=0
 					if(prob(3*skillspassive[OPEN_WOUNDS]))
 						wound2=pick(1,2,3,4)
@@ -3331,8 +3341,8 @@ mob/verb
 
 						Blood2(T,usr)
 					woundz+=wound2
-					if(woundz)T.Wound(woundz,0,usr)
-
+					if(woundz)//T.Wound(woundz,0,usr)
+						T.Damage(0, woundz, usr, name)
 					usr.combat("[usr] hit [T] with a weapon for [damz] stamina damage and inflicting [woundz] wounds!")
 
 					if(T) T.Hostile(usr)
@@ -3378,7 +3388,7 @@ mob/verb
 					damz = round(damz * pick(0.6,0.7,0.8,0.9,1))
 					if(usr.skillspassive[WEAPON_MASTERY])
 						damz*=1 + 0.06*usr.skillspassive[WEAPON_MASTERY]
-					T.Dec_Stam(damz,0,usr)
+					//T.Dec_Stam(damz,0,usr)
 					var/wound2=0
 					if(prob(3*skillspassive[OPEN_WOUNDS]))
 						wound2=pick(1,2,3,4)
@@ -3389,7 +3399,8 @@ mob/verb
 
 						Blood2(T,usr)
 					woundz+=wound2
-					if(woundz)T.Wound(woundz,0,usr)
+					//if(woundz)T.Wound(woundz,0,usr)
+					T.Damage(damz, woundz, usr, name)
 					usr.combat("[usr] hit [T] with a weapon for [damz] stamina damage and inflicting [woundz] wounds!")
 
 					if(T && usr) T.Hostile(usr)
@@ -3413,7 +3424,8 @@ mob
 		bleeding++
 		while(time > 0)
 			Blood2(src, causer)
-			Dec_Stam(100, 0, causer)
+			//Dec_Stam(100, 0, causer)
+			Damage(100, 0, causer, "Rend", "Internal")
 			time--
 			sleep(15)
 		bleeding--
@@ -3505,11 +3517,11 @@ obj/projectile
 
 				Oc.Graphiked('icons/dazed.dmi')
 
-			Oc.Dec_Stam(pow,0,src.powner)  //hurt the player it hits = the power variable
+			Oc.Damage(pow, 0, src.powner)//Oc.Dec_Stam(pow,0,src.powner)  //hurt the player it hits = the power variable
 			if(wnd)
 				//Blood(O.x,O.y,O.z)  //ew blood
 				Blood2(O)
-				Oc.Wound(wnd,0,src.powner)
+				Oc.Damage(0, wnd, powner)//Oc.Wound(wnd,0,src.powner)
 
 
 			Oc.Hostile(src.powner)
@@ -3765,8 +3777,10 @@ proc
 			if(eto&&istype(eto,/mob/human))
 				if(!eto.icon_state)
 					flick("hurt",eto)
-			sleep(5)
-			del(p)
+			//sleep(5)
+			//del(p)
+			sleep(1)
+			p.dispose()
 proc
 	projectile_to2(type,mob/efrom,atom/eto)
 		var/obj/p = new type(locate(efrom.x,efrom.y,efrom.z))
@@ -3779,7 +3793,8 @@ proc
 			if(!eto.icon_state)
 				flick("hurt",eto)
 		sleep(5)
-		del(p)
+		//del(p)
+		p.dispose()
 
 obj/proj
 	density=0
@@ -3923,22 +3938,22 @@ proc
 
 						view(6)<<"[usr] Nailed [hit] with [ename]"
 
-						hit.Wound(rand(minwound+3,maxwound),0,u)
+						hit.Damage(0, rand(minwound+3,maxwound), u)//hit.Wound(rand(minwound+3,maxwound),0,u)
 						Blood2(hit)
 					if(result==5)
 						view(6)<<"[usr] accurately hit [hit] with [ename]"
 
-						hit.Wound(rand(minwound+1,maxwound/2),0,u)
+						hit.Damage(0, rand(minwound+1,maxwound/2), u)//hit.Wound(rand(minwound+1,maxwound/2),0,u)
 						Blood2(hit)
 					if(result==4)
 						view(6)<<"[usr] hit [hit] dead on with [ename]"
 
-						hit.Wound(rand(minwound,minwound+1),0,u)
+						hit.Damage(0, rand(minwound,minwound+1), u)//hit.Wound(rand(minwound,minwound+1),0,u)
 
 					if(result==3)
 						view(6)<<"[usr] partially hit [hit] with [ename]"
 					if(result>=3)
-						hit.Dec_Stam(epower,0,u)
+						hit.Damage(epower, 0, u)//hit.Dec_Stam(epower,0,u)
 						if(u)
 							hit.Hostile(u)
 					sleep(1)

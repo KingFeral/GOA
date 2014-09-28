@@ -3,7 +3,7 @@ var
 	list/online_admins = list()
 	list/EN=list(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)
 	wcount=0
-	list/respecers = list()
+	//list/respecers = list()
 client
 	perspective = /*EDGE_PERSPECTIVE | */EYE_PERSPECTIVE
 
@@ -374,6 +374,8 @@ mob/human/player
 
 		unstick_me()
 			set name = "Im Stuck"
+			if(!usr.initialized)
+				return
 			var/ex=usr.x
 			var/ey=usr.y
 			var/ez=usr.z
@@ -462,7 +464,6 @@ var/global/players[] = list()
 
 mob/human/player
 	Logout()
-		players -= src
 		src.loggedin = 0
 		if(cexam || (pk && combat_flagged() && !(client && client.inactivity > 6000)))	// && !(ckey in admins))))
 			src.loggingout = 1
@@ -581,7 +582,13 @@ mob/human/player
 				verbs += /mob/new_player/verb/togglecombat
 				winset(src, "togglecombatid", "parent = menu_commands; name = \"Toggle Combat Protection\"; command = togglecombat")
 
-			if(world.host == key)
+			/*if(!respeced)
+				usr << "<font color = 'yellow'>A world respec has been triggered. To restat your character, navigate to your Commands tab at the top of your window.</font>"
+				usr << "<font color = 'yellow'>Be aware: if you log out without using your available respec, you will lose it until the next world respec.</font>"
+				verbs += /respecverbs/respecverb/verb/respec
+				winset(src, "respecid", "parent = menu_commands; name = \"Respec Character\"; command = respec")*/
+
+			/*if(world.host == key)
 				verbs += /mob/Admin/verb/Mute
 				verbs += /mob/Admin/verb/UnMute
 				verbs += /mob/Admin/verb/UnMute_all
@@ -590,7 +597,7 @@ mob/human/player
 				winset(src, "host_verb_mute", "parent=host_menu;name=\"&Mute\";command=Mute")
 				winset(src, "host_verb_unmute", "parent=host_menu;name=\"U&nmute\";command=UnMute")
 				winset(src, "host_verb_unmuteall", "parent=host_menu;name=\"Unmute &All\";command=UnMute-all")
-				winset(src, "host_verb_localann", "parent=host_menu;name=\"&Local Announce\";command=Local-Announce")
+				winset(src, "host_verb_localann", "parent=host_menu;name=\"&Local Announce\";command=Local-Announce")*/
 
 			if(ckey in admins)
 				online_admins += src
@@ -764,7 +771,8 @@ world
 			//for(var/client/C)
 			//	if(C.key) C.Refresh_Bounties()
 			for(var/mob/p in players)
-				p.client.Refresh_Bounties()
+				if(p.client)
+					p.client.Refresh_Bounties()
 
 client
 	proc

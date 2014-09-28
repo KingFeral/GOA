@@ -400,7 +400,8 @@ obj/projectile
 				var/mob/human/player/Oc=O
 				src.Grabbed+=Oc  //this means the wave will no longer cause damage to that specific player, 1 time hit max per projectile of this type
 				Oc.Collide(src)//the mob gets hit by src. Cause knockback check.
-				Oc.Dec_Stam(pow)
+				if(owner)
+					Oc.Damage(pow, 0, owner)//Oc.Dec_Stam(pow)
 
 			if(istype(O,/obj/projectile))
 				Clash(O,src)
@@ -431,7 +432,8 @@ obj/projectile
 				del(src) //hit a wall!
 			if(istype(O,/mob/human/player))
 				var/mob/human/player/Oc=O
-				Oc.Dec_Stam(pow)  //hurt the player it hits = the power variable
+				if(owner)
+					Oc.Damage(pow, 0, owner)//Oc.Dec_Stam(pow)  //hurt the player it hits = the power variable
 				Blood2(Oc)//Blood(O.x,O.y,O.z)  //ew blood
 				src.loc=null  //go away invisible
 				src.powner = null

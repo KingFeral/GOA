@@ -1515,6 +1515,10 @@ area/pkzone/Roof
 
 turf/dense
 	density=1
+turf/denseopacity
+	density=1
+	opacity=1
+	layer=10
 turf
 	Rocks
 		Rock1

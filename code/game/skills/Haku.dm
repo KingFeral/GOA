@@ -113,13 +113,13 @@ skill
 				for(var/mob/human/O in P)
 					//O.move_stun+=3
 					O.Timed_Stun(20)
-					O.Dec_Stam((rand(400,1300)+300*conmult),0,user)
-					O.Wound(rand(1,3),0,user)
+					O.Damage((rand(400,1300)+300*conmult), rand(1,3),user,"Ice Needles")//O.Dec_Stam((rand(400,1300)+300*conmult),0,user)
+					//O.Wound(rand(1,3),0,user)
 					O.Hostile(user)
 					Blood2(O,user)
 
 				for(var/mob/human/O in oview(1,P))
-					O.Dec_Stam((rand(200,300)+70*conmult),0,user)
+					O.Damage(rand(200,300)+70*conmult,0,user,"Ice Needles")//O.Dec_Stam((rand(200,300)+70*conmult),0,user)
 					O.Hostile(user)
 
 				//new/Event(30, "delayed_delete", EX)
@@ -151,8 +151,8 @@ skill
 				Haku_Spikes(user.x+1,user.y,user.z)
 				var/conmult = user.ControlDamageMultiplier()
 				for(var/mob/human/X in oview(2,user))
-					X.Dec_Stam(rand(1700,2200)+750*conmult,0,user)
-					X.Wound(rand(3,6),0,user)
+					X.Damage(rand(1700,2200)+750*conmult,rand(3,6),user,"Ice Explosion")//X.Dec_Stam(rand(1700,2200)+750*conmult,0,user)
+					//X.Wound(rand(3,6),0,user)
 					X.Hostile(user)
 					Blood2(X)
 
@@ -262,8 +262,8 @@ skill
 
 						spawn(5)
 							for(var/mob/OG in Gotchad)
-								OG.Wound(rand(15,40),0,user)
-								OG.Dec_Stam(rand(2500,3000)+900*conmult,0,user)
+								OG.Damage(rand(2500,3000)+900*conmult, rand(15,40),user,"Demonic Ice Mirrors")//OG.Wound(rand(15,40),0,user)
+								//OG.Dec_Stam(rand(2500,3000)+900*conmult,0,user)
 
 						user.End_Stun()
 						user.End_Protect()
@@ -300,7 +300,7 @@ skill
 mob
 	proc
 		NearWater(range=world.view)
-			for(var/obj/Water/X in oview(src, range))
+			for(var/obj/water/X in oview(src, range))
 				return 1
 			for(var/turf/X in oview(src, range))
 				if(Iswater(X.x,X.y,X.z))
@@ -311,7 +311,7 @@ mob
 		ClosestWater(range=world.view)
 			var/closest
 			var/closest_dist = 1e40
-			for(var/obj/Water/X in oview(src, range))
+			for(var/obj/water/X in oview(src, range))
 				if(get_dist(src, X) < closest_dist)
 					closest = X
 					closest_dist = closest_dist

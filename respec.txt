@@ -1,2 +1,2 @@
 UPDATE `players` SET `control` = 50, `strength` = 50, `intelligence` = 50, `reflex` = 50, `skill_points` = 0, `skills_passive` = '0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0&0', elements = '', `macro1` = NULL, `macro2` = NULL, `macro3` = NULL, `macro4` = NULL, `macro5` = NULL, `macro6` = NULL, `macro7` = NULL, `macro8` = NULL,
-`macro9` = NULL, `macro10` = NULL, level_points = `body_level` * 6;
+`macro9` = NULL, `macro10` = NULL, level_points = `body_level` * 6, respeced = 0;

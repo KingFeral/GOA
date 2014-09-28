@@ -60,9 +60,9 @@ obj/gui/passives
 	Click() // TODO, automate.
 		if(istype(src, /obj/gui/passives/gauge))
 			return
-		if(istype(src, /obj/gui/passives/int/Keen_Eye))
-			usr << "This is disabled at the moment."
-			return 0
+		//if(istype(src, /obj/gui/passives/int/Keen_Eye))
+		//	usr << "This is disabled at the moment."
+		//	return 0
 
 		var/mob/human/user = usr
 		var/details = "[name] \n\nDescription: [disc] \n\nYou currently have [user.skillspassive[pindex] >= 1 ? user.skillspassive[pindex] : "0"] [name] passives out of [max]."

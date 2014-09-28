@@ -49,28 +49,41 @@ skill
 				if(!etarget)
 					etarget=straight_proj2(eicon,estate,8,user)
 					if(etarget)
-						var/ex=etarget.x
+						/*var/ex=etarget.x
 						var/ey=etarget.y
-						var/ez=etarget.z
-						explosion(1200,ex,ey,ez,user)
+						var/ez=etarget.z*/
+						//explosion(1200,ex,ey,ez,user)
+						explosion(1200, 0, etarget.loc, user)
 					else
-						if(startdir==EAST)
-							explosion(1200,user.x+8,user.y,user.z,user)
-						if(startdir==WEST)
-							explosion(1200,user.x-8,user.y,user.z,user)
-						if(startdir==NORTH)
-							explosion(1200,user.x,user.y+8,user.z,user)
-						if(startdir==SOUTH)
-							explosion(1200,user.x,user.y-8,user.z,user)
+						var/explosion_location
+						switch(startdir)
+							if(EAST)
+								explosion_location = locate(user.x+8, user.y, user.z)
+								if(explosion_location)
+									explosion(1200, 0, explosion_location, user)
+							if(WEST)
+								explosion_location = locate(user.x-8, user.y, user.z)
+								if(explosion_location)
+									explosion(1200, 0, explosion_location, user)
+							if(NORTH)
+								explosion_location = locate(user.x, user.y+8, user.z)
+								if(explosion_location)
+									explosion(1200, 0, explosion_location, user)
+							if(SOUTH)
+								explosion_location = locate(user.x, user.y-8, user.z)
+								if(explosion_location)
+									explosion(1200, 0, explosion_location, user)
 				else
-					var/ex=etarget.x
+					/*var/ex=etarget.x
 					var/ey=etarget.y
-					var/ez=etarget.z
-					var/mob/x=new/mob(locate(ex,ey,ez))
+					var/ez=etarget.z*/
+					var/mob/x=new/mob(etarget.loc)
 
 					projectile_to(eicon,estate,user,x)
-					del(x)
-					explosion(1500,ex,ey,ez,user)
+					//del(x)
+					x.dispose()
+					//explosion(1500,ex,ey,ez,user)
+					explosion(1500, 0, etarget.loc, user)
 				user.addswords()
 
 
@@ -82,6 +95,7 @@ skill
 			icon_state = "explnote"
 			default_supply_cost = 10
 			default_cooldown = 30
+			skill_delay = 0
 			var/obj/explosive_tag/etag
 
 			SupplyCost(mob/user)
@@ -109,7 +123,8 @@ skill
 						etag.dispose()
 				else if(user)
 					RemoveOverlay('icons/activation.dmi')
-					explosion(2000, etag.x, etag.y, etag.z, user)
+					//explosion(2000, etag.x, etag.y, etag.z, user)
+					explosion(2000, 0, etag.loc, user)
 					etag.dispose()
 					etag = null
 

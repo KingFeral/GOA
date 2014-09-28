@@ -172,8 +172,8 @@ skill
 					flick("flick",o)
 					for(var/mob/human/M in oview(1,user))
 						Blood2(M)
-						M.Wound(rand(5,10),0,user)
-						M.Dec_Stam(rand(100,500),0,user)
+						M.Damage(rand(100,500), rand(5,10), user, "Bone Spines")//M.Wound(rand(5,10),0,user)
+						//M.Dec_Stam(rand(100,500),0,user)
 						M.Hostile(user)
 						//M.move_stun+=30
 						M.Timed_Move_Stun(30)

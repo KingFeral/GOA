@@ -326,101 +326,8 @@ mob
 			wof_adren_loop = 0
 
 
-mob/human
+mob
 	proc
-		KO()
-			if(ko) return
-			if(istype(src, /mob/human/player/npc) && src:lasthurtme)
-				var/mob/attacker = src:lasthurtme
-				if(attacker && attacker.client)
-					attacker.ez_count = 0
-					attacker.ez_immune = 30
-			else if(client)
-				for(var/mob/m in ohearers(10, src))
-					if(m.key == lasthostile)
-						m.ez_count = 0
-						m.ez_immune = 30
-
-			//ez_count = 0
-			//ez_immune = 60
-			if(!pk)
-				curstamina = stamina
-				curwound = 0
-
-			else if(gate >= 4)
-				src.Wound(rand(27,33),3)
-				src.curstamina=src.stamina * ((maxwound-curwound)/maxwound)
-				src.curchakra=max(round(src.chakra/4), curchakra)
-
-			else
-				if(src.pill>=2)
-					src.overlays-='icons/Chakra_Shroud.dmi'
-					src.strbuff=0
-					src.conbuff =0
-					src.pill=0
-					src.combat("The effects from the pill(s) wore off.")
-					for(var/skill/akimichi/curry_pill/currypill in skills)
-						currypill.DoCooldown(src,0,300)
-
-				src.Poison=0
-				src.Wound(rand(27,33),3)
-				src.ko=1
-
-				sleep(10)
-
-				flick("Knockout",src)
-
-				src.icon_state="Dead"
-				src.layer=TURF_LAYER
-
-				for(var/obj/items/Heavenscroll/II in src.contents)
-					II.Drop()
-				for(var/obj/items/Earthscroll/EI in src.contents)
-					EI.Drop()
-
-				var/maxwound1=100
-				if(clan == "Will of Fire")
-					maxwound1=130
-				else if(clan == "Jashin")
-					maxwound1=150
-					if(immortality)
-						maxwound1=300
-
-				if(src.curwound<maxwound1||(src.immortality&&src.cexam!=5))
-					sleep(src.curwound + 100)
-					if(src.ko && src.curwound<300)
-						if(clan == "Will of Fire")
-							src.curstamina=src.stamina
-							if(curwound >= 100)
-								src.curstamina=src.stamina*1.25
-								src.curchakra=src.chakra*1.25
-							if(skillspassive[ENDURANCE])
-								curstamina *= 1 + 0.03 * skillspassive[ENDURANCE]
-						else
-							var/durr=((maxwound-curwound)/maxwound)/2
-							if(durr<0)
-								durr=0
-							src.curstamina=src.stamina * durr + src.stamina/2
-							if(skillspassive[ENDURANCE])
-								curstamina *= 1 + 0.03 * skillspassive[ENDURANCE]
-						if(src.curchakra<src.chakra/5)
-							src.curchakra=src.chakra/5 +20
-
-					//if(clan == "Will of Fire")
-					//	combat("The Will of Fire burns within you..!")
-					//	WOF_adrenaline()
-					//src.protected=3
-					Protect(30)
-					Reset_Stun()
-					//Reset_Move_Stun()
-					movepenalty = round(movepenalty * 0.6)
-					//src.stunned=0
-					src.ko=0
-					src.icon_state=""
-					combat_flag(DEFENSE_FLAG, time = 120)
-				else
-					Die()
-
 		Die()
 			if(cexam == 5)
 				src.curwound=0
@@ -523,7 +430,8 @@ mob/human
 					overgated = 1
 
 				if(overgated)
-					Wound(300,3)
+					//Wound(300,3)
+					Damage(0, 300, null, "Gates", "Internal")
 					CloseGates()
 					src<<"The stress from the gates have taken a significant toll on your body."
 					Hostile(src)
@@ -561,15 +469,15 @@ mob/human
 					kstun-=1
 
 					cc-=10
-					attackbreak-=40
+					//attackbreak-=40
 				else
 					if(kstun)
 						kstun-=0.10
 
 					if(cc)
 						cc--
-					if(attackbreak)
-						attackbreak-=2
+					//if(attackbreak)
+					//	attackbreak-=2
 
 				double_xp_time = max(0, double_xp_time - 0.1)
 				triple_xp_time = max(0, triple_xp_time - 0.1)
@@ -579,8 +487,8 @@ mob/human
 
 				if(cc<0)
 					cc=0
-				if(attackbreak<0)
-					attackbreak=0
+				//if(attackbreak<0)
+				//	attackbreak=0
 				sleep(1)
 
 		regeneration()
@@ -616,21 +524,23 @@ mob/human
 
 				if(pill==1)
 					if(prob(10))
-						src.Wound(1,3)
+						//src.Wound(1,3)
+						Damage(0, 1, null, "Pill Stress", "Internal")
 					strbuff=round(src.str * 0.30)
 					conbuff=round(src.con * 0.10)
 
 				else if(pill==2)
 					if(prob(25))
-						Wound(1,3)
+						//Wound(1,3)
+						Damage(0, 1, null, "Pill Stress", "Internal")
 					strbuff=round(src.str * 0.60)
 					conbuff=round(src.con * 0.30)
 
 
 				curchakra = min(chakra*3, curchakra)
 
-				if(scalpol)
-					scalpoltime = min(10, scalpoltime + 1*regenlag)
+				/*if(scalpol)
+					scalpoltime = min(10, scalpoltime + 1*regenlag)*/
 				if(alertcool)
 					alertcool = max(0, alertcool - 1*regenlag)
 				if(MissionCool)
@@ -683,8 +593,8 @@ mob/human
 				if(movepenalty)
 					if(!pk)
 						movepenalty=0
-					else if(prob(33))
-						movepenalty-=5
+					else if(prob(50))
+						movepenalty--
 						if(movepenalty<0)
 							movepenalty=0
 
@@ -697,13 +607,13 @@ mob/human
 					if(!client.eye)
 						client.eye=client.mob
 
-					if(controlmob || tajuu)
+					/*if(controlmob || tajuu)
 						for(var/obj/gui/skillcards/interactcard/x in client.screen)
 							x.icon_state="ibunshindispell"
 					else
 						for(var/obj/gui/skillcards/interactcard/x in client.screen)
 							if(x.icon_state=="ibunshindispell")
-								x.icon_state="interact0"
+								x.icon_state="interact0"*/
 
 					if(MissionTimeLeft > 0)
 						MissionTimeLeft--
@@ -780,7 +690,6 @@ mob/human
 						usedelay--
 						if(usedelay<0)
 							usedelay=0
-
 
 					if(movedrecently)
 						movedrecently--
@@ -904,10 +813,10 @@ mob/human
 						smul *= 1.5//1.2
 
 					if(gentle_fist_block)
-						if(gentle_fist_timestamp + 100 < world.time)
+						if(gentle_fist_timestamp <= world.time)
 							gentle_fist_block = max(0, --gentle_fist_block)
-						gentle_fist_block = min(40, gentle_fist_block)
-						cmul *= 1-(gentle_fist_block*0.01)
+						gentle_fist_block = min(60, gentle_fist_block)
+						cmul *= 1 - (gentle_fist_block * 0.01)
 
 					if(boneharden)
 						cmul *= 0.65
@@ -915,8 +824,8 @@ mob/human
 					//stamina = 2000 + (blevel*25 +(str+strbuff+strneg)*13)*stammultiplier
 
 					if(gate < 3)
-						//stamina=2000+(blevel*45 +(str+strbuff+strneg)*10)*stammultiplier
-						stamina = 2000 + (blevel*25 +(str+strbuff+strneg)*13)*stammultiplier
+						stamina=2000+(blevel*45 +(str+strbuff+strneg)*10)*stammultiplier
+						//stamina = 2000 + (blevel*25 +(str+strbuff+strneg)*13)*stammultiplier
 						chakra=(500 + (con+conbuff+conneg)*5)*chakramultiplier
 					else
 						stamina=2000+(blevel*25 +(str+strbuff+strneg)*18)*stammultiplier
@@ -1014,8 +923,8 @@ mob/human
 						if(src.blevel<20)
 							r=max(10,r)*/
 
-						if((curwound < maxwound || immortality) && !ko && !mane && !maned && !waterlogged  && !RP)
-							if(curchakra < chakra)
+						if((curwound < maxwound || immortality) && !ko && !mane && !maned && !waterlogged)
+							if(curchakra < chakra && !scalpol)
 								if(chakraregen*regenlag > (chakra-curchakra))
 									curchakra= chakra
 								else
@@ -1035,7 +944,7 @@ mob/human
 									if(!ezing)body+=r*regenlag*lp_mult
 									bodycheck()
 
-					if(Poison)
+					/*if(Poison)
 						var/poison_multiplier = 1
 						if(clan == "Battle Conditioned")
 							Poison = 0
@@ -1046,7 +955,7 @@ mob/human
 							++Recovery
 							if(Recovery >= 2)
 								Recovery = 0
-								Poison -= 1 * regenlag
+								Poison -= 1 * regenlag*/
 
 					refresh_rank()
 
@@ -1113,7 +1022,7 @@ mob
 				usr<<"Complete!"
 
 var/lp_mult=1
-mob/human
+mob
 	proc
 		bodycheck()
 			if(src.body>=Req2Level(src.blevel) && blevel < 100)

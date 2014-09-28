@@ -196,7 +196,10 @@ obj/items/usable
 				usr.double_xp_time += 60 * 30
 				usr << "The double experience scroll burns up in flames."
 				usr << "Double experience gained for <strong>+30</strong> minutes."
-				del(src)
+				equipped--
+				Refreshcountdd(user)
+				//if(equipped <= 0)
+				//	del(src)
 
 		triple_experience
 			name = "Triple Experience Scroll"
@@ -210,7 +213,10 @@ obj/items/usable
 				usr.triple_xp_time += 60 * 30
 				usr << "The triple experience scroll burns up in flames."
 				usr << "Triple experience gained for <strong>+30</strong> minutes."
-				del(src)
+				equipped--
+				Refreshcountdd(user)
+				//if(equipped <= 0)
+				//	del(src)
 
 		Click()
 			Use(usr)

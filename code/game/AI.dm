@@ -298,6 +298,7 @@ mob/human/player/npc
 					staminaregen=round(stamina/100)
 					chakraregen=round((chakra*3)/100)
 					src.icon_state=""
+					curwound = 0
 					/*for(var/mob/T in targets)
 						RemoveTarget(T)
 					for(var/mob/human/player/npc/X in ohearers(5))
@@ -339,7 +340,7 @@ mob/human/player/npc
 											if("Academy Student", "Genin", "Chuunin")
 												gain *= 1.1
 											else
-												if(!higher_up_boost && m.realname == squad.leader)
+												if(!higher_up_boost && squad && m && m.realname == squad.leader)
 													higher_up_boost = 1
 													gain *= 1.2
 								for(var/mob/m in killer.squad.online_members - killer)
@@ -1056,7 +1057,7 @@ mob/human/player/npc
 
 				if(src.curstamina<=0)
 					//src.Damage(0,rand(32,37),src,"KO","Internal")
-					src.Wound(rand(32,37),1)
+					Damage(0, rand(32,37), null, "KO", "Internal")//src.Wound(rand(32,37),1)
 					src.ko=1
 					sleep(10)
 					flick("Knockout",src)

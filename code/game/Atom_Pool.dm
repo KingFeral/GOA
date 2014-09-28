@@ -49,6 +49,12 @@ atom_pool
 		return src.unpool(name, path)
 
 atom/movable
+	var/tmp/pool_name
+
+	New()
+		..()
+		pool_name = "[src.type]"
+
 	proc/pooled()
 		src.loc = null
 

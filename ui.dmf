@@ -301,6 +301,15 @@ menu "menu"
 		group = ""
 		is-disabled = false
 		saved-params = "is-checked"
+	elem 
+		name = "I'm Stuck"
+		command = "stuck"
+		category = "C&ommands"
+		is-checked = false
+		can-check = false
+		group = ""
+		is-disabled = false
+		saved-params = "is-checked"
 
 
 window "bountylistpane"
@@ -1937,7 +1946,7 @@ window "oocoutputpane"
 		on-size = ""
 		link-color = #0000ff
 		visited-color = #ff00ff
-		style = ".villageicon img.icon { width: 18; height: 14; }\na.admin_link:link { text-decoration: none; color: #ffffff; }\na.admin_link:visited { text-decoration: none; color: #ffffff; }\n.name { font-weight: bold; }\n.help .rank { color: #55acda; }\n.help .message { color: #448cca; }\n.help .interserver .name { font-style: italic; }\n.village_chat .faction, .village_chat .rank, .village_chat .name { color: #e4ca1f; }\n.village_chat .message { color: #29b41c; }\n.village_chat .interserver .faction { font-style: italic; }\n.village_chat .Konoha .faction, .village_chat .Konoha .rank { color: #40A000; }\n.village_chat .Konoha .name { color: #60C000; }\n.village_chat .Konoha .message { color: #FF6000; }\n.village_chat .Kiri .faction, .village_chat .Kiri .rank { color: #0080FF; }\n.village_chat .Kiri .name { color: #20A0FF; }\n.village_chat .Kiri .message { color: #8080FF; }\n.village_chat .Suna .faction, .village_chat .Suna .rank { color: #B0B080; }\n.village_chat .Suna .name { color: #D0D0A0; }\n.village_chat .Suna .message { color: #FFFF80; }\n.faction_chat .faction, .faction_chat .rank, .faction_chat .name { color: #e4ca1f; }\n.faction_chat .message { color: #29b41c; }\n.faction_chat .interserver .faction { font-style: italic; }\n.radio .chat_type, .radio .message { color: #8cbd73; }\n.radio .interserver .name { font-style: italic; }\n.say .chat_type, .say .message { color: #a6e6fc; }\n.mute_notify .interserver { font-style: italic;}\n.chuunin_exam { color: #448cca; font-weight: bold; }\n.war_info, .territory_info { color: #00b84d; font-weight: bold; }\n.death_info .betrayal { text-decoration: underline; font-style: italic; }"
+		style = ".villageicon img.icon { width: 18; height: 14; }\na.admin_link:link { text-decoration: none; color: #ffffff; }\na.admin_link:visited { text-decoration: none; color: #ffffff; }\n.name { font-weight: bold; }\n.help .rank { color: #55acda; }\n.help .message { color: #448cca; }\n.help .interserver .name { font-style: italic; }\n.village_chat .faction, .village_chat .rank, .village_chat .name { color: #e4ca1f; }\n.village_chat .message { color: #29b41c; }\n.village_chat .interserver .faction { font-style: italic; }\n.village_chat .Konoha .faction, .village_chat .Konoha .rank { color: #40A000; }\n.village_chat .Konoha .name { color: #60C000; }\n.village_chat .Konoha .message { color: #FF6000; }\n.village_chat .Kiri .faction, .village_chat .Kiri .rank { color: #0080FF; }\n.village_chat .Kiri .name { color: #20A0FF; }\n.village_chat .Kiri .message { color: #8080FF; }\n.village_chat .Suna .faction, .village_chat .Suna .rank { color: #B0B080; }\n.village_chat .Suna .name { color: #D0D0A0; }\n.village_chat .Suna .message { color: #FFFF80; }\n.faction_chat .faction, .faction_chat .rank, .faction_chat .name { color: #e4ca1f; }\n.faction_chat .message { color: #29b41c; }\n.faction_chat .interserver .faction { font-style: italic; }\n.radio .chat_type, .radio .message { color: #8cbd73; }\n.radio .interserver .name { font-style: italic; }\n.say .chat_type, .say .message { color: #FFEC8B; }\n.mute_notify .interserver { font-style: italic;}\n.chuunin_exam { color: #448cca; font-weight: bold; }\n.war_info, .territory_info { color: #00b84d; font-weight: bold; }\n.death_info .betrayal { text-decoration: underline; font-style: italic; }"
 		enable-http-images = false
 		max-lines = 1000
 		image = ""

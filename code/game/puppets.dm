@@ -37,13 +37,14 @@ mob/human/Puppet/proc
 						//X = X.Replacement_Start(u)
 						if(!X.icon_state)
 							flick("hurt",X)
-						//X.Damage(((rand(50,100)*src.meleedamage)/100),rand(0,src.wounddamage), u, "Puppet Melee", "Normal")
-						X.Dec_Stam((rand(50,100)*src.meleedamage)/100, 0, u)
-						X.Wound(rand(0,src.wounddamage), 0, u)
+						X.Damage(((rand(50,100)*src.meleedamage)/100),rand(0,src.wounddamage), u, "Puppet Melee", "Normal")
+						//X.Dec_Stam((rand(50,100)*src.meleedamage)/100, 0, u)
+						//X.Wound(rand(0,src.wounddamage), 0, u)
 						if(Pmod)
 							var/poison = rand(1, 4)
 							if(X && X.bleeding && u.skillspassive[OPEN_WOUNDS])
 								poison *= 1 + 0.1 * u.skillspassive[OPEN_WOUNDS]
+							X.poison(poison)
 						if(u && prob(3*u.skillspassive[OPEN_WOUNDS]))
 							//wound2=pick(1,2,3,4)
 							var/bleed=pick(2,4,6)
@@ -245,9 +246,9 @@ mob
 							if(etarget && etarget.loc == original_loc)
 								etarget.icon_state=""
 								etarget.underlays-=e
-								//etarget.Damage(rand(2000,3500), rand(4,9), u, "Body Crush", "Normal")
-								etarget.Dec_Stam(rand(2000,3500), 0, u)
-								etarget.Wound(rand(4,9), 0, u)
+								etarget.Damage(rand(2000,3500), rand(4,9), u, "Body Crush", "Normal")
+								//etarget.Dec_Stam(rand(2000,3500), 0, u)
+								//etarget.Wound(rand(4,9), 0, u)
 								etarget.Hostile(u)
 							src.layer=MOB_LAYER
 							e.loc = null
@@ -331,20 +332,22 @@ mob
 
 obj
 	Shield
-		layer=MOB_LAYER+3
+		layer = MOB_LAYER+3
 		density = 0
-		var/list/owners[] = list()
-		New()
-			..()
-			src.owner = usr
-			src.overlays.Add(image('icons/shield.dmi',icon_state="tl",pixel_x=-16,pixel_y=16),
-			image('icons/shield.dmi',icon_state="tr",pixel_x=16,pixel_y=16),
-			image('icons/shield.dmi',icon_state="bl",pixel_x=-16,pixel_y=-16),
-			image('icons/shield.dmi',icon_state="br",pixel_x=16,pixel_y=-16))
-			sleep(70)
-			owner = null
-			owners = null
-			loc = null
+		//var/list/owners[] = list()
+		puppet_shield
+			New()
+				..()
+				src.owner = usr
+				src.overlays.Add(image('icons/shield.dmi',icon_state="tl",pixel_x=-16,pixel_y=16),
+				image('icons/shield.dmi',icon_state="tr",pixel_x=16,pixel_y=16),
+				image('icons/shield.dmi',icon_state="bl",pixel_x=-16,pixel_y=-16),
+				image('icons/shield.dmi',icon_state="br",pixel_x=16,pixel_y=-16))
+				sleep(70)
+				owner = null
+				//owners = null
+				dispose()
+				//loc = null
 
 mob/human/Puppet
 	combat_protection = 0
